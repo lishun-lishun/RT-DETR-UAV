@@ -3,7 +3,7 @@
 # RT-DETR 
 
 文章"[DETRs Beat YOLOs on Real-time Object Detection](https://arxiv.org/abs/2304.08069)"和"[RT-DETRv2: Improved Baseline with Bag-of-Freebies for Real-Time Detection Transformer](https://arxiv.org/abs/2407.17140)"的官方实现.
-
+//李顺
 <details>
 <summary>Fig</summary>
 
