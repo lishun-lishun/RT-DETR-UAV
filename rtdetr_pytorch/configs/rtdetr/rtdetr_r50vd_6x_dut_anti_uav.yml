@@ -1,0 +1,19 @@
+__include__: [
+  '../dataset/dut_anti_uav_detection.yml',
+  '../runtime.yml',
+  './include/dataloader.yml',
+  './include/optimizer.yml',
+  './include/rtdetr_r50vd.yml',
+]
+
+output_dir: ./output/rtdetr_r50vd_6x_dut_anti_uav
+
+# The standard RT-DETR 6x schedule is 72 epochs.
+epoches: 72
+
+# batch_size is per GPU. Adjust these two values for server GPU memory.
+train_dataloader:
+  batch_size: 4
+
+val_dataloader:
+  batch_size: 8

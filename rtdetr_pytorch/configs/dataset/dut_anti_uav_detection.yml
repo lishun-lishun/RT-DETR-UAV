@@ -1,0 +1,37 @@
+task: detection
+
+# DUT-Anti-UAV contains one class. Its COCO annotations use category_id: 0,
+# therefore the MS-COCO 80-class id remapping must remain disabled.
+num_classes: 1
+remap_mscoco_category: False
+
+train_dataloader:
+  type: DataLoader
+  dataset:
+    type: CocoDetection
+    # Paths are resolved from the rtdetr_pytorch working directory.
+    img_folder: ../DUT-Anti-UAV/DUT-Anti-UAV/images/train/
+    ann_file: ../DUT-Anti-UAV/DUT-Anti-UAV/labels/train.json
+    return_masks: False
+    transforms:
+      type: Compose
+      ops: ~
+  shuffle: True
+  batch_size: 4
+  num_workers: 4
+  drop_last: True
+
+val_dataloader:
+  type: DataLoader
+  dataset:
+    type: CocoDetection
+    img_folder: ../DUT-Anti-UAV/DUT-Anti-UAV/images/val/
+    ann_file: ../DUT-Anti-UAV/DUT-Anti-UAV/labels/val.json
+    return_masks: False
+    transforms:
+      type: Compose
+      ops: ~
+  shuffle: False
+  batch_size: 8
+  num_workers: 4
+  drop_last: False
