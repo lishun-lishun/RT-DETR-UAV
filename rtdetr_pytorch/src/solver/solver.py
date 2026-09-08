@@ -16,6 +16,9 @@ class BaseSolver(object):
     def __init__(self, cfg: BaseConfig) -> None:
         
         self.cfg = cfg 
+        # Persisted in checkpoints so resumed training keeps the historical
+        # validation best instead of treating the first resumed epoch as best.
+        self.best_stat = {'epoch': -1}
 
     def setup(self, ):
         '''Avoid instantiating unnecessary classes 
@@ -90,6 +93,8 @@ class BaseSolver(object):
         if self.scaler is not None:
             state['scaler'] = self.scaler.state_dict()
 
+        state['best_stat'] = self.best_stat
+
         return state
 
 
@@ -123,6 +128,10 @@ class BaseSolver(object):
         if getattr(self, 'scaler', None) and 'scaler' in state:
             self.scaler.load_state_dict(state['scaler'])
             print('Loading scaler.state_dict')
+
+        if 'best_stat' in state:
+            self.best_stat = state['best_stat']
+            print('Loading best_stat:', self.best_stat)
 
 
     def save(self, path):
