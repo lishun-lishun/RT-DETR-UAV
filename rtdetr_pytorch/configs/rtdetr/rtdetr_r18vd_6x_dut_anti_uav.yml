@@ -11,12 +11,17 @@ output_dir: ./output/rtdetr_r18vd_6x_dut_anti_uav
 # The standard RT-DETR 6x schedule is 72 epochs.
 epoches: 72
 
-# batch_size is per GPU. Adjust these two values for server GPU memory.
+# Tuned for 3 x 24 GB GPUs:
+#   per-GPU batch size = 24, global batch size = 24 * 3 = 72.
+# Multi-scale training can randomly select resolutions up to 800x800, so some
+# free memory is intentionally left for the largest scale.
 train_dataloader:
-  batch_size: 4
+  batch_size: 24
+  num_workers: 8
 
 val_dataloader:
-  batch_size: 8
+  batch_size: 32
+  num_workers: 8
 
 PResNet:
   depth: 18
@@ -39,14 +44,16 @@ optimizer:
   params:
     -
       params: '^(?=.*backbone)(?=.*norm).*$'
-      lr: 0.00001
+      # Linear LR scaling: 1e-5 * (global batch 72 / reference batch 16).
+      lr: 0.000045
       weight_decay: 0.
     -
       params: '^(?=.*backbone)(?!.*norm).*$'
-      lr: 0.00001
+      lr: 0.000045
     -
       params: '^(?=.*(?:encoder|decoder))(?=.*(?:norm|bias)).*$'
       weight_decay: 0.
-  lr: 0.0001
+  # Linear LR scaling: 1e-4 * (global batch 72 / reference batch 16).
+  lr: 0.00045
   betas: [0.9, 0.999]
   weight_decay: 0.0001
