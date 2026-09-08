@@ -1,7 +1,7 @@
 __include__: [
   '../dataset/dut_anti_uav_detection.yml',
   '../runtime.yml',
-  './include/dataloader.yml',
+  './include/dataloader_dut_anti_uav.yml',
   './include/optimizer.yml',
   './include/rtdetr_r50vd.yml',
 ]
