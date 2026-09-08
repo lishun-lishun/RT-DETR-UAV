@@ -50,8 +50,11 @@ def main(args, ):
         'orig_target_sizes': {0: 'N'}
     }
 
-    data = torch.rand(1, 3, 640, 640)
-    size = torch.tensor([[640, 640]])
+    input_size = cfg.yaml_cfg.get('RTDETRTransformer', {}).get(
+        'eval_spatial_size', [640, 640])
+    input_height, input_width = input_size
+    data = torch.rand(1, 3, input_height, input_width)
+    size = torch.tensor([[input_width, input_height]])
 
     torch.onnx.export(
         model, 

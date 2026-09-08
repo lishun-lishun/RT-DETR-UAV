@@ -7,22 +7,19 @@ __include__: [
   './include/dut_anti_uav_200e.yml',
 ]
 
-output_dir: ./output/rtdetr_r18vd_200e_800_dut_anti_uav
+output_dir: ./output/rtdetr_r34vd_200e_800_dut_anti_uav
 
-# Tuned for 3 x 24 GB GPUs:
-#   per-GPU batch size = 24, global batch size = 24 * 3 = 72.
-# Multi-scale training can randomly select resolutions up to 960x960, so some
-# free memory is intentionally left for the largest scale.
+# Tuned for 3 x 24 GB GPUs: global batch size = 16 * 3 = 48.
 train_dataloader:
-  batch_size: 24
+  batch_size: 16
   num_workers: 8
 
 val_dataloader:
-  batch_size: 32
+  batch_size: 24
   num_workers: 8
 
 PResNet:
-  depth: 18
+  depth: 34
   freeze_at: -1
   freeze_norm: False
   pretrained: True
@@ -33,22 +30,20 @@ HybridEncoder:
   expansion: 0.5
 
 RTDETRTransformer:
-  eval_idx: -1
-  num_decoder_layers: 3
-  num_denoising: 100
+  num_decoder_layers: 4
 
 optimizer:
   type: AdamW
   params:
     -
-      params: '^(?=.*backbone)(?=.*norm).*$'
-      lr: 0.00001
+      params: '^(?=.*backbone)(?=.*norm|bn).*$'
       weight_decay: 0.
-    -
-      params: '^(?=.*backbone)(?!.*norm).*$'
       lr: 0.00001
     -
-      params: '^(?=.*(?:encoder|decoder))(?=.*(?:norm|bias)).*$'
+      params: '^(?=.*backbone)(?!.*norm|bn).*$'
+      lr: 0.00001
+    -
+      params: '^(?=.*(?:encoder|decoder))(?=.*(?:norm|bn|bias)).*$'
       weight_decay: 0.
   lr: 0.0001
   betas: [0.9, 0.999]

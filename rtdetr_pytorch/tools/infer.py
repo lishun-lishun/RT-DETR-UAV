@@ -143,8 +143,10 @@ def main(args, ):
     w, h = im_pil.size
     orig_size = torch.tensor([w, h])[None].to(args.device)
     
+    input_size = cfg.yaml_cfg.get('RTDETRTransformer', {}).get(
+        'eval_spatial_size', [640, 640])
     transforms = T.Compose([
-        T.Resize((640, 640)),  
+        T.Resize(tuple(input_size)),
         T.ToTensor(),
     ])
     im_data = transforms(im_pil)[None].to(args.device)

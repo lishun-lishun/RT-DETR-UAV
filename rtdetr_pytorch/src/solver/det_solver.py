@@ -80,7 +80,7 @@ class DetSolver(BaseSolver):
         # New checkpoints restore this value directly. For checkpoints produced
         # by older code, recover it from log.txt instead.
         best_stat = self.best_stat
-        if best_stat.get('epoch', -1) < 0:
+        if self.cfg.resume and best_stat.get('epoch', -1) < 0:
             best_stat = self._recover_best_stat()
             self.best_stat = best_stat
             if best_stat.get('epoch', -1) >= 0:

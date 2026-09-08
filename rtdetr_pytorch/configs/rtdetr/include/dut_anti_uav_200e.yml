@@ -1,0 +1,27 @@
+# Shared training policy for all DUT-Anti-UAV RT-DETR variants.
+epoches: 200
+checkpoint_step: 10
+find_unused_parameters: False
+
+# If training is resumed later, keep the schedule from this YAML while still
+# restoring model, optimizer, EMA, scaler, and the completed epoch number.
+override_lr_scheduler_on_resume: True
+
+# DUT-Anti-UAV is dominated by very small targets. Training above the fixed
+# 800x800 validation resolution exposes the model to more useful small-object
+# pixels without changing the three-level RT-DETR architecture.
+RTDETR:
+  multi_scale: [640, 672, 704, 736, 768, 800, 800, 800, 832, 864, 896, 928, 960]
+
+HybridEncoder:
+  eval_spatial_size: [800, 800]
+
+RTDETRTransformer:
+  eval_spatial_size: [800, 800]
+
+# With full COCO weights (-t), 120/170 gives the detector enough time to adapt
+# and then two lower-LR convergence phases on the one-class dataset.
+lr_scheduler:
+  type: MultiStepLR
+  milestones: [120, 170]
+  gamma: 0.1

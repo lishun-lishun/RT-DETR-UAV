@@ -122,8 +122,24 @@ class BaseSolver(object):
             print('Loading optimizer.state_dict')
 
         if getattr(self, 'lr_scheduler', None) and 'lr_scheduler' in state:
+            # A resumed checkpoint normally restores its original schedule.
+            # Some experiments intentionally extend the epoch count and define
+            # new milestones in YAML; keep those configured values when the
+            # explicit override flag is enabled while still restoring progress.
+            scheduler_overrides = {}
+            yaml_cfg = getattr(self.cfg, 'yaml_cfg', {})
+            if yaml_cfg.get('override_lr_scheduler_on_resume', False):
+                for name in ('milestones', 'gamma'):
+                    if hasattr(self.lr_scheduler, name):
+                        scheduler_overrides[name] = getattr(self.lr_scheduler, name)
+
             self.lr_scheduler.load_state_dict(state['lr_scheduler'])
             print('Loading lr_scheduler.state_dict')
+
+            for name, value in scheduler_overrides.items():
+                setattr(self.lr_scheduler, name, value)
+            if scheduler_overrides:
+                print('Using lr_scheduler settings from YAML:', scheduler_overrides)
 
         if getattr(self, 'scaler', None) and 'scaler' in state:
             self.scaler.load_state_dict(state['scaler'])

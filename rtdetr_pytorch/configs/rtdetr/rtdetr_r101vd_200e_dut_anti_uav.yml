@@ -7,29 +7,33 @@ __include__: [
   './include/dut_anti_uav_200e.yml',
 ]
 
-output_dir: ./output/rtdetr_r50vd_200e_800_dut_anti_uav
+output_dir: ./output/rtdetr_r101vd_200e_800_dut_anti_uav
 
-# Tuned for 3 x 24 GB GPUs at up to 960x960: global batch = 10 * 3 = 30.
+# Tuned for 3 x 24 GB GPUs at up to 960x960: global batch = 6 * 3 = 18.
 train_dataloader:
-  batch_size: 10
+  batch_size: 6
   num_workers: 8
 
 val_dataloader:
-  batch_size: 12
+  batch_size: 8
   num_workers: 8
+
+PResNet:
+  depth: 101
+
+HybridEncoder:
+  hidden_dim: 384
+  dim_feedforward: 2048
+
+RTDETRTransformer:
+  feat_channels: [384, 384, 384]
 
 optimizer:
   type: AdamW
   params:
     -
       params: 'backbone'
-      lr: 0.00001
-    -
-      params: '^(?=.*encoder(?=.*bias|.*norm.*weight)).*$'
-      weight_decay: 0.
-    -
-      params: '^(?=.*decoder(?=.*bias|.*norm.*weight)).*$'
-      weight_decay: 0.
+      lr: 0.000001
   lr: 0.0001
   betas: [0.9, 0.999]
   weight_decay: 0.0001
