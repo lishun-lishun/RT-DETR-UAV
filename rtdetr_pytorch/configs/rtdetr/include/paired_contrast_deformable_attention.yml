@@ -1,0 +1,35 @@
+# Paired Contrast-Guided Deformable Cross-Attention.
+# The generic layer selector [-2, -1] means the last two Decoder layers.
+RTDETRTransformer:
+  decoder_cross_attention:
+    type: paired_contrast
+    enabled: true
+
+    surround:
+      mode: box_outside_radial
+      margin: 0.20
+
+    contrast:
+      mode: abs_difference
+      scorer: mean
+      lambda: 0.5
+      normalize_feature: true
+
+    layers:
+      enabled_layers: [-2, -1]
+
+    # Current feature order is stride 8/16/32 = P3/P4/P5.
+    levels:
+      enabled_levels: [0, 1]
+
+    small_query:
+      enabled: false
+      area_threshold: 0.02
+
+    denoising:
+      enable_surround_for_dn: false
+
+    invalid_point:
+      mode: mask
+
+    debug: false

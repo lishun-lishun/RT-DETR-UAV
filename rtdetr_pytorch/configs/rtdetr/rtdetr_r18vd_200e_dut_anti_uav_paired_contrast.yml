@@ -1,0 +1,12 @@
+__include__: [
+  './rtdetr_r18vd_6x_dut_anti_uav.yml',
+  './include/paired_contrast_deformable_attention.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_200e_800_dut_anti_uav_paired_contrast
+
+RTDETRTransformer:
+  decoder_cross_attention:
+    # R18 has 3 Decoder layers: 0, 1, 2.
+    layers:
+      enabled_layers: [1, 2]

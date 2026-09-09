@@ -12,6 +12,71 @@ def inverse_sigmoid(x: torch.Tensor, eps: float=1e-5) -> torch.Tensor:
     return torch.log(x.clip(min=eps) / (1 - x).clip(min=eps))
 
 
+def deformable_attention_sample_func(value,
+                                     value_spatial_shapes,
+                                     sampling_locations,
+                                     enabled_levels=None):
+    """Return point-wise features using the original attention sampler.
+
+    This is the point-feature counterpart of
+    :func:`deformable_attention_core_func`.  It deliberately uses the same
+    feature layout, normalized grid conversion and ``grid_sample`` arguments.
+    The original aggregation function below is left unchanged.
+
+    Args:
+        value (Tensor): [B, value_length, num_heads, head_dim].
+        value_spatial_shapes (List): [[H_0, W_0], ..., [H_l, W_l]].
+        sampling_locations (Tensor): [B, Q, H, L, P, 2].
+        enabled_levels (Sequence[int] | None): levels to sample. ``None``
+            samples every level.
+
+    Returns:
+        List[Tensor]: one tensor per requested level, in the requested order;
+        each tensor has shape [B * num_heads, head_dim, Q, num_points].
+    """
+    bs, _, n_head, head_dim = value.shape
+    _, _, location_heads, location_levels, _, coordinate_dim = \
+        sampling_locations.shape
+    if location_heads != n_head or coordinate_dim != 2:
+        raise ValueError('Invalid sampling_locations shape: {}'.format(
+            tuple(sampling_locations.shape)))
+    num_value_levels = len(value_spatial_shapes)
+    if enabled_levels is None:
+        enabled_levels = tuple(range(num_value_levels))
+    else:
+        enabled_levels = tuple(int(level) for level in enabled_levels)
+    for level in enabled_levels:
+        if level < 0 or level >= num_value_levels:
+            raise ValueError('Invalid feature level {} for {} levels.'.format(
+                level, num_value_levels))
+    if location_levels not in (num_value_levels, len(enabled_levels)):
+        raise ValueError(
+            'sampling_locations contains {} levels; expected {} full levels '
+            'or {} selected levels.'.format(
+                location_levels, num_value_levels, len(enabled_levels)))
+
+    split_shape = [h * w for h, w in value_spatial_shapes]
+    value_list = value.split(split_shape, dim=1)
+    sampling_grids = 2 * sampling_locations - 1
+    sampled_features = []
+    for position, level in enumerate(enabled_levels):
+        h, w = value_spatial_shapes[level]
+        value_l = value_list[level].flatten(2).permute(
+            0, 2, 1).reshape(bs * n_head, head_dim, h, w)
+        location_level = level if location_levels == num_value_levels \
+            else position
+        sampling_grid_l = sampling_grids[:, :, :, location_level].permute(
+            0, 2, 1, 3, 4).flatten(0, 1)
+        sampled_features.append(F.grid_sample(
+            value_l,
+            sampling_grid_l,
+            mode='bilinear',
+            padding_mode='zeros',
+            align_corners=False))
+
+    return sampled_features
+
+
 def deformable_attention_core_func(value, value_spatial_shapes, sampling_locations, attention_weights):
     """
     Args:
