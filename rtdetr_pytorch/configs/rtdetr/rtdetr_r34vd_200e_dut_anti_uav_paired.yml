@@ -1,6 +1,0 @@
-__include__: [
-  './rtdetr_r34vd_200e_dut_anti_uav.yml',
-  './include/paired_target_surround.yml',
-]
-
-output_dir: ./output/rtdetr_r34vd_200e_800_dut_anti_uav_paired

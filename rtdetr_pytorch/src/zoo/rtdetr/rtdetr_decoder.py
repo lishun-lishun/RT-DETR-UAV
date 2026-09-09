@@ -11,7 +11,6 @@ import torch.nn.functional as F
 import torch.nn.init as init 
 
 from .denoising import get_contrastive_denoising_training_group
-from .paired_target_surround_attention import build_decoder_cross_attention
 from .utils import deformable_attention_core_func, get_activation, inverse_sigmoid
 from .utils import bias_init_with_prob
 
@@ -151,8 +150,7 @@ class TransformerDecoderLayer(nn.Module):
                  dropout=0.,
                  activation="relu",
                  n_levels=4,
-                 n_points=4,
-                 decoder_cross_attention=None):
+                 n_points=4,):
         super(TransformerDecoderLayer, self).__init__()
 
         # self attention
@@ -161,9 +159,7 @@ class TransformerDecoderLayer(nn.Module):
         self.norm1 = nn.LayerNorm(d_model)
 
         # cross attention
-        self.cross_attn = build_decoder_cross_attention(
-            MSDeformableAttention(d_model, n_head, n_levels, n_points),
-            decoder_cross_attention)
+        self.cross_attn = MSDeformableAttention(d_model, n_head, n_levels, n_points)
         self.dropout2 = nn.Dropout(dropout)
         self.norm2 = nn.LayerNorm(d_model)
 
@@ -306,8 +302,7 @@ class RTDETRTransformer(nn.Module):
                  eval_spatial_size=None,
                  eval_idx=-1,
                  eps=1e-2, 
-                 aux_loss=True,
-                 decoder_cross_attention=None):
+                 aux_loss=True):
 
         super(RTDETRTransformer, self).__init__()
         assert position_embed_type in ['sine', 'learned'], \
@@ -332,10 +327,7 @@ class RTDETRTransformer(nn.Module):
         self._build_input_proj_layer(feat_channels)
 
         # Transformer module
-        decoder_layer = TransformerDecoderLayer(
-            hidden_dim, nhead, dim_feedforward, dropout, activation,
-            num_levels, num_decoder_points,
-            decoder_cross_attention=decoder_cross_attention)
+        decoder_layer = TransformerDecoderLayer(hidden_dim, nhead, dim_feedforward, dropout, activation, num_levels, num_decoder_points)
         self.decoder = TransformerDecoder(hidden_dim, decoder_layer, num_decoder_layers, eval_idx)
 
         self.num_denoising = num_denoising
