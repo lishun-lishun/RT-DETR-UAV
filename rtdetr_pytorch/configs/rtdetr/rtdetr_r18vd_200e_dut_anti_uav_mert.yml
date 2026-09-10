@@ -1,0 +1,48 @@
+__include__: [
+  './rtdetr_r18vd_6x_dut_anti_uav.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_200e_800_dut_anti_uav_mert
+
+# concat mode doubles the model-forward batch. Halving the per-GPU loader
+# batch keeps peak training memory close to the R18 baseline on 24 GB GPUs.
+train_dataloader:
+  batch_size: 12
+
+# Avoid worker shared-memory exhaustion during distributed validation.
+val_dataloader:
+  num_workers: 0
+
+MERT:
+  enabled: true
+  forward_mode: concat
+
+  micro_shift:
+    max_pixels: 2
+    choices: [-2, -1, 0, 1, 2]
+    forbid_zero_zero: true
+    per_image: true
+    fill_mode: baseline
+
+  trajectory:
+    enabled: true
+    loss_type: smooth_l1
+    weight: 0.20
+    beta: 0.10
+    layers: all
+
+  size_weight:
+    enabled: true
+    reference_area: 256.0
+    gamma: 0.5
+    min_weight: 1.0
+    max_weight: 4.0
+
+  matching:
+    use_final_layer_matching: true
+    exclude_dn_queries: true
+
+  pair:
+    require_fully_visible: true
+
+  debug: false
