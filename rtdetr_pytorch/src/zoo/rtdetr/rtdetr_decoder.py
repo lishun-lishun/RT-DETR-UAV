@@ -11,8 +11,6 @@ import torch.nn.functional as F
 import torch.nn.init as init 
 
 from .denoising import get_contrastive_denoising_training_group
-from .paired_contrast_deformable_attention import \
-    build_decoder_cross_attention
 from .utils import deformable_attention_core_func, get_activation, inverse_sigmoid
 from .utils import bias_init_with_prob
 
@@ -152,9 +150,7 @@ class TransformerDecoderLayer(nn.Module):
                  dropout=0.,
                  activation="relu",
                  n_levels=4,
-                 n_points=4,
-                 decoder_cross_attention=None,
-                 num_matching_queries=300):
+                 n_points=4,):
         super(TransformerDecoderLayer, self).__init__()
 
         # self attention
@@ -164,9 +160,6 @@ class TransformerDecoderLayer(nn.Module):
 
         # cross attention
         self.cross_attn = MSDeformableAttention(d_model, n_head, n_levels, n_points)
-        self._decoder_cross_attention_config = copy.deepcopy(
-            decoder_cross_attention)
-        self._num_matching_queries = int(num_matching_queries)
         self.dropout2 = nn.Dropout(dropout)
         self.norm2 = nn.LayerNorm(d_model)
 
@@ -179,15 +172,6 @@ class TransformerDecoderLayer(nn.Module):
         self.norm3 = nn.LayerNorm(d_model)
 
         # self._reset_parameters()
-
-    def configure_cross_attention(self, layer_index, num_decoder_layers):
-        self.cross_attn = build_decoder_cross_attention(
-            self.cross_attn,
-            self._decoder_cross_attention_config,
-            layer_index,
-            num_decoder_layers,
-            self._num_matching_queries)
-        self._decoder_cross_attention_config = None
 
     # def _reset_parameters(self):
     #     linear_init_(self.linear1)
@@ -245,8 +229,6 @@ class TransformerDecoder(nn.Module):
     def __init__(self, hidden_dim, decoder_layer, num_layers, eval_idx=-1):
         super(TransformerDecoder, self).__init__()
         self.layers = nn.ModuleList([copy.deepcopy(decoder_layer) for _ in range(num_layers)])
-        for layer_index, layer in enumerate(self.layers):
-            layer.configure_cross_attention(layer_index, num_layers)
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
         self.eval_idx = eval_idx if eval_idx >= 0 else num_layers + eval_idx
@@ -320,8 +302,7 @@ class RTDETRTransformer(nn.Module):
                  eval_spatial_size=None,
                  eval_idx=-1,
                  eps=1e-2, 
-                 aux_loss=True,
-                 decoder_cross_attention=None):
+                 aux_loss=True):
 
         super(RTDETRTransformer, self).__init__()
         assert position_embed_type in ['sine', 'learned'], \
@@ -346,11 +327,7 @@ class RTDETRTransformer(nn.Module):
         self._build_input_proj_layer(feat_channels)
 
         # Transformer module
-        decoder_layer = TransformerDecoderLayer(
-            hidden_dim, nhead, dim_feedforward, dropout, activation,
-            num_levels, num_decoder_points,
-            decoder_cross_attention=decoder_cross_attention,
-            num_matching_queries=num_queries)
+        decoder_layer = TransformerDecoderLayer(hidden_dim, nhead, dim_feedforward, dropout, activation, num_levels, num_decoder_points)
         self.decoder = TransformerDecoder(hidden_dim, decoder_layer, num_decoder_layers, eval_idx)
 
         self.num_denoising = num_denoising
