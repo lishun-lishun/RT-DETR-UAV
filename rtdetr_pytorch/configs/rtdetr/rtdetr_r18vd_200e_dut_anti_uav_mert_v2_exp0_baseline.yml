@@ -6,7 +6,7 @@ output_dir: ./output/rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp0_baseline
 
 # Keep the original-image batch identical across Exp0--Exp5.
 train_dataloader:
-  batch_size: 12
+  batch_size: 10
 
 val_dataloader:
   num_workers: 0

@@ -5,7 +5,7 @@ __include__: [
 output_dir: ./output/rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp5_full
 
 train_dataloader:
-  batch_size: 12
+  batch_size: 10
 
 val_dataloader:
   num_workers: 0
