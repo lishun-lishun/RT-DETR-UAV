@@ -1,0 +1,55 @@
+__include__: [
+  './rtdetr_r18vd_6x_dut_anti_uav.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp4_late_xywh
+
+train_dataloader:
+  batch_size: 12
+
+val_dataloader:
+  num_workers: 0
+
+MERT:
+  enabled: true
+  forward_mode: concat
+
+  micro_shift:
+    max_pixels: 1
+    choices: [-1, 0, 1]
+    forbid_zero_zero: true
+    per_image: true
+    fill_mode: baseline
+
+  trajectory:
+    enabled: true
+    loss_type: smooth_l1
+    weight: 0.10
+    beta: 0.01
+    # R18 has B0/B1/B2, so this dynamically selects B0->B1 and B1->B2.
+    layers: last_2
+    xy_weight: 1.0
+    wh_weight: 0.25
+
+  schedule:
+    enabled: false
+
+  size_weight:
+    enabled: true
+    reference_area: 256.0
+    gamma: 0.5
+    max_object_area: null
+    min_weight: 1.0
+    max_weight: 4.0
+
+  supervision:
+    shifted_detection_loss: true
+
+  matching:
+    use_final_layer_matching: true
+    exclude_dn_queries: true
+
+  pair:
+    require_fully_visible: true
+
+  debug: false

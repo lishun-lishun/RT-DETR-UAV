@@ -7,7 +7,9 @@ Run from ``rtdetr_pytorch``:
 
 import sys
 import types
+import copy
 import unittest
+from unittest import mock
 from pathlib import Path
 
 import torch
@@ -50,6 +52,7 @@ from src.solver.mert import (  # noqa: E402
     MERTTrainingPlugin,
     MicroShiftPairGenerator,
     RefinementTrajectoryEquivarianceLoss,
+    get_mert_weight,
 )
 from src.solver.det_engine import train_one_epoch  # noqa: E402
 
@@ -293,6 +296,200 @@ class TestTrajectoryLoss(unittest.TestCase):
             )
 
 
+class TestMERTV2Loss(unittest.TestCase):
+    def _loss(self, trajectory=None, size_weight=None, debug=True):
+        trajectory_cfg = {
+            "weight": 0.10,
+            "beta": 0.01,
+            "layers": "last_2",
+            "xy_weight": 1.0,
+            "wh_weight": 0.25,
+        }
+        if trajectory:
+            trajectory_cfg.update(trajectory)
+        return RefinementTrajectoryEquivarianceLoss(
+            DesiredQueryMatcher(),
+            trajectory=trajectory_cfg,
+            size_weight=size_weight or {"enabled": False},
+            debug=debug,
+        )
+
+    @staticmethod
+    def _targets():
+        original = make_target(desired_query=0)
+        shifted = make_target(desired_query=2)
+        original["origin_gt_id"] = torch.tensor([0])
+        shifted["origin_gt_id"] = torch.tensor([0])
+        original["mert_fully_visible"] = torch.tensor([True])
+        shifted["mert_fully_visible"] = torch.tensor([True])
+        return [original], [shifted]
+
+    def test_beta_001_is_passed_to_smooth_l1(self):
+        loss = self._loss(trajectory={"layers": "all"})
+        original_targets, shifted_targets = self._targets()
+        track = [[0.5, 0.5, 0.1, 0.1], [0.51, 0.5, 0.1, 0.1]]
+        with mock.patch(
+            "src.solver.mert.F.smooth_l1_loss",
+            wraps=torch.nn.functional.smooth_l1_loss,
+        ) as smooth_l1:
+            loss(
+                make_outputs(track, 0),
+                make_outputs(track, 2),
+                original_targets,
+                shifted_targets,
+                torch.tensor([[1, 0]]),
+                (640, 640),
+            )
+        self.assertEqual(smooth_l1.call_args.kwargs["beta"], 0.01)
+
+    def test_v2_loss_defaults(self):
+        loss = RefinementTrajectoryEquivarianceLoss(DesiredQueryMatcher())
+        self.assertEqual(loss.weight, 0.10)
+        self.assertEqual(loss.beta, 0.01)
+        self.assertEqual(loss.layers, "last_2")
+        self.assertEqual(loss.xy_weight, 1.0)
+        self.assertEqual(loss.wh_weight, 0.25)
+        pair_generator = MicroShiftPairGenerator()
+        self.assertEqual(pair_generator.max_pixels, 1)
+        self.assertEqual(pair_generator.choices, (-1, 0, 1))
+
+    def test_last_n_and_explicit_transition_selection(self):
+        loss = self._loss()
+        self.assertEqual(loss._transition_indices(6), [3, 4])
+        loss.layers = "last_1"
+        self.assertEqual(loss._transition_indices(6), [4])
+        loss.layers = "last_3"
+        self.assertEqual(loss._transition_indices(6), [2, 3, 4])
+        loss.layers = [3, 4]
+        self.assertEqual(loss._transition_indices(6), [3, 4])
+
+    def test_xy_and_wh_losses_are_separate_and_weighted(self):
+        original_targets, shifted_targets = self._targets()
+        base = [[0.50, 0.50, 0.10, 0.10], [0.50, 0.50, 0.10, 0.10]]
+        shifted_xy = [
+            [0.50 + 1 / 640, 0.50, 0.10, 0.10],
+            [0.52 + 1 / 640, 0.50, 0.10, 0.10],
+        ]
+        xy_info = self._loss(trajectory={"layers": "all"})
+        xy_value = xy_info(
+            make_outputs(base, 0), make_outputs(shifted_xy, 2),
+            original_targets, shifted_targets, torch.tensor([[1, 0]]),
+            (640, 640),
+        )
+        self.assertGreater(xy_info.last_debug_info["xy_loss"], 0.0)
+        self.assertEqual(xy_info.last_debug_info["wh_loss"], 0.0)
+        self.assertAlmostEqual(
+            float(xy_value),
+            0.10 * xy_info.last_debug_info["xy_loss"],
+            places=7,
+        )
+
+        shifted_wh = [
+            [0.50 + 1 / 640, 0.50, 0.10, 0.10],
+            [0.50 + 1 / 640, 0.50, 0.12, 0.10],
+        ]
+        wh_info = self._loss(trajectory={"layers": "all"})
+        wh_value = wh_info(
+            make_outputs(base, 0), make_outputs(shifted_wh, 2),
+            original_targets, shifted_targets, torch.tensor([[1, 0]]),
+            (640, 640),
+        )
+        self.assertEqual(wh_info.last_debug_info["xy_loss"], 0.0)
+        self.assertGreater(wh_info.last_debug_info["wh_loss"], 0.0)
+        self.assertAlmostEqual(
+            float(wh_value),
+            0.10 * 0.25 * wh_info.last_debug_info["wh_loss"],
+            places=7,
+        )
+
+    def test_warmup_hold_decay_schedule(self):
+        schedule = {
+            "enabled": True,
+            "start_epoch": 20,
+            "warmup_end_epoch": 40,
+            "hold_end_epoch": 100,
+            "end_epoch": 160,
+        }
+        expected = {
+            0: 0.0, 19: 0.0, 20: 0.0, 30: 0.05, 40: 0.10,
+            80: 0.10, 99: 0.10, 100: 0.10, 130: 0.05,
+            160: 0.0, 180: 0.0, 200: 0.0,
+        }
+        for epoch, value in expected.items():
+            self.assertAlmostEqual(
+                get_mert_weight(epoch, 0.10, schedule), value, places=8
+            )
+
+    def test_small_object_weight_and_area_filter(self):
+        loss = self._loss(size_weight={
+            "enabled": True,
+            "reference_area": 256.0,
+            "gamma": 0.25,
+            "max_object_area": 1024.0,
+            "min_weight": 1.0,
+            "max_weight": 2.5,
+        })
+        expected = {8: 4 ** 0.25, 16: 1.0, 32: 1.0, 64: 0.0}
+        for side, value in expected.items():
+            box = torch.tensor([0.5, 0.5, side / 640, side / 640])
+            self.assertAlmostEqual(
+                float(loss._size_weight(box, 640, 640)), value, places=5
+            )
+
+        sides = torch.tensor([8.0, 16.0, 32.0, 64.0])
+        boxes = torch.stack([
+            torch.full_like(sides, 0.5),
+            torch.full_like(sides, 0.5),
+            sides / 640,
+            sides / 640,
+        ], dim=-1)
+        original_target = {
+            "boxes": boxes,
+            "labels": torch.zeros(4, dtype=torch.int64),
+            "area": sides.square(),
+            "origin_gt_id": torch.arange(4),
+            "mert_fully_visible": torch.ones(4, dtype=torch.bool),
+            "desired_query": 0,
+        }
+        shifted_target = {
+            key: value.clone() if torch.is_tensor(value) else value
+            for key, value in original_target.items()
+        }
+        shifted_target["boxes"][:, 0] += 1 / 640
+
+        def outputs(layer_boxes):
+            logits = torch.zeros(1, 4, 1, requires_grad=True)
+            layers = [layer_boxes[None].clone().requires_grad_() for _ in range(3)]
+            return {
+                "pred_logits": logits,
+                "pred_boxes": layers[-1],
+                "aux_outputs": [
+                    {"pred_logits": logits, "pred_boxes": layers[0]},
+                    {"pred_logits": logits, "pred_boxes": layers[1]},
+                    {"pred_logits": logits, "pred_boxes": torch.zeros_like(layers[0])},
+                ],
+            }
+
+        loss(
+            outputs(boxes), outputs(shifted_target["boxes"]),
+            [original_target], [shifted_target], torch.tensor([[1, 0]]),
+            (640, 640),
+        )
+        self.assertEqual(loss.last_debug_info["num_total_gt"], 4)
+        self.assertEqual(loss.last_debug_info["num_gt_filtered_by_area"], 1)
+        self.assertEqual(loss.last_debug_info["num_mert_gt"], 3)
+
+    def test_legacy_yaml_defaults_remain_compatible(self):
+        plugin = MERTTrainingPlugin(
+            MERT_CONFIG, DesiredQueryMatcher(), current_epoch=80
+        )
+        self.assertEqual(plugin.current_mert_weight, 0.20)
+        self.assertTrue(plugin.shifted_detection_loss)
+        self.assertEqual(plugin.trajectory_loss.xy_weight, 0.25)
+        self.assertEqual(plugin.trajectory_loss.wh_weight, 0.25)
+        self.assertIsNone(plugin.trajectory_loss.max_object_area)
+
+
 class TestMERTIntegration(unittest.TestCase):
     def test_disabled_plugin_creates_nothing(self):
         plugin = MERTTrainingPlugin({"enabled": False}, DesiredQueryMatcher())
@@ -313,6 +510,25 @@ class TestMERTIntegration(unittest.TestCase):
                 }
                 for a, b in zip(first["aux_outputs"], second["aux_outputs"])
             ],
+            "dn_aux_outputs": [
+                {
+                    "pred_logits": torch.cat([
+                        first["dn_aux_outputs"][0]["pred_logits"],
+                        second["dn_aux_outputs"][0]["pred_logits"],
+                    ]),
+                    "pred_boxes": torch.cat([
+                        first["dn_aux_outputs"][0]["pred_boxes"],
+                        second["dn_aux_outputs"][0]["pred_boxes"],
+                    ]),
+                }
+            ],
+            "dn_meta": {
+                "dn_positive_idx": (
+                    torch.tensor([0]), torch.tensor([1])
+                ),
+                "dn_num_group": 1,
+                "dn_num_split": [3, 3],
+            },
         }
         split_first, split_second = MERTTrainingPlugin.split_concatenated_outputs(
             combined, 1
@@ -320,23 +536,49 @@ class TestMERTIntegration(unittest.TestCase):
         self.assertTrue(torch.equal(split_first["pred_boxes"], first["pred_boxes"]))
         self.assertTrue(torch.equal(split_second["pred_boxes"], second["pred_boxes"]))
         self.assertEqual(len(split_first["aux_outputs"]), len(first["aux_outputs"]))
+        self.assertEqual(split_first["dn_aux_outputs"][0]["pred_boxes"].shape[0], 1)
+        self.assertEqual(len(split_first["dn_meta"]["dn_positive_idx"]), 1)
+        self.assertEqual(
+            split_second["dn_meta"]["dn_positive_idx"][0].tolist(), [1]
+        )
 
     def test_yaml_configs_load_and_do_not_change_model_schema(self):
-        names = (
+        legacy_names = (
             "rtdetr_r18vd_200e_dut_anti_uav_mert.yml",
             "rtdetr_r34vd_200e_dut_anti_uav_mert.yml",
             "rtdetr_r50vd_200e_dut_anti_uav_mert.yml",
             "rtdetr_r101vd_200e_dut_anti_uav_mert.yml",
         )
-        for name in names:
+        for name in legacy_names:
             config = load_config(str(PROJECT_DIR / "configs" / "rtdetr" / name), {})
             self.assertTrue(config["MERT"]["enabled"])
             self.assertEqual(config["MERT"]["forward_mode"], "concat")
             self.assertNotIn("MERT", config["RTDETR"])
 
+        v2_names = (
+            "rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp0_baseline.yml",
+            "rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp1_legacy.yml",
+            "rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp2_beta.yml",
+            "rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp3_late.yml",
+            "rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp4_late_xywh.yml",
+            "rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp5_full.yml",
+        )
+        output_dirs = []
+        for name in v2_names:
+            config = load_config(str(PROJECT_DIR / "configs" / "rtdetr" / name), {})
+            self.assertNotIn("MERT", config["RTDETR"])
+            output_dirs.append(config["output_dir"])
+        self.assertEqual(len(output_dirs), len(set(output_dirs)))
+        full = load_config(
+            str(PROJECT_DIR / "configs" / "rtdetr" / v2_names[-1]), {}
+        )["MERT"]
+        self.assertEqual(full["trajectory"]["beta"], 0.01)
+        self.assertEqual(full["trajectory"]["layers"], "last_2")
+        self.assertFalse(full["supervision"]["shifted_detection_loss"])
+
     def test_real_r18_model_forward_backward_and_parameter_identity(self):
         config_path = PROJECT_DIR / "configs" / "rtdetr" / \
-            "rtdetr_r18vd_200e_dut_anti_uav_mert.yml"
+            "rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp5_full.yml"
         config = YAMLConfig(str(config_path))
         config.yaml_cfg["PResNet"]["pretrained"] = False
         config.yaml_cfg["RTDETR"]["multi_scale"] = None
@@ -347,11 +589,13 @@ class TestMERTIntegration(unittest.TestCase):
         parameter_names_before = list(model.state_dict())
         parameter_count_before = sum(parameter.numel() for parameter in model.parameters())
 
-        plugin = MERTTrainingPlugin(MERT_CONFIG, criterion.matcher)
+        plugin = MERTTrainingPlugin(
+            config.yaml_cfg["MERT"], criterion.matcher, current_epoch=80
+        )
         # Three feature levels contain 336 locations at 128x128, enough for
         # the unchanged 300-query RT-DETR top-k selection.
         images = torch.randn(1, 3, 128, 128)
-        targets = [make_target()]
+        targets = [make_target(box=(0.5, 0.5, 0.02, 0.02))]
         pair = plugin.prepare(model, images, targets)
         paired_images = torch.cat([
             pair["original_images"], pair["shifted_images"]
@@ -360,8 +604,8 @@ class TestMERTIntegration(unittest.TestCase):
 
         model.train()
         outputs = model(paired_images, paired_targets)
-        detection_losses = criterion(outputs, paired_targets)
         outputs_o, outputs_s = plugin.split_concatenated_outputs(outputs, 1)
+        detection_losses = criterion(outputs_o, pair["original_targets"])
         mert_loss = plugin.calculate_loss(outputs_o, outputs_s, pair)
         total_loss = sum(detection_losses.values()) + mert_loss
         self.assertTrue(torch.isfinite(total_loss))
@@ -428,8 +672,10 @@ class TestMERTIntegration(unittest.TestCase):
             def __init__(self):
                 super().__init__()
                 self.matcher = DesiredQueryMatcher()
+                self.batch_sizes = []
 
             def forward(self, outputs, targets):
+                self.batch_sizes.append(len(targets))
                 return {
                     "loss_det": outputs["pred_boxes"].square().mean()
                     + outputs["pred_logits"].square().mean()
@@ -453,19 +699,31 @@ class TestMERTIntegration(unittest.TestCase):
             )
             self.assertTrue(torch.isfinite(model.scale.grad))
             self.assertEqual(model.multi_scale, [8])
+            model.criterion_batch_sizes = criterion.batch_sizes
             return model
 
         disabled = run({"enabled": False})
         self.assertEqual(disabled.batch_sizes, [1])
+        self.assertEqual(disabled.criterion_batch_sizes, [1])
 
-        concat_config = dict(MERT_CONFIG)
+        concat_config = copy.deepcopy(MERT_CONFIG)
         concat = run(concat_config)
         self.assertEqual(concat.batch_sizes, [2])
+        self.assertEqual(concat.criterion_batch_sizes, [2])
 
-        sequential_config = dict(MERT_CONFIG)
+        sequential_config = copy.deepcopy(MERT_CONFIG)
         sequential_config["forward_mode"] = "sequential"
         sequential = run(sequential_config)
         self.assertEqual(sequential.batch_sizes, [1, 1])
+        self.assertEqual(sequential.criterion_batch_sizes, [1, 1])
+
+        fair_config = copy.deepcopy(MERT_CONFIG)
+        fair_config["supervision"] = {"shifted_detection_loss": False}
+        fair = run(fair_config)
+        # The shifted image is still forwarded for its trajectory, but only
+        # the original view enters the unchanged detection criterion.
+        self.assertEqual(fair.batch_sizes, [2])
+        self.assertEqual(fair.criterion_batch_sizes, [1])
 
 
 if __name__ == "__main__":

@@ -32,7 +32,9 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     
     ema = kwargs.get('ema', None)
     scaler = kwargs.get('scaler', None)
-    mert = MERTTrainingPlugin(kwargs.get('mert_config'), criterion.matcher)
+    mert = MERTTrainingPlugin(
+        kwargs.get('mert_config'), criterion.matcher, current_epoch=epoch
+    )
 
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
         samples = samples.to(device)
@@ -66,15 +68,25 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
             if mert.forward_mode == 'concat':
                 paired_targets = pair['original_targets'] + pair['shifted_targets']
-                loss_dict = criterion(outputs, paired_targets)
                 outputs_original, outputs_shifted = \
                     mert.split_concatenated_outputs(outputs, samples.shape[0])
+                if mert.shifted_detection_loss:
+                    loss_dict = criterion(outputs, paired_targets)
+                else:
+                    loss_dict = criterion(
+                        outputs_original, pair['original_targets']
+                    )
             else:
                 outputs_original, outputs_shifted = outputs
-                loss_dict = average_loss_dicts(
-                    criterion(outputs_original, pair['original_targets']),
-                    criterion(outputs_shifted, pair['shifted_targets']),
-                )
+                if mert.shifted_detection_loss:
+                    loss_dict = average_loss_dicts(
+                        criterion(outputs_original, pair['original_targets']),
+                        criterion(outputs_shifted, pair['shifted_targets']),
+                    )
+                else:
+                    loss_dict = criterion(
+                        outputs_original, pair['original_targets']
+                    )
 
             loss_dict['loss_mert'] = mert.calculate_loss(
                 outputs_original, outputs_shifted, pair

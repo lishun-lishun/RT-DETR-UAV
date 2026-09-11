@@ -18,6 +18,7 @@ from src.misc import dist
 
 
 __all__ = [
+    "get_mert_weight",
     "MicroShiftPairGenerator",
     "RefinementTrajectoryEquivarianceLoss",
     "MERTTrainingPlugin",
@@ -39,6 +40,37 @@ def _clone_target(target):
     }
 
 
+def get_mert_weight(current_epoch, base_weight, schedule_cfg=None):
+    """Return the MERT loss weight for the trainer's real zero-based epoch."""
+    schedule_cfg = _validate_mapping(schedule_cfg, "MERT.schedule")
+    base_weight = float(base_weight)
+    current_epoch = int(current_epoch)
+    if base_weight < 0:
+        raise ValueError("MERT trajectory weight must be non-negative")
+    if not schedule_cfg.get("enabled", False):
+        return base_weight
+
+    start = int(schedule_cfg.get("start_epoch", 20))
+    warmup_end = int(schedule_cfg.get("warmup_end_epoch", 40))
+    hold_end = int(schedule_cfg.get("hold_end_epoch", 100))
+    end = int(schedule_cfg.get("end_epoch", 160))
+    if not (0 <= start < warmup_end <= hold_end < end):
+        raise ValueError(
+            "MERT schedule must satisfy 0 <= start_epoch < warmup_end_epoch "
+            "<= hold_end_epoch < end_epoch"
+        )
+
+    if current_epoch < start:
+        return 0.0
+    if current_epoch < warmup_end:
+        return base_weight * (current_epoch - start) / (warmup_end - start)
+    if current_epoch < hold_end:
+        return base_weight
+    if current_epoch < end:
+        return base_weight * (1.0 - (current_epoch - hold_end) / (end - hold_end))
+    return 0.0
+
+
 class MicroShiftPairGenerator(object):
     """Create a non-circular translated image/target pair after augmentation."""
 
@@ -46,9 +78,9 @@ class MicroShiftPairGenerator(object):
 
     def __init__(self, config=None, debug=False):
         config = _validate_mapping(config, "MERT.micro_shift")
-        self.max_pixels = int(config.get("max_pixels", 2))
+        self.max_pixels = int(config.get("max_pixels", 1))
         self.choices = tuple(int(value) for value in config.get(
-            "choices", [-2, -1, 0, 1, 2]
+            "choices", [-1, 0, 1]
         ))
         self.forbid_zero_zero = bool(config.get("forbid_zero_zero", True))
         self.per_image = bool(config.get("per_image", True))
@@ -191,7 +223,11 @@ class MicroShiftPairGenerator(object):
             self.last_debug_info = {
                 "shift_distribution": dict(distribution),
                 "num_gt": sum(len(target["boxes"]) for target in original_targets),
+                "num_total_gt": sum(
+                    len(target["boxes"]) for target in original_targets
+                ),
                 "num_border_excluded": border_excluded,
+                "num_gt_filtered_by_border": border_excluded,
             }
         return shifted_images, original_targets, shifted_targets, shifts
 
@@ -218,14 +254,34 @@ class RefinementTrajectoryEquivarianceLoss(nn.Module):
 
         self.matcher = matcher
         self.enabled = bool(trajectory.get("enabled", True))
-        self.weight = float(trajectory.get("weight", 0.20))
-        self.beta = float(trajectory.get("beta", 0.10))
-        self.layers = trajectory.get("layers", "all")
+        self.weight = float(trajectory.get("weight", 0.10))
+        self.beta = float(trajectory.get("beta", 0.01))
+        self.layers = trajectory.get("layers", "last_2")
+        # Old MERT YAMLs did not have component weights and averaged cxcywh.
+        # A coefficient of 0.25 for each two-component sum reproduces that
+        # exact four-dimensional mean.  MERT V2 YAMLs explicitly select 1/.25.
+        legacy_component_weighting = (
+            "xy_weight" not in trajectory
+            and "wh_weight" not in trajectory
+            and float(trajectory.get("weight", -1.0)) == 0.20
+            and float(trajectory.get("beta", -1.0)) == 0.10
+            and trajectory.get("layers") == "all"
+        )
+        self.xy_weight = float(trajectory.get(
+            "xy_weight", 0.25 if legacy_component_weighting else 1.0
+        ))
+        self.wh_weight = float(trajectory.get(
+            "wh_weight", 0.25 if legacy_component_weighting else 0.25
+        ))
         self.size_weight_enabled = bool(size_weight.get("enabled", True))
         self.reference_area = float(size_weight.get("reference_area", 256.0))
-        self.gamma = float(size_weight.get("gamma", 0.5))
+        self.gamma = float(size_weight.get("gamma", 0.25))
+        max_object_area = size_weight.get("max_object_area", None)
+        self.max_object_area = (
+            None if max_object_area is None else float(max_object_area)
+        )
         self.min_weight = float(size_weight.get("min_weight", 1.0))
-        self.max_weight = float(size_weight.get("max_weight", 4.0))
+        self.max_weight = float(size_weight.get("max_weight", 2.5))
         self.require_fully_visible = bool(pair.get("require_fully_visible", True))
         self.debug = bool(debug)
         self.eps = 1.0e-6
@@ -233,8 +289,12 @@ class RefinementTrajectoryEquivarianceLoss(nn.Module):
 
         if self.weight < 0 or self.beta <= 0:
             raise ValueError("MERT trajectory weight must be non-negative and beta positive")
+        if self.xy_weight < 0 or self.wh_weight < 0:
+            raise ValueError("MERT xy_weight and wh_weight must be non-negative")
         if self.reference_area <= 0 or self.gamma < 0:
             raise ValueError("Invalid MERT size-weight configuration")
+        if self.max_object_area is not None and self.max_object_area <= 0:
+            raise ValueError("MERT max_object_area must be positive or null")
         if self.min_weight <= 0 or self.max_weight < self.min_weight:
             raise ValueError("Invalid MERT size-weight clamp")
 
@@ -261,20 +321,36 @@ class RefinementTrajectoryEquivarianceLoss(nn.Module):
         }
 
     def _transition_indices(self, num_layers):
+        """Select zero-based B_i -> B_(i+1) refinement transition indices."""
+        num_transitions = num_layers - 1
         if self.layers == "all":
-            return list(range(num_layers - 1))
-        if not isinstance(self.layers, (list, tuple)):
-            raise ValueError("MERT.trajectory.layers must be 'all' or a list")
-        transitions = []
-        for destination_layer in self.layers:
-            destination_layer = int(destination_layer)
-            if destination_layer <= 0 or destination_layer >= num_layers:
+            return list(range(num_transitions))
+        if isinstance(self.layers, str) and self.layers.startswith("last_"):
+            try:
+                count = int(self.layers.split("_", 1)[1])
+            except (TypeError, ValueError):
                 raise ValueError(
-                    "MERT trajectory layer {} is outside [1, {}]".format(
-                        destination_layer, num_layers - 1
+                    "MERT.trajectory.layers must be all, last_N, or a list"
+                )
+            if count <= 0:
+                raise ValueError("MERT last_N must select at least one transition")
+            count = min(count, num_transitions)
+            return list(range(num_transitions - count, num_transitions))
+        if not isinstance(self.layers, (list, tuple)):
+            raise ValueError(
+                "MERT.trajectory.layers must be all, last_N, or a list"
+            )
+        transitions = []
+        for transition_index in self.layers:
+            transition_index = int(transition_index)
+            if transition_index < 0 or transition_index >= num_transitions:
+                raise ValueError(
+                    "MERT transition index {} is outside [0, {}]".format(
+                        transition_index, num_transitions - 1
                     )
                 )
-            transitions.append(destination_layer - 1)
+            if transition_index not in transitions:
+                transitions.append(transition_index)
         if not transitions:
             raise ValueError("MERT.trajectory.layers selects no transition")
         return transitions
@@ -284,7 +360,12 @@ class RefinementTrajectoryEquivarianceLoss(nn.Module):
             return box.new_tensor(1.0)
         area = (box[2] * width) * (box[3] * height)
         weight = (self.reference_area / (area + self.eps)).pow(self.gamma)
-        return weight.clamp(self.min_weight, self.max_weight)
+        weight = weight.clamp(self.min_weight, self.max_weight)
+        if self.max_object_area is not None:
+            weight = torch.where(
+                area > self.max_object_area, torch.zeros_like(weight), weight
+            )
+        return weight
 
     @staticmethod
     def _query_map(target, indices, require_fully_visible=False):
@@ -302,12 +383,13 @@ class RefinementTrajectoryEquivarianceLoss(nn.Module):
             if keep
         }
 
-    def _distributed_normalize(self, numerator, denominator):
+    def _distributed_scale(self, denominator):
+        world_size = 1
+        global_denominator = denominator.detach().clone()
         if tdist.is_available() and tdist.is_initialized():
-            global_denominator = denominator.detach().clone()
             tdist.all_reduce(global_denominator)
-            return numerator * tdist.get_world_size() / (global_denominator + self.eps)
-        return numerator / (denominator + self.eps)
+            world_size = tdist.get_world_size()
+        return world_size / (global_denominator + self.eps)
 
     def forward(
         self,
@@ -317,7 +399,9 @@ class RefinementTrajectoryEquivarianceLoss(nn.Module):
         shifted_targets,
         shifts,
         input_size,
+        current_weight=None,
     ):
+        current_weight = self.weight if current_weight is None else float(current_weight)
         original_trajectory = self.decoder_box_trajectory(outputs_original)
         shifted_trajectory = self.decoder_box_trajectory(outputs_shifted)
         if len(original_trajectory) != len(shifted_trajectory):
@@ -375,67 +459,139 @@ class RefinementTrajectoryEquivarianceLoss(nn.Module):
                 weights.append(self._size_weight(box, height, width))
                 object_areas.append((box[2] * width) * (box[3] * height))
 
-        if not original_tracks:
+        if original_tracks:
+            tracks_o = torch.stack(original_tracks)
+            tracks_s = torch.stack(shifted_tracks)
+            delta_o = tracks_o[:, 1:] - tracks_o[:, :-1]
+            delta_s = tracks_s[:, 1:] - tracks_s[:, :-1]
+            delta_o = delta_o[:, transitions]
+            delta_s = delta_s[:, transitions]
+            weight_tensor = torch.stack(weights).to(delta_o)
+            area_tensor = torch.stack(object_areas).to(delta_o)
+
+            component_loss = F.smooth_l1_loss(
+                delta_o, delta_s, beta=self.beta, reduction="none"
+            )
+            xy_element_loss = component_loss[..., :2].sum(dim=-1)
+            wh_element_loss = component_loss[..., 2:].sum(dim=-1)
+            xy_numerator = (xy_element_loss * weight_tensor[:, None]).sum()
+            wh_numerator = (wh_element_loss * weight_tensor[:, None]).sum()
+            denominator = weight_tensor.sum() * len(transitions)
+        else:
+            # Every rank must enter the denominator all-reduce, even when this
+            # rank has no matched MERT pair, otherwise distributed training can
+            # deadlock on batches with uneven target counts.
             zero = outputs_original["pred_boxes"].sum() * 0.0
-            self.last_debug_info = {
-                "num_valid_pairs": 0,
-                "num_original_matched_queries": num_original_matched,
-                "num_shifted_matched_queries": num_shifted_matched,
-                "trajectory_loss": 0.0,
-                "trajectory_loss_per_layer": {},
-            }
-            return zero
+            xy_numerator = zero
+            wh_numerator = zero
+            denominator = outputs_original["pred_boxes"].new_zeros(())
+            weight_tensor = outputs_original["pred_boxes"].new_empty((0,))
+            area_tensor = outputs_original["pred_boxes"].new_empty((0,))
+            delta_o = outputs_original["pred_boxes"].new_empty(
+                (0, len(transitions), 4)
+            )
+            delta_s = delta_o
+            xy_element_loss = delta_o.new_empty((0, len(transitions)))
+            wh_element_loss = delta_o.new_empty((0, len(transitions)))
 
-        tracks_o = torch.stack(original_tracks)
-        tracks_s = torch.stack(shifted_tracks)
-        delta_o = tracks_o[:, 1:] - tracks_o[:, :-1]
-        delta_s = tracks_s[:, 1:] - tracks_s[:, :-1]
-        delta_o = delta_o[:, transitions]
-        delta_s = delta_s[:, transitions]
-        weight_tensor = torch.stack(weights).to(delta_o)
-
-        element_loss = F.smooth_l1_loss(
-            delta_o, delta_s, beta=self.beta, reduction="none"
-        ).mean(dim=-1)
-        numerator = (element_loss * weight_tensor[:, None]).sum()
-        denominator = weight_tensor.sum() * len(transitions)
-        raw_loss = self._distributed_normalize(numerator, denominator)
+        normalization_scale = self._distributed_scale(denominator)
+        xy_loss = xy_numerator * normalization_scale
+        wh_loss = wh_numerator * normalization_scale
+        raw_loss = self.xy_weight * xy_loss + self.wh_weight * wh_loss
 
         if self.debug:
-            layer_losses = element_loss.detach().mean(dim=0)
-            area_tensor = torch.stack(object_areas).detach()
-            magnitude_o = delta_o.detach().norm(dim=-1).mean()
-            magnitude_s = delta_s.detach().norm(dim=-1).mean()
-            trajectory_difference = \
-                (delta_o.detach() - delta_s.detach()).norm(dim=-1).mean()
+            valid_size = weight_tensor > 0
+            num_mert_gt = int(valid_size.sum().detach().cpu())
+            num_total_gt = sum(len(target["boxes"]) for target in original_targets)
+            num_area_filtered = 0
+            if self.size_weight_enabled and self.max_object_area is not None:
+                for target in original_targets:
+                    boxes = target["boxes"]
+                    areas = (boxes[:, 2] * width) * (boxes[:, 3] * height)
+                    num_area_filtered += int(
+                        (areas > self.max_object_area).sum().detach().cpu()
+                    )
+
+            combined_element_loss = (
+                self.xy_weight * xy_element_loss
+                + self.wh_weight * wh_element_loss
+            )
+            layer_numerators = (
+                combined_element_loss * weight_tensor[:, None]
+            ).sum(dim=0)
+            layer_losses = layer_numerators * normalization_scale
+            layer_loss_dict = {
+                "B{}->B{}".format(index, index + 1): float(value.detach())
+                for index, value in zip(transitions, layer_losses)
+            }
+            transition_stats = {
+                "trajectory_loss_transition_{}".format(position): float(value.detach())
+                for position, value in enumerate(layer_losses, start=1)
+            }
+
+            if num_mert_gt:
+                valid_areas = area_tensor[valid_size].detach()
+                valid_weights = weight_tensor[valid_size].detach()
+                trajectory_error = (
+                    delta_o[valid_size].detach() - delta_s[valid_size].detach()
+                ).abs()
+                mean_area = float(valid_areas.mean())
+                mean_weight = float(valid_weights.mean())
+                max_weight = float(valid_weights.max())
+                mean_xy_error = float(trajectory_error[..., :2].mean())
+                mean_wh_error = float(trajectory_error[..., 2:].mean())
+                magnitude_o = float(delta_o[valid_size].detach().norm(dim=-1).mean())
+                magnitude_s = float(delta_s[valid_size].detach().norm(dim=-1).mean())
+                trajectory_difference = float(
+                    (delta_o[valid_size].detach() - delta_s[valid_size].detach())
+                    .norm(dim=-1).mean()
+                )
+            else:
+                mean_area = mean_weight = max_weight = 0.0
+                mean_xy_error = mean_wh_error = 0.0
+                magnitude_o = magnitude_s = trajectory_difference = 0.0
+
             self.last_debug_info = {
-                "num_valid_pairs": len(original_tracks),
+                "trajectory_beta": self.beta,
+                "active_refinement_layers": [
+                    "B{}->B{}".format(index, index + 1)
+                    for index in transitions
+                ],
+                "xy_loss": float(xy_loss.detach()),
+                "wh_loss": float(wh_loss.detach()),
+                "trajectory_loss": float(raw_loss.detach()),
+                "weighted_trajectory_loss": float(
+                    (current_weight * raw_loss).detach()
+                ),
+                "trajectory_loss_per_layer": layer_loss_dict,
+                "num_total_gt": num_total_gt,
+                "num_mert_gt": num_mert_gt,
+                "num_gt_filtered_by_area": num_area_filtered,
+                "num_valid_pairs": num_mert_gt,
                 "num_original_matched_queries": num_original_matched,
                 "num_shifted_matched_queries": num_shifted_matched,
-                "trajectory_loss": float(raw_loss.detach()),
-                "weighted_trajectory_loss": float((self.weight * raw_loss).detach()),
-                "trajectory_loss_per_layer": {
-                    "Layer{}->{}".format(index, index + 1): float(value)
-                    for index, value in zip(transitions, layer_losses)
-                },
-                "mean_object_area": float(area_tensor.mean()),
-                "mean_size_weight": float(weight_tensor.detach().mean()),
-                "max_size_weight": float(weight_tensor.detach().max()),
-                "mean_original_refinement_magnitude": float(magnitude_o),
-                "mean_shifted_refinement_magnitude": float(magnitude_s),
-                "mean_trajectory_difference": float(trajectory_difference),
+                "mean_object_area": mean_area,
+                "mean_size_weight": mean_weight,
+                "max_size_weight": max_weight,
+                "mean_xy_trajectory_error": mean_xy_error,
+                "mean_wh_trajectory_error": mean_wh_error,
+                "mean_original_refinement_magnitude": magnitude_o,
+                "mean_shifted_refinement_magnitude": magnitude_s,
+                "mean_trajectory_difference": trajectory_difference,
             }
-        return self.weight * raw_loss
+            self.last_debug_info.update(transition_stats)
+        return current_weight * raw_loss
 
 
 class MERTTrainingPlugin(object):
     """Orchestrate MERT without becoming part of the detector state_dict."""
 
-    def __init__(self, config, matcher):
+    def __init__(self, config, matcher, current_epoch=0):
         config = _validate_mapping(config, "MERT")
         self.enabled = bool(config.get("enabled", False))
         self.forward_mode = config.get("forward_mode", "concat")
         self.debug = bool(config.get("debug", False))
+        self.current_epoch = int(current_epoch)
         self._debug_printed = False
         self.last_debug_info = {}
 
@@ -453,6 +609,21 @@ class MERTTrainingPlugin(object):
             pair=config.get("pair"),
             debug=self.debug,
         ) if self.enabled else None
+        schedule = _validate_mapping(config.get("schedule"), "MERT.schedule")
+        supervision = _validate_mapping(
+            config.get("supervision"), "MERT.supervision"
+        )
+        if self.enabled:
+            self.current_mert_weight = get_mert_weight(
+                self.current_epoch, self.trajectory_loss.weight, schedule
+            )
+        else:
+            self.current_mert_weight = 0.0
+        # Missing supervision keeps legacy MERT behavior.  The formal V2 YAML
+        # explicitly sets this to false for one-view detection supervision.
+        self.shifted_detection_loss = bool(
+            supervision.get("shifted_detection_loss", True)
+        )
 
     @staticmethod
     def _model_module(model):
@@ -505,22 +676,42 @@ class MERTTrainingPlugin(object):
                     }
                     for item in outputs["aux_outputs"]
                 ]
+            if "dn_aux_outputs" in outputs:
+                selected["dn_aux_outputs"] = [
+                    {
+                        "pred_logits": item["pred_logits"][start:end],
+                        "pred_boxes": item["pred_boxes"][start:end],
+                    }
+                    for item in outputs["dn_aux_outputs"]
+                ]
+            if "dn_meta" in outputs:
+                selected["dn_meta"] = dict(outputs["dn_meta"])
+                selected["dn_meta"]["dn_positive_idx"] = \
+                    outputs["dn_meta"]["dn_positive_idx"][start:end]
             return selected
         return select(0, batch_size), select(batch_size, 2 * batch_size)
 
     def calculate_loss(self, outputs_original, outputs_shifted, pair):
         if not self.trajectory_loss.enabled:
-            return outputs_original["pred_boxes"].sum() * 0.0
-        loss = self.trajectory_loss(
-            outputs_original,
-            outputs_shifted,
-            pair["original_targets"],
-            pair["shifted_targets"],
-            pair["shifts"],
-            pair["input_size"],
-        )
+            loss = outputs_original["pred_boxes"].sum() * 0.0
+        else:
+            loss = self.trajectory_loss(
+                outputs_original,
+                outputs_shifted,
+                pair["original_targets"],
+                pair["shifted_targets"],
+                pair["shifts"],
+                pair["input_size"],
+                current_weight=self.current_mert_weight,
+            )
         self.last_debug_info = dict(self.pair_generator.last_debug_info)
         self.last_debug_info.update(self.trajectory_loss.last_debug_info)
+        self.last_debug_info.update({
+            "current_epoch": self.current_epoch,
+            "current_mert_weight": self.current_mert_weight,
+            "trajectory_beta": self.trajectory_loss.beta,
+            "shifted_detection_loss_enabled": self.shifted_detection_loss,
+        })
         if self.debug and not self._debug_printed and dist.is_main_process():
             print("[MERT debug] {}".format(self.last_debug_info))
             self._debug_printed = True
