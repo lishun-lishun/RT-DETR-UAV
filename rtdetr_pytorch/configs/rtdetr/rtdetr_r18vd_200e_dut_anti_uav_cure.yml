@@ -1,0 +1,59 @@
+__include__: [
+  './rtdetr_r18vd_200e_dut_anti_uav_baseline.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_200e_dut_anti_uav_cure
+
+CURE: &cure_config
+  enabled: true
+  target_strides: [8]
+
+  context:
+    kernel_size: 5
+    exclude_center_size: 3
+    depthwise: true
+
+  residual:
+    use_projection: true
+
+  gate:
+    enabled: true
+    hidden_ratio: 0.25
+    spatial_gate: true
+
+  fusion:
+    alpha_init: 0.0
+
+  debug: false
+
+PResNet:
+  cure_config: *cure_config
+
+# Newly initialized CURE parameters use the detector base LR; the pretrained
+# PResNet keeps its smaller backbone LR.
+optimizer:
+  type: AdamW
+  params:
+    -
+      params: '^(?=.*backbone)(?=.*norm)(?!.*cure_).*$'
+      lr: 0.00001
+      weight_decay: 0.
+    -
+      params: '^(?=.*backbone)(?!.*norm)(?!.*cure_).*$'
+      lr: 0.00001
+    -
+      params: '^(?=.*backbone\.cure_)(?=.*(?:norm|bias)).*$'
+      lr: 0.0001
+      weight_decay: 0.
+    -
+      params: '^(?=.*backbone\.cure_)(?!.*(?:norm|bias)).*$'
+      lr: 0.0001
+    -
+      params: '^(?=.*(?:encoder|decoder))(?=.*(?:norm|bias)).*$'
+      weight_decay: 0.
+  lr: 0.0001
+  betas: [0.9, 0.999]
+  weight_decay: 0.0001
+
+MERT:
+  enabled: false

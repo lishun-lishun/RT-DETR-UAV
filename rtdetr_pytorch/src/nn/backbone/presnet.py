@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from collections import OrderedDict
 
 from .common import get_activation, ConvNormLayer, FrozenBatchNorm2d
+from .cure import ContextUnexplainedResidualEnhancement
 
 from src.core import register
 
@@ -149,7 +150,8 @@ class PResNet(nn.Module):
         act='relu',
         freeze_at=-1, 
         freeze_norm=True, 
-        pretrained=False):
+        pretrained=False,
+        cure_config=None):
         super().__init__()
 
         block_nums = ResNet_cfg[depth]
@@ -184,6 +186,8 @@ class PResNet(nn.Module):
         self.return_idx = return_idx
         self.out_channels = [_out_channels[_i] for _i in return_idx]
         self.out_strides = [_out_strides[_i] for _i in return_idx]
+        self._stage_strides = _out_strides[:num_stages]
+        self._cure_stage_names = {}
 
         if freeze_at >= 0:
             self._freeze_parameters(self.conv1)
@@ -197,6 +201,54 @@ class PResNet(nn.Module):
             state = torch.hub.load_state_dict_from_url(donwload_url[depth])
             self.load_state_dict(state)
             print(f'Load PResNet{depth} state_dict')
+
+        # Instantiate CURE only after the original pretrained PResNet has been
+        # loaded strictly.  This preserves every original state_dict path and
+        # keeps the released backbone checkpoints fully compatible.
+        if cure_config is not None:
+            if not isinstance(cure_config, dict):
+                raise TypeError("PResNet.cure_config must be a mapping or null")
+            if cure_config.get('enabled', False):
+                context_config = cure_config.get('context') or {}
+                residual_config = cure_config.get('residual') or {}
+                gate_config = cure_config.get('gate') or {}
+                fusion_config = cure_config.get('fusion') or {}
+                target_strides = cure_config.get('target_strides', [8])
+                if not isinstance(target_strides, (list, tuple)) or not target_strides:
+                    raise ValueError("CURE.target_strides must be a non-empty list")
+
+                stage_names = {8: 'cure_s3', 16: 'cure_s4', 32: 'cure_s5'}
+                for stride in target_strides:
+                    if stride not in stage_names or stride not in self._stage_strides:
+                        raise ValueError(
+                            "Unsupported CURE target stride {} for this PResNet".format(
+                                stride
+                            )
+                        )
+                    stage_index = self._stage_strides.index(stride)
+                    module = ContextUnexplainedResidualEnhancement(
+                        channels=_out_channels[stage_index],
+                        kernel_size=context_config.get('kernel_size', 5),
+                        exclude_center_size=context_config.get(
+                            'exclude_center_size', 3
+                        ),
+                        depthwise=context_config.get('depthwise', True),
+                        use_residual_projection=residual_config.get(
+                            'use_projection', True
+                        ),
+                        gate_enabled=gate_config.get('enabled', True),
+                        gate_hidden_ratio=gate_config.get('hidden_ratio', 0.25),
+                        spatial_gate=gate_config.get('spatial_gate', True),
+                        alpha_init=fusion_config.get('alpha_init', 0.0),
+                        act=cure_config.get('act', 'silu'),
+                        eps=cure_config.get('eps', 1.0e-6),
+                        debug=cure_config.get('debug', False),
+                    )
+                    if freeze_norm:
+                        module = self._freeze_norm(module)
+                    module_name = stage_names[stride]
+                    setattr(self, module_name, module)
+                    self._cure_stage_names[stage_index] = module_name
             
     def _freeze_parameters(self, m: nn.Module):
         for p in m.parameters():
@@ -218,6 +270,9 @@ class PResNet(nn.Module):
         outs = []
         for idx, stage in enumerate(self.res_layers):
             x = stage(x)
+            cure_name = self._cure_stage_names.get(idx)
+            if cure_name is not None:
+                x = getattr(self, cure_name)(x)
             if idx in self.return_idx:
                 outs.append(x)
         return outs

@@ -1,0 +1,25 @@
+__include__: [
+  './rtdetr_r18vd_200e_dut_anti_uav_cure.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_200e_dut_anti_uav_cure_residual_only
+
+CURE: &cure_config
+  enabled: true
+  target_strides: [8]
+  context:
+    kernel_size: 5
+    exclude_center_size: 3
+    depthwise: true
+  residual:
+    use_projection: true
+  gate:
+    enabled: false
+    hidden_ratio: 0.25
+    spatial_gate: true
+  fusion:
+    alpha_init: 0.0
+  debug: false
+
+PResNet:
+  cure_config: *cure_config

@@ -1,5 +1,6 @@
 
 from .presnet import *
+from .cure import *
 from .test_resnet import *
 from .regnet import *
 from .common import *

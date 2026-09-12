@@ -1,0 +1,14 @@
+__include__: [
+  './rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp0_baseline.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_200e_dut_anti_uav_baseline
+
+CURE: &cure_config
+  enabled: false
+
+PResNet:
+  cure_config: *cure_config
+
+MERT:
+  enabled: false
