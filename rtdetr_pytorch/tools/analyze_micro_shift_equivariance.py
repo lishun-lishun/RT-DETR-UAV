@@ -14,6 +14,7 @@ import torch
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 from src.core import YAMLConfig
+from src.misc.amp import autocast_context
 from src.solver.mert import MicroShiftPairGenerator
 from src.zoo.rtdetr.box_ops import box_cxcywh_to_xyxy, box_iou
 
@@ -131,7 +132,9 @@ def _finalize(stat):
 
 
 def main(args):
-    config = YAMLConfig(args.config)
+    config = YAMLConfig(args.config, use_amp=args.amp)
+    amp_enabled = bool(args.amp and config.device.type == 'cuda')
+    print('Evaluation AMP: {}'.format('enabled' if amp_enabled else 'disabled'))
     config.yaml_cfg["PResNet"]["pretrained"] = False
     model = config.model.to(config.device)
 
@@ -156,7 +159,8 @@ def main(args):
                 for target in targets
             ]
             height, width = images.shape[-2:]
-            baseline_outputs = model(images)
+            with autocast_context(images.device, enabled=amp_enabled):
+                baseline_outputs = model(images)
 
             normalized_targets = [
                 _target_boxes_as_normalized_cxcywh(target, height, width)
@@ -179,7 +183,8 @@ def main(args):
                         [[dx, dy]] * len(images), dtype=torch.int64
                     )
                     shifted_images = MicroShiftPairGenerator.shift_images(images, shifts)
-                    shifted_outputs = model(shifted_images)
+                    with autocast_context(shifted_images.device, enabled=amp_enabled):
+                        shifted_outputs = model(shifted_images)
                     shifted_outputs = dict(shifted_outputs)
                     shifted_outputs["pred_boxes"] = shifted_outputs["pred_boxes"].clone()
                     shifted_outputs["pred_boxes"][..., 0] -= dx / width
@@ -226,6 +231,7 @@ def main(args):
     result = {
         "config": args.config,
         "checkpoint": args.checkpoint,
+        "amp": amp_enabled,
         "score_threshold": args.score_threshold,
         "iou_threshold": args.iou_threshold,
         "size_definition": "maximum GT box side at model input resolution",
@@ -245,6 +251,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--config", required=True)
     parser.add_argument("--checkpoint", required=True)
+    parser.add_argument("--amp", action="store_true")
     parser.add_argument("--score-threshold", type=float, default=0.25)
     parser.add_argument("--iou-threshold", type=float, default=0.5)
     parser.add_argument("--max-images", type=int, default=0)

@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn 
 import torchvision.transforms as T
-from torch.cuda.amp import autocast
 import numpy as np 
 from PIL import Image, ImageDraw, ImageFont
 import os 
@@ -10,6 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 import argparse
 import src.misc.dist as dist 
 from src.core import YAMLConfig 
+from src.misc.amp import autocast_context
 from src.solver import TASKS
 import numpy as np
 
@@ -113,10 +113,13 @@ def draw(images, labels, boxes, scores, thrh = 0.6, path = ""):
         else:
             im.save(path)
             
+@torch.no_grad()
 def main(args, ):
     """main
     """
-    cfg = YAMLConfig(args.config, resume=args.resume)
+    cfg = YAMLConfig(args.config, resume=args.resume, use_amp=args.amp)
+    amp_enabled = bool(args.amp and torch.device(args.device).type == 'cuda')
+    print('Evaluation AMP: {}'.format('enabled' if amp_enabled else 'disabled'))
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu') 
         if 'ema' in checkpoint:
@@ -134,7 +137,8 @@ def main(args, ):
             self.postprocessor = cfg.postprocessor.deploy()
             
         def forward(self, images, orig_target_sizes):
-            outputs = self.model(images)
+            with autocast_context(images.device, enabled=amp_enabled):
+                outputs = self.model(images)
             outputs = self.postprocessor(outputs, orig_target_sizes)
             return outputs
     
@@ -163,8 +167,7 @@ def main(args, ):
         predictions = []
         for i, slice_img in enumerate(slices):
             slice_tensor = transforms(slice_img)[None].to(args.device)
-            with autocast():  # Use AMP for each slice
-                output = model(slice_tensor, torch.tensor([[slice_img.size[0], slice_img.size[1]]]).to(args.device))
+            output = model(slice_tensor, torch.tensor([[slice_img.size[0], slice_img.size[1]]]).to(args.device))
             torch.cuda.empty_cache() 
             labels, boxes, scores = output
             
@@ -189,6 +192,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--im-file', type=str, )
     parser.add_argument('-s', '--sliced', type=bool, default=False)
     parser.add_argument('-d', '--device', type=str, default='cpu')
+    parser.add_argument('--amp', action='store_true', help='use CUDA autocast for whole-image or sliced inference')
     parser.add_argument('-nc', '--numberofboxes', type=int, default=25)
     args = parser.parse_args()
     main(args)

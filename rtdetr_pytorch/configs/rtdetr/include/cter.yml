@@ -1,0 +1,15 @@
+# Parameter-free training loss. No CTER settings are injected into RTDETR.
+CTER:
+  enabled: true
+  transitions: [3to4, 4to5]
+  context_scale: 1.5
+  eps: 1.0e-6
+  hard_negative:
+    temperature: 0.10
+  relay_ratio: 0.90
+  occupancy:
+    mode: soft_overlap
+  stage_validity:
+    enabled: true
+  loss_weight: 0.05
+  debug: false

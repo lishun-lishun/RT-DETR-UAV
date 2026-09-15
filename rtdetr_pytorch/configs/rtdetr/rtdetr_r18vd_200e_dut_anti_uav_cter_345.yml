@@ -1,0 +1,10 @@
+__include__: [
+  './rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp4_late_xywh.yml',
+  './include/cter.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_200e_dut_anti_uav_cter_345
+
+# Preserve the exact late_xywh detector training policy; disable MERT entirely.
+MERT:
+  enabled: false

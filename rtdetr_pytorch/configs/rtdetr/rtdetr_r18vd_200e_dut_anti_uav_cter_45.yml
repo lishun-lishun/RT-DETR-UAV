@@ -1,0 +1,8 @@
+__include__: [
+  './rtdetr_r18vd_200e_dut_anti_uav_cter_345.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_200e_dut_anti_uav_cter_45
+
+CTER:
+  transitions: [4to5]

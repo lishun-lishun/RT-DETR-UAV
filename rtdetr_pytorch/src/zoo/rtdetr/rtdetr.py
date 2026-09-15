@@ -25,15 +25,23 @@ class RTDETR(nn.Module):
         self.encoder = encoder
         self.multi_scale = multi_scale
         
-    def forward(self, x, targets=None):
+    def forward(self, x, targets=None, return_backbone_features=False):
         if self.multi_scale and self.training:
             sz = np.random.choice(self.multi_scale)
             x = F.interpolate(x, size=[sz, sz])
             
-        x = self.backbone(x)
-        x = self.encoder(x)        
-        x = self.decoder(x, targets)
+        if return_backbone_features:
+            input_size = tuple(x.shape[-2:])
+            backbone_features = self.backbone(x)
+            x = self.encoder(backbone_features)
+            x = self.decoder(x, targets)
+            return x, backbone_features, input_size
 
+        # Keep the original default path, including feature lifetimes: do not
+        # retain pre-encoder maps throughout decoder inference when CTER is off.
+        x = self.backbone(x)
+        x = self.encoder(x)
+        x = self.decoder(x, targets)
         return x
     
     def deploy(self, ):

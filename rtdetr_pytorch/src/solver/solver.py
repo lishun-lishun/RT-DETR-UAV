@@ -37,7 +37,8 @@ class BaseSolver(object):
             print(f'Tuning checkpoint from {self.cfg.tuning}')
             self.load_tuning_state(self.cfg.tuning)
 
-        self.scaler = cfg.scaler
+        # Evaluation uses autocast only; no GradScaler is constructed there.
+        self.scaler = None
         self.ema = cfg.ema.to(device) if cfg.ema is not None else None 
 
         self.output_dir = Path(cfg.output_dir)
@@ -46,6 +47,7 @@ class BaseSolver(object):
 
     def train(self, ):
         self.setup()
+        self.scaler = self.cfg.scaler
         self.optimizer = self.cfg.optimizer
         self.lr_scheduler = self.cfg.lr_scheduler
 

@@ -95,7 +95,8 @@ class DetSolver(BaseSolver):
             train_stats = train_one_epoch(
                 self.model, self.criterion, self.train_dataloader, self.optimizer, self.device, epoch,
                 args.clip_max_norm, print_freq=args.log_step, ema=self.ema, scaler=self.scaler,
-                mert_config=args.yaml_cfg.get('MERT'))
+                mert_config=args.yaml_cfg.get('MERT'),
+                cter_config=args.yaml_cfg.get('CTER'))
 
             self.lr_scheduler.step()
             
@@ -109,7 +110,10 @@ class DetSolver(BaseSolver):
 
             module = self.ema.module if self.ema else self.model
             test_stats, coco_evaluator = evaluate(
-                module, self.criterion, self.postprocessor, self.val_dataloader, base_ds, self.device, self.output_dir
+                module, self.criterion, self.postprocessor, self.val_dataloader,
+                base_ds, self.device, self.output_dir,
+                amp_enabled=args.use_amp,
+                debug_eval_amp=args.yaml_cfg.get('debug_eval_amp', False),
             )
 
             primary_metric = 'coco_eval_bbox'
@@ -168,7 +172,9 @@ class DetSolver(BaseSolver):
         
         module = self.ema.module if self.ema else self.model
         test_stats, coco_evaluator = evaluate(module, self.criterion, self.postprocessor,
-                self.val_dataloader, base_ds, self.device, self.output_dir)
+                self.val_dataloader, base_ds, self.device, self.output_dir,
+                amp_enabled=self.cfg.use_amp,
+                debug_eval_amp=self.cfg.yaml_cfg.get('debug_eval_amp', False))
                 
         if self.output_dir:
             dist.save_on_master(coco_evaluator.coco_eval["bbox"].eval, self.output_dir / "eval.pth")

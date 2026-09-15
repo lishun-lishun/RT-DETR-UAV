@@ -25,8 +25,18 @@ def main(args, ) -> None:
         args.config,
         resume=args.resume, 
         use_amp=args.amp,
-        tuning=args.tuning
+        tuning=args.tuning,
+        debug_eval_amp=args.debug_eval_amp,
     )
+
+    if args.test_only:
+        workers = 8 if args.test_num_workers is None else args.test_num_workers
+        if workers < 0:
+            raise ValueError('--test-num-workers must be non-negative')
+        loader_config = cfg.yaml_cfg['val_dataloader']
+        old_workers = loader_config.get('num_workers', 0)
+        loader_config['num_workers'] = workers
+        print('Test-only val_dataloader.num_workers: {} -> {}'.format(old_workers, workers))
 
     solver = TASKS[cfg.yaml_cfg['task']](cfg)
     
@@ -44,6 +54,10 @@ if __name__ == '__main__':
     parser.add_argument('--tuning', '-t', type=str, )
     parser.add_argument('--test-only', action='store_true', default=False,)
     parser.add_argument('--amp', action='store_true', default=False,)
+    parser.add_argument('--debug-eval-amp', action='store_true', default=False,
+                        help='audit actual first-batch activation dtypes and forward counts')
+    parser.add_argument('--test-num-workers', type=int, default=None,
+                        help='test-only DataLoader workers, default 8')
     parser.add_argument('--seed', type=int, help='seed',)
     args = parser.parse_args()
 

@@ -149,9 +149,13 @@ def create(type_or_name, **kwargs):
 
 
 
-def load_config(file_path, cfg=dict()):
+def load_config(file_path, cfg=None):
     '''load config
     '''
+    # Never leak CTER/MERT switches from a previously loaded experiment into
+    # the next independent config in this process.
+    if cfg is None:
+        cfg = {}
     _, ext = os.path.splitext(file_path)
     assert ext in ['.yml', '.yaml'], "only support yaml files for now"
 

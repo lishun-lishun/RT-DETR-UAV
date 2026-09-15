@@ -1,0 +1,7 @@
+__include__: [
+  './rtdetr_r18vd_200e_dut_anti_uav_mert_v2_exp4_late_xywh.yml',
+  './include/cter.yml',
+]
+
+# The complete MERT block is inherited unchanged from the proven experiment.
+output_dir: ./output/rtdetr_r18vd_200e_dut_anti_uav_cter_mert_late_xywh

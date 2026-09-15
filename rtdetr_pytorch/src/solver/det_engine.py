@@ -16,7 +16,11 @@ import torch.amp
 
 from src.data import CocoEvaluator
 from src.misc import (MetricLogger, SmoothedValue, reduce_dict)
+from src.misc.dist import de_parallel
+from src.misc.amp import autocast_context
+from src.misc.inference_audit import InferenceAudit
 from .mert import MERTTrainingPlugin, average_loss_dicts
+from .cter_loss import CTERTrainingPlugin
 
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
@@ -32,19 +36,49 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     
     ema = kwargs.get('ema', None)
     scaler = kwargs.get('scaler', None)
+    mert_config = kwargs.get('mert_config') or {}
     mert = MERTTrainingPlugin(
-        kwargs.get('mert_config'), criterion.matcher, current_epoch=epoch
-    )
+        mert_config, criterion.matcher, current_epoch=epoch
+    ) if mert_config.get('enabled', False) else None
+    cter_config = kwargs.get('cter_config') or {}
+    cter = None
+    if cter_config.get('enabled', False):
+        backbone = de_parallel(model).backbone
+        feature_strides = getattr(backbone, 'out_strides', None)
+        return_indices = getattr(backbone, 'return_idx', None)
+        if feature_strides is None or return_indices is None:
+            raise ValueError('CTER needs backbone.out_strides and backbone.return_idx metadata')
+        stage_names = tuple('s{}'.format(index + 2) for index in return_indices)
+        cter = CTERTrainingPlugin(cter_config, feature_strides, stage_names)
+        if cter.debug:
+            print('CTER training debug: stages={}, strides={}, model views={}'.format(
+                stage_names, feature_strides, 2 if mert is not None else 1
+            ))
+    print('Training AMP: {}'.format(
+        'enabled' if scaler is not None and device.type == 'cuda' else 'disabled'
+    ))
 
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-        pair = mert.prepare(model, samples, targets) if mert.enabled else None
+        pair = mert.prepare(model, samples, targets) if mert is not None else None
+        original_backbone_features = None
+        original_image_size = None
+
+        def forward_original(images, image_targets):
+            nonlocal original_backbone_features, original_image_size
+            if cter is None:
+                return model(images, image_targets)
+            outputs, original_backbone_features, original_image_size = model(
+                images, image_targets, return_backbone_features=True
+            )
+            return outputs
 
         def forward_train_views():
-            if not mert.enabled:
-                return model(samples, targets)
+            nonlocal original_backbone_features, original_image_size
+            if mert is None:
+                return forward_original(samples, targets)
 
             with mert.disable_internal_multiscale(model):
                 if mert.forward_mode == 'concat':
@@ -52,9 +86,18 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                         pair['original_images'], pair['shifted_images']
                     ], dim=0)
                     paired_targets = pair['original_targets'] + pair['shifted_targets']
-                    return model(paired_images, paired_targets)
+                    if cter is None:
+                        # The original MERT-only forward call is unchanged.
+                        return model(paired_images, paired_targets)
+                    outputs, paired_features, original_image_size = model(
+                        paired_images, paired_targets, return_backbone_features=True
+                    )
+                    original_backbone_features = [
+                        feature[:samples.shape[0]] for feature in paired_features
+                    ]
+                    return outputs
 
-                outputs_original = model(
+                outputs_original = forward_original(
                     pair['original_images'], pair['original_targets']
                 )
                 outputs_shifted = model(
@@ -63,7 +106,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 return outputs_original, outputs_shifted
 
         def compute_train_losses(outputs):
-            if not mert.enabled:
+            if mert is None:
                 return criterion(outputs, targets)
 
             if mert.forward_mode == 'concat':
@@ -93,12 +136,22 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             )
             return loss_dict
 
+        def compute_all_losses(outputs):
+            loss_dict = compute_train_losses(outputs)
+            if cter is not None:
+                # Only original GT and original pre-encoder features enter
+                # CTER. No pair metadata, shifted GT, or decoder output enters.
+                loss_dict['loss_cter'] = cter.calculate_loss(
+                    original_backbone_features, targets, original_image_size
+                )
+            return loss_dict
+
         if scaler is not None:
-            with torch.autocast(device_type=str(device), cache_enabled=True):
+            with autocast_context(device, enabled=True):
                 outputs = forward_train_views()
             
-            with torch.autocast(device_type=str(device), enabled=False):
-                loss_dict = compute_train_losses(outputs)
+            with autocast_context(device, enabled=False):
+                loss_dict = compute_all_losses(outputs)
 
             loss = sum(loss_dict.values())
             scaler.scale(loss).backward()
@@ -113,7 +166,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         else:
             outputs = forward_train_views()
-            loss_dict = compute_train_losses(outputs)
+            loss_dict = compute_all_losses(outputs)
             
             loss = sum(loss_dict.values())
             optimizer.zero_grad()
@@ -142,14 +195,25 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
-    return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+    stats = {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+    if cter is not None:
+        cter_debug = cter.debug_summary()
+        if cter_debug:
+            print('CTER epoch debug:', cter_debug)
+            stats.update(cter_debug)
+    return stats
 
 
 
 @torch.no_grad()
-def evaluate(model: torch.nn.Module, criterion: torch.nn.Module, postprocessors, data_loader, base_ds, device, output_dir):
+def evaluate(model: torch.nn.Module, criterion: torch.nn.Module, postprocessors,
+             data_loader, base_ds, device, output_dir, amp_enabled=False,
+             debug_eval_amp=False):
     model.eval()
     criterion.eval()
+    device = torch.device(device)
+    eval_amp_enabled = bool(amp_enabled and device.type == 'cuda')
+    print('Evaluation AMP: {}'.format('enabled' if eval_amp_enabled else 'disabled'))
 
     metric_logger = MetricLogger(delimiter="  ")
     # metric_logger.add_meter('class_error', SmoothedValue(window_size=1, fmt='{value:.2f}'))
@@ -168,14 +232,20 @@ def evaluate(model: torch.nn.Module, criterion: torch.nn.Module, postprocessors,
     #         output_dir=os.path.join(output_dir, "panoptic_eval"),
     #     )
 
-    for samples, targets in metric_logger.log_every(data_loader, 10, header):
-        samples = samples.to(device)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+    for batch_index, (samples, targets) in enumerate(
+        metric_logger.log_every(data_loader, 10, header)
+    ):
+        samples = samples.to(device, non_blocking=True)
+        targets = [{k: v.to(device, non_blocking=True) for k, v in t.items()} for t in targets]
 
-        # with torch.autocast(device_type=str(device)):
-        #     outputs = model(samples)
-
-        outputs = model(samples)
+        if debug_eval_amp and batch_index == 0:
+            with InferenceAudit(model) as audit:
+                with autocast_context(device, enabled=eval_amp_enabled):
+                    outputs = model(samples)
+            audit.report(expected_amp=eval_amp_enabled)
+        else:
+            with autocast_context(device, enabled=eval_amp_enabled):
+                outputs = model(samples)
 
         # loss_dict = criterion(outputs, targets)
         # weight_dict = criterion.weight_dict
