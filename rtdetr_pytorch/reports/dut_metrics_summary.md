@@ -1,6 +1,6 @@
 # DUT 实验配置公平性与模型统计
 
-7 份 DUT YAML 的完整继承解析检查通过。Baseline 相对官方 R18 只改变数据路径、类别数及 COCO 类别映射、关闭的新方法开关、输出目录，并新增不参与训练的 test_dataset 路径元信息。所有方法相对 DUT Baseline 只改变 MERT/SECD 字段及 include/输出目录；epoch、batch、优化器、LR、scheduler、增强、分辨率、预训练策略、EMA、AMP、criterion/decoder 等其余字段完全相同。
+7 份 DUT YAML 的完整继承解析检查通过。Baseline 相对官方 R18 改变数据路径、类别数及 COCO 类别映射、关闭的新方法开关、输出目录，并新增不参与训练的 test_dataset 路径元信息；后续按用户要求将 DUT train/val/test batch 统一为 16/GPU，官方原版 train=4、val=8 未改。所有方法相对 DUT Baseline 只改变 MERT/SECD 字段及 include/输出目录；epoch、batch、优化器、LR、scheduler、增强、分辨率、预训练策略、EMA、AMP、criterion/decoder 等其余字段完全相同。单张图片的推理复杂度统计不受训练/评估 DataLoader batch 修改影响。
 
 ## 统计口径
 
@@ -40,6 +40,6 @@ python tools/analyze_dut_models.py --model-only-import --threads 4 --seed 0 --ou
 python -m unittest discover -s tests -p test_analyze_dut_models.py -v
 ```
 
-9 个工具 guard tests 通过，覆盖 fresh loader accumulator、公平性允许/禁止字段、独立配对值校验、输出/模块执行路径差异拒绝及 profiler 未计数事件的诊断口径。这里没有启动训练、下载权重、修改官方 YAML 或提供准确率/测速结果。
+12 个工具 guard tests 通过，覆盖 fresh loader accumulator、公平性允许/禁止字段、统一 batch=16/错误值拒绝、独立配对值校验、输出/模块执行路径差异拒绝及 profiler 未计数事件的诊断口径。这里没有启动训练、下载权重、修改官方 YAML 或提供准确率/测速结果。
 
 完整原始结果见 `dut_model_metrics.json`；其中包含每份 YAML 的字段级 resolved differences、训练协议、每个实际被计数/未计数算子、全部等价检查与统计环境。更全面的模型总 FLOPs 需要支持实际 grid sampling、attention 和 SECD 运算的补充计数器，当前不声称已获得。

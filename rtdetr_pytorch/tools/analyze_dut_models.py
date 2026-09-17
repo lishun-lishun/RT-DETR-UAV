@@ -28,6 +28,9 @@ import types
 
 ROOT = Path(__file__).resolve().parents[1]
 PREFIX = "rtdetr_r18vd_dut_anti_uav"
+# Explicit user-approved deviation from official train=4 / val=8. Methods
+# must all share this exact value; other official hyperparameters stay guarded.
+DUT_BATCH_SIZE = 16
 METHODS = {
     "Baseline": "",
     "MERT": "_mert_late_xywh",
@@ -82,6 +85,7 @@ def permitted_difference(key, original=False):
         return True
     if original:
         return (key in ("num_classes", "remap_mscoco_category")
+                or key in ("train_dataloader.batch_size", "val_dataloader.batch_size")
                 or key.startswith("test_dataset.")
                 or key == "test_dataset"
                 or key in {loader + ".dataset." + field
@@ -99,6 +103,9 @@ def resolved_audit():
     methods = {}
     for method in METHODS:
         cfg = fresh_config(config_path(method))
+        for loader in ("train_dataloader", "val_dataloader"):
+            if cfg[loader]["batch_size"] != DUT_BATCH_SIZE:
+                failures.append(f"{method}: {loader}.batch_size must be {DUT_BATCH_SIZE}/GPU")
         diff = differences(baseline, cfg)
         failures.extend(method + " vs Baseline: " + key for key in diff
                         if not permitted_difference(key))

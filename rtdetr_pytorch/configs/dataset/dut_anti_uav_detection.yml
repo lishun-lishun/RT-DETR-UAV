@@ -1,6 +1,7 @@
 # Read from the actual train/val/test COCO annotations: one category, id=0 (UAV).
 # Only dataset metadata/paths are adapted. Loader, transforms, batch sizes and
-# all training settings are inherited from the original R18/COCO configuration.
+# all training settings are inherited from the original R18/COCO configuration
+# unless explicitly overridden in the DUT Baseline (currently batch_size=16).
 num_classes: 1
 remap_mscoco_category: False
 

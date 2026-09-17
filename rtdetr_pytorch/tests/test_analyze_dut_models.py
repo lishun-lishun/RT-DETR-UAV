@@ -22,7 +22,7 @@ class FairnessGuardTests(unittest.TestCase):
 
     def test_hyperparameters_cannot_be_exempted(self):
         for key in ("optimizer.lr", "optimizer.params", "epoches", "use_amp",
-                    "train_dataloader.batch_size", "RTDETR.multi_scale",
+                    "RTDETR.multi_scale",
                     "HybridEncoder.eval_spatial_size", "RTDETRTransformer.num_queries",
                     "train_dataloader.dataset.transforms.ops"):
             self.assertFalse(analyze.permitted_difference(key, original=True), key)
@@ -37,6 +37,33 @@ class FairnessGuardTests(unittest.TestCase):
     def test_method_switches_exempted(self):
         for key in ("MERT.enabled", "MERT.beta", "SECD.transitions", "SECD.enabled"):
             self.assertTrue(analyze.permitted_difference(key))
+
+    def test_batch_override_is_only_exempted_against_official(self):
+        for key in ("train_dataloader.batch_size", "val_dataloader.batch_size"):
+            self.assertTrue(analyze.permitted_difference(key, original=True), key)
+            self.assertFalse(analyze.permitted_difference(key), key)
+
+    def test_all_seven_resolved_configs_have_batch_sixteen(self):
+        self.assertTrue(analyze.resolved_audit()["passed"])
+        for method in analyze.METHODS:
+            cfg = analyze.fresh_config(analyze.config_path(method))
+            for loader in ("train_dataloader", "val_dataloader"):
+                self.assertEqual(cfg[loader]["batch_size"], 16, (method, loader))
+
+    def test_batch_exemption_does_not_allow_arbitrary_values(self):
+        original_loader = analyze.fresh_config
+
+        def altered_config(path):
+            cfg = original_loader(path)
+            if path == analyze.config_path("Baseline"):
+                cfg["train_dataloader"]["batch_size"] = 32
+            return cfg
+
+        with patch.object(analyze, "fresh_config", side_effect=altered_config):
+            audit = analyze.resolved_audit()
+        self.assertFalse(audit["passed"])
+        self.assertTrue(any("batch_size must be 16/GPU" in failure
+                            for failure in audit["failures"]))
 
     def test_loader_receives_explicit_fresh_accumulator(self):
         seen = []

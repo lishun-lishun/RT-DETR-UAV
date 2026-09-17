@@ -5,6 +5,14 @@ __include__: [
 
 output_dir: ./output/rtdetr_r18vd_dut_anti_uav
 
+# User-requested override: all DUT methods inherit 16 original images per GPU.
+# MERT concat adds 16 shifted images; val and true-test use batch_size=16.
+train_dataloader:
+  batch_size: 16
+
+val_dataloader:
+  batch_size: 16
+
 # Default-off switches: no extra inference structure or training views.
 MERT:
   enabled: false

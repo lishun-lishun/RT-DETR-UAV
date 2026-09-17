@@ -2,11 +2,13 @@
 
 本次以修改前的当前干净工作树为准，不恢复旧实验工程。先完成原版审计，再新增数据适配、训练期 MERT 和 Backbone 旁路 SECD。没有执行正式训练、完整 DUT 评估或服务器 CUDA/NCCL 测试。
 
+后续用户明确要求统一 batch size：七种 DUT 实验的 train/val/test 现均为 **16/GPU**。这是相对原版 train=4、val/test=8 的明确授权覆盖；其他超参数不变，官方 YAML 未改。MERT concat 每张卡实际送入模型为 16 原图 + 16 平移图。
+
 ## 1. 原版审计与统一协议
 
 原版入口为 `tools/train.py`，R18 配置为 `configs/rtdetr/rtdetr_r18vd_6x_coco.yml`。该 YAML 继承原版 COCO dataset、runtime、dataloader、optimizer 和 `rtdetr_r50vd.yml` 模型定义，再覆盖 R18 的 Backbone/Encoder/Decoder 设置。DUT 配置直接继承它，而不是另建一套训练超参数。
 
-| 项目 | 当前原版实际值；七种方法全部继承 |
+| 项目 | 当前原版实际值；除用户指定 batch 覆盖外，七种方法全部继承 |
 | --- | --- |
 | Backbone | PResNet18-vd，variant=d，4 stages，return_idx=[1,2,3]，freeze_at=-1，freeze_norm=False，pretrained=True |
 | S3/S4/S5 | channels=[128,256,512]；strides=[8,16,32] |
@@ -17,7 +19,7 @@
 | Train random multi-scale | [480,512,544,576,608,640,640,640,672,704,736,768,800]，直接继承原版列表 |
 | Validation / Test | 640×640 |
 | eval_spatial_size | Encoder 和 Decoder 均为 [640,640] |
-| Batch size | train=4/GPU，val/test=8/GPU；3 卡训练原图全局 batch=12 |
+| Batch size | 原版 train=4/GPU、val/test=8/GPU；当前 DUT 统一 train/val/test=16/GPU，3 卡训练原图全局 batch=48 |
 | Worker | train/val/test=4/进程；未引入旧版 worker=8、预取或 pinned-memory 补丁 |
 | Optimizer | AdamW，betas=[0.9,0.999]，weight_decay=1e-4；原有 norm/bias 免 decay 分组不变 |
 | LR | Backbone=1e-5，其余=1e-4；SECD 属于 Backbone，沿用原分组，不另调 LR |
@@ -92,7 +94,7 @@ SmoothL1 beta = 0.01; K = min(2, 实际 decoder transitions)
 
 不存在额外的坐标 `/4` 或未经说明的 `/2`，小目标权重不改变分母；无匹配目标/无 transition 时返回可微零损失。损失权重固定，不增加 schedule。
 
-正式 YAML 均使用 `forward_mode: concat`、`shifted_detection_loss: true`。每进程原图 batch 仍为 4；模型收到 8 张两视图图片，调用原 criterion 对这个 concat batch 进行原版 GT 数量归一化，GT/DN 各自正确处理。MERT 模型调用次数是一次，但处理图像量增加，不宣称训练零开销。保留单卡 sequential 作为可选路径；DDP 下显式拒绝 sequential，避免同一步两次 DDP forward 的 reducer 风险。两者在视图 GT 数不等时检测损失归一化不同，正式对比统一 concat。
+正式 YAML 均使用 `forward_mode: concat`、`shifted_detection_loss: true`。当前每进程原图 batch 为 16；模型收到 32 张两视图图片，调用原 criterion 对这个 concat batch 进行原版 GT 数量归一化，GT/DN 各自正确处理。MERT 模型调用次数是一次，但处理图像量增加，不宣称训练零开销。保留单卡 sequential 作为可选路径；DDP 下显式拒绝 sequential，避免同一步两次 DDP forward 的 reducer 风险。两者在视图 GT 数不等时检测损失归一化不同，正式对比统一 concat。
 
 SECD 与 MERT 无内部变量耦合。组合方法两视图均经过同一个 SECD Backbone。evaluate/test 不创建 MERTBatch、不生成 shifted view、不计算 trajectory 或 MERT loss，只有单次真实 detector forward。
 
@@ -136,7 +138,7 @@ alpha=0 的首次 forward 与原版一致，但仍计算启用的旁路，不能
 | SECD34+MERT | rtdetr_r18vd_dut_anti_uav_secd_34_mert_late_xywh.yml | MERT + SECD34 | 同时启用上述完整 MERT/SECD34；本地重新设 MERT.enabled=True 防止父级 Baseline 关闭开关 |
 | SECD345+MERT | rtdetr_r18vd_dut_anti_uav_secd_345_mert_late_xywh.yml | SECD34+MERT | transitions=[3to4,4to5] |
 
-唯一 dataset YAML 为 `configs/dataset/dut_anti_uav_detection.yml`，只设置真实路径、类别数/映射和 test 路径元数据。不创建 DUT 公共 optimizer/dataloader/augmentation 配置。完整递归解析检查已通过：方法间除了 MERT/SECD、include 和输出目录，全部其余字段相同；DUT Baseline 相对官方仅改变数据集相关字段、默认关闭方法开关及输出目录。
+唯一 dataset YAML 为 `configs/dataset/dut_anti_uav_detection.yml`，只设置真实路径、类别数/映射和 test 路径元数据。不创建 DUT 公共 optimizer/dataloader/augmentation 配置。DUT Baseline 新增 train_dataloader.batch_size=16、val_dataloader.batch_size=16，所有六份方法配置继承；真实 test 复用 val loader，所以也为 16。完整递归解析检查已通过：方法间除了 MERT/SECD、include 和输出目录，全部其余字段相同；DUT Baseline 相对官方另有本次明确授权的两个 batch 字段覆盖。
 
 完整字段级原始结果见 `dut_resolved_audit.json`，统计检查的代码在 `tools/analyze_dut_models.py`。
 
@@ -162,13 +164,13 @@ alpha=0 的首次 forward 与原版一致，但仍计算启用的旁路，不能
 
 ## 8. 验证结果与边界
 
-运行 `python -m unittest discover -s tests -v`：**63 项全部通过，13.182 秒**。
+首次增量开发运行 `python -m unittest discover -s tests -v`：63 项全部通过，13.182 秒。统一 batch=16 后再次回归：**运行 66 项，65 项通过、1 项因当前本地未放置 DUT 数据集而跳过，13.793 秒**。新增检查覆盖七种方法均为 16、官方配置的显式例外及错误 batch 值拒绝。
 
 | 测试组 | 数量 | 实测覆盖 |
 | --- | ---: | --- |
 | test_secd.py | 23 | 独立公式参考、uniform/sparse/texture/permutation、奇数尺寸、低精度稳定性、alpha=0 等价及梯度、原 key、预训练兼容、冻结、种子流保持 |
 | test_mert.py | 20 | 像素/GT shift、ID、边界 GT、inverse、不同 query 配对、未匹配、轨迹排除 encoder/DN、xy/wh 与小目标权重数值、关闭/eval 零插件行为、concat DN/criterion/backward |
-| test_analyze_dut_models.py | 9 | 独立解析、字段公平性 guard、模型等价检查拒绝真实差异、profiler 下界诊断口径 |
+| test_analyze_dut_models.py | 12 | 独立解析、字段公平性 guard、统一 batch=16/错误值拒绝、模型等价检查拒绝真实差异、profiler 下界诊断口径 |
 | test_dut_integration.py | 10 | 官方 YAML/入口未变、完整 R18 原版参数/key/初始化/640 输出等价、三个 SECD alpha0 完整输出等价、关闭时单步训练更新与原版相同、真实组合模型 DN/反传、eval 单次调用、test 路径适配 |
 | test_mert_distributed.py | 1 | 两个 CPU Gloo 进程、真实 R18+SECD34、两步 concat forward+原 criterion+MERT backward、不同 rank GT 数与裁剪、DN、全部参数有限梯度、每步单次 DDP/SECD forward |
 
@@ -176,7 +178,7 @@ alpha=0 的首次 forward 与原版一致，但仍计算启用的旁路，不能
 
 ## 9. 训练和评估命令
 
-在服务器 `rtdetr_pytorch` 目录执行。下面都是一行命令，统一使用原版训练 AMP、seed=0、三卡原图 batch=12。**同一组 GPU 的实验按顺序运行，不要同时启动这七条。**如果改为单卡或双卡，所有方法保持同样卡数，不自动改 LR/batch。
+在服务器 `rtdetr_pytorch` 目录执行。下面都是一行命令，统一使用原版训练 AMP、seed=0、三卡原图 batch=48。**同一组 GPU 的实验按顺序运行，不要同时启动这七条。**如果改为单卡或双卡，所有方法保持同样卡数，不自动改 LR/batch。
 
 Baseline：
 
@@ -255,13 +257,13 @@ python -m unittest discover -s tests -v
 | 3 | 原始 multi-scale 完整列表 | [480,512,544,576,608,640,640,640,672,704,736,768,800]，直接继承 |
 | 4 | 原始 val/test resize | 640×640，未改 |
 | 5 | 原始 eval_spatial_size | Encoder/Decoder 均 [640,640] |
-| 6 | 原始 batch | train 4/GPU，val/test 8/GPU；MERT 仅额外创建 shifted 视图 |
+| 6 | 原始 batch | 原版 train 4/GPU、val/test 8/GPU；用户后续要求当前 DUT 统一为 16/GPU；MERT 增加等量 shifted 视图 |
 | 7 | 原始 optimizer | AdamW，betas=[0.9,0.999]，WD=1e-4，原分组未改 |
 | 8 | 原始 LR | Backbone 1e-5，其他 1e-4，未改 |
 | 9 | 原始 epoch | 72，未改为 200 |
 | 10 | 原始 augmentation | 第 1 节完整顺序/参数，逐项继承，无另加尺寸 cap |
 | 11 | DUT dataset/config 文件 | 1 份 dataset YAML + 第 6 节 7 份方法 YAML，复用 CocoDetection |
-| 12 | DUT 改哪些字段 | 数据路径、num_classes=1、remap=False、test 路径元数据、独立 output_dir、默认关闭开关 |
+| 12 | DUT 改哪些字段 | 数据路径、num_classes=1、remap=False、test 路径元数据、独立 output_dir、默认关闭开关；后续明确授权 train/val batch_size=16 |
 | 13 | 修改官方 COCO YAML？ | 否；全部 16 份原有 YAML 原始字节哈希不变 |
 | 14 | 修改官方公共 include？ | 否 |
 | 15 | 哪些已有 Python 被修改 | yaml_config.py、presnet.py、det_engine.py、det_solver.py，仅四处；新增文件见第 3 节 |
@@ -307,5 +309,6 @@ python -m unittest discover -s tests -v
 4. **初始化门控。**alpha=0 时 projection 初始梯度为零，raw_alpha 可学习；非零之后旁路学习。SECD 继承原 Backbone LR=1e-5，可能起效较慢，这是保留原协议的结果，没有擅自加旁路 LR。
 5. **Checkpoint 范围。**原 Backbone 预训练加载允许仅新增 SECD key 缺失并检查其他错配；`-r` 完整训练恢复仍是原版严格架构/optimizer 语义，不能把 Baseline checkpoint 直接作为 SECD 的完整 resume。需要同架构 resume；跨架构初始化若使用原版 `-t`，它不是完整恢复，必须单独说明。原版不自动保存 best.pth。
 6. **验证精度公平优先。**没有恢复 eval AMP、测速补丁或 test-worker CLI。所有方法验证/真实 test 使用原版 FP32，worker=4。MERT 训练中仍有 ID 配对 CPU 同步开销，未作为本任务偷偷更改原训练基础实现。
-7. **测试覆盖不是服务器实跑承诺。**63 项测试是 CPU 与合成输入；真实 CUDA AMP/NCCL、完整数据增强、服务器多进程 DataLoader 的环境行为及最终 AP 仍需服务器验证。保留的原版 find_unused_parameters=True 可能有 warning/遍历成本，本次不改。
+7. **测试覆盖不是服务器实跑承诺。**测试是 CPU 与合成输入（最新结果见第 8 节）；真实 CUDA AMP/NCCL、完整数据增强、服务器多进程 DataLoader 的环境行为及最终 AP 仍需服务器验证。保留的原版 find_unused_parameters=True 可能有 warning/遍历成本，本次不改。
 8. **复杂度计数有限。**当前报告提供真实 Params 和明确标注的 FLOPs/MACs 下界，不声称拥有完整 FLOPs、训练速度、峰值显存或检测精度结果。
+9. **当前 batch 覆盖的影响。**DUT batch 从原版训练 4 增至 16；MERT 单卡 concat 处理 32 张图，随机尺度最大仍为 800，24G 显存不保证一定足够。每轮 optimizer step 数减少，训练过程不再与原版 batch=4 数值等价；方法对比统一 batch=16，未同时改变 LR 或 epochs。已有运行中的 DataLoader 不会自动读取修改，需重新启动进程才生效。

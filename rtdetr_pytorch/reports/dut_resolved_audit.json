@@ -44,6 +44,10 @@
         "reference": "<absent>",
         "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/images/test/"
       },
+      "train_dataloader.batch_size": {
+        "reference": 4,
+        "candidate": 16
+      },
       "train_dataloader.dataset.ann_file": {
         "reference": "./dataset/coco/annotations/instances_train2017.json",
         "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/train.json"
@@ -51,6 +55,10 @@
       "train_dataloader.dataset.img_folder": {
         "reference": "./dataset/coco/train2017/",
         "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/images/train/"
+      },
+      "val_dataloader.batch_size": {
+        "reference": 8,
+        "candidate": 16
       },
       "val_dataloader.dataset.ann_file": {
         "reference": "./dataset/coco/annotations/instances_val2017.json",
@@ -673,8 +681,8 @@
     },
     "protocol": {
       "epoches": 72,
-      "train_batch_size_per_rank": 4,
-      "val_batch_size_per_rank": 8,
+      "train_batch_size_per_rank": 16,
+      "val_batch_size_per_rank": 16,
       "optimizer": {
         "type": "AdamW",
         "params": [

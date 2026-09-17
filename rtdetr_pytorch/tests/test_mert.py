@@ -140,6 +140,80 @@ class MERTTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.batch(target)
 
+    def test_sanitize_keeps_stale_metadata_but_mert_realigns_it(self):
+        from torchvision import datapoints
+        from torchvision.transforms.v2 import SanitizeBoundingBox
+
+        # The original transform filters boxes/labels, but not area/iscrowd.
+        # Retain the third annotation, not the first: truncation is incorrect.
+        target = {
+            'boxes': datapoints.BoundingBox(
+                [[0, 0, 0, 2], [2, 2, 3, 2], [8, 4, 12, 6],
+                 [1, 1, 1, 1], [0, 0, .5, .5]],
+                format='XYXY', spatial_size=(10, 20), dtype=torch.float32),
+            'labels': torch.zeros(5, dtype=torch.long),
+            'area': torch.tensor([101., 102., 103., 104., 105.]),
+            'iscrowd': torch.zeros(5, dtype=torch.long),
+            'image_id': torch.tensor([11]), 'size': torch.tensor([20, 10]),
+            'orig_size': torch.tensor([20, 10]),
+        }
+        _, target = SanitizeBoundingBox()(torch.zeros(3, 10, 20), target)
+        self.assertEqual(len(target['boxes']), 1)
+        self.assertEqual(len(target['labels']), 1)
+        self.assertEqual(len(target['area']), 5)
+        self.assertEqual(len(target['iscrowd']), 5)
+        from torchvision.ops import box_convert
+        target['boxes'] = box_convert(target['boxes'], 'xyxy', 'cxcywh') / \
+            torch.tensor([20., 10., 20., 10.])
+        before = {key: value.clone() for key, value in target.items()}
+        batch = self.batch(target, shift=(1, 0))
+        for view in (batch.targets[0], batch.shifted_targets[0]):
+            torch.testing.assert_close(view['area'], torch.tensor([8.]))
+            self.assertEqual(view['iscrowd'].tolist(), [0])
+            self.assertEqual(view['origin_gt_id'].tolist(), [0])
+        for key, value in before.items():
+            torch.testing.assert_close(target[key], value)
+
+    def test_stale_metadata_with_empty_targets_is_safe(self):
+        target = make_target([])
+        target['area'] = torch.arange(5, dtype=torch.float32)
+        target['iscrowd'] = torch.zeros(5, dtype=torch.long)
+        batch = self.batch(target)
+        for view in (batch.targets[0], batch.shifted_targets[0]):
+            for key in ('boxes', 'labels', 'area', 'iscrowd', 'origin_gt_id', 'fully_visible'):
+                self.assertEqual(view[key].shape[0], 0, key)
+
+    def test_stale_metadata_rebuilt_before_shifted_box_filter(self):
+        target = make_target([[0.5, 0.5, 0.2, 0.2],
+                              [0.94, 0.5, 0.12, 0.2],
+                              [0.99, 0.5, 0.02, 0.2]], ids=[9, 3, 77])
+        target['area'] = torch.arange(5, dtype=torch.float32)
+        target['iscrowd'] = torch.zeros(5, dtype=torch.long)
+        batch = self.batch(target, shift=(1, 0))
+        torch.testing.assert_close(batch.targets[0]['area'], torch.tensor([8., 4.8, .8]))
+        self.assertEqual(batch.shifted_targets[0]['origin_gt_id'].tolist(), [9, 3])
+        torch.testing.assert_close(batch.shifted_targets[0]['area'], torch.tensor([8., 2.8]))
+        self.assertEqual(batch.shifted_targets[0]['iscrowd'].tolist(), [0, 0])
+
+    def test_essential_mismatched_fields_are_not_truncated(self):
+        for key, value in (
+            ('labels', torch.zeros(5, dtype=torch.long)),
+            ('masks', torch.zeros(5, 10, 20, dtype=torch.bool)),
+            ('fully_visible', torch.ones(5, dtype=torch.bool)),
+            ('origin_gt_id', torch.arange(5)),
+        ):
+            with self.subTest(field=key):
+                target = make_target([[.5, .5, .2, .2]])
+                target[key] = value
+                with self.assertRaisesRegex(ValueError, key):
+                    self.batch(target)
+
+    def test_stale_nonzero_crowd_flags_cannot_be_guessed(self):
+        target = make_target([[.5, .5, .2, .2]])
+        target['iscrowd'] = torch.tensor([0, 1, 0, 0, 0])
+        with self.assertRaisesRegex(ValueError, 'iscrowd'):
+            self.batch(target)
+
     def test_masks_shift_with_gt_and_sampled_resolution(self):
         target = make_target([[0.5, 0.5, 0.2, 0.2]])
         target['masks'] = torch.zeros(1, 5, 10, dtype=torch.bool)
@@ -382,6 +456,10 @@ class MERTTests(unittest.TestCase):
         samples = torch.randn(2, 3, 64, 64)
         targets = [make_target([[0.5, 0.5, 0.12, 0.14]]),
                    make_target([[0.3, 0.4, 0.08, 0.10], [0.7, 0.6, 0.14, 0.12]])]
+        # Exercise the production augmentation metadata mismatch through real
+        # DN generation, Hungarian matching, detection losses and backward.
+        targets[0]['area'] = torch.arange(5, dtype=torch.float32)
+        targets[0]['iscrowd'] = torch.zeros(5, dtype=torch.long)
         batch = self.plugin.prepare(samples, targets, self.model, shifts=[[1, 0], [0, -1]])
         self.assertEqual(batch.concatenated_samples.shape, (4, 3, 64, 64))
         features = [torch.randn(4, 16, size, size, requires_grad=True) for size in (8, 4, 2)]

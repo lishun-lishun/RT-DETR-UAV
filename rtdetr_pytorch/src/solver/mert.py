@@ -126,6 +126,28 @@ def shift_targets(targets, shifts, spatial_size):
         if boxes.ndim != 2 or boxes.shape[-1] != 4:
             raise ValueError('MERT requires normalized cxcywh target boxes [N,4].')
         count = len(boxes)
+        if target['labels'].shape != (count,):
+            raise ValueError('MERT target labels must have one entry per box.')
+        if 'masks' in target and (target['masks'].ndim != 3 or
+                                  target['masks'].shape[0] != count):
+            raise ValueError('MERT target masks must have shape [N,H,W] aligned with boxes.')
+        if 'fully_visible' in target and target['fully_visible'].shape != (count,):
+            raise ValueError('MERT target fully_visible must have one entry per box.')
+
+        # Original torchvision SanitizeBoundingBox filters boxes/labels/masks,
+        # but can leave area/iscrowd at their pre-crop length. Reconstruct only
+        # these auxiliary fields on this private view, BEFORE indexing by keep.
+        # Never truncate: the surviving GT may not be the first annotation.
+        if 'area' in original and original['area'].shape != (count,):
+            original['area'] = boxes.float()[:, 2:].prod(-1) * width * height
+        if 'iscrowd' in original and original['iscrowd'].shape != (count,):
+            crowd = original['iscrowd']
+            # The original CocoDetection converter excludes all crowd GTs.
+            # Stale all-zero flags can therefore be rebuilt without guessing
+            # instance correspondence; mixed/nonzero flags cannot.
+            if bool((crowd != 0).any()):
+                raise ValueError('MERT cannot realign mismatched nonzero iscrowd flags.')
+            original['iscrowd'] = crowd.new_zeros(count)
         ids = target.get('origin_gt_id', torch.arange(count, device=boxes.device))
         ids = ids.to(device=boxes.device, dtype=torch.int64)
         if ids.shape != (count,) or ids.unique().numel() != count:
