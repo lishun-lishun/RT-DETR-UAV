@@ -1,0 +1,11 @@
+__include__: [
+  './rtdetr_r18vd_dut_anti_uav_mert_late_xywh.yml',
+  './rtdetr_r18vd_dut_anti_uav_secd_34.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_secd_34_mert_late_xywh
+
+# The SECD parent inherits Baseline and therefore resets this switch to false.
+# Re-enable ONLY the switch: all late_xywh parameters remain inherited.
+MERT:
+  enabled: true

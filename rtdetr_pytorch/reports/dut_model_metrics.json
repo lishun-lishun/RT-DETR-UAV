@@ -1,0 +1,1857 @@
+{
+  "resolved_audit": {
+    "passed": true,
+    "failures": [],
+    "baseline_original_differences": {
+      "MERT.enabled": {
+        "reference": "<absent>",
+        "candidate": false
+      },
+      "SECD.enabled": {
+        "reference": "<absent>",
+        "candidate": false
+      },
+      "__include__": {
+        "reference": [
+          "../dataset/coco_detection.yml",
+          "../runtime.yml",
+          "./include/dataloader.yml",
+          "./include/optimizer.yml",
+          "./include/rtdetr_r50vd.yml"
+        ],
+        "candidate": [
+          "./rtdetr_r18vd_6x_coco.yml",
+          "../dataset/dut_anti_uav_detection.yml"
+        ]
+      },
+      "num_classes": {
+        "reference": 80,
+        "candidate": 1
+      },
+      "output_dir": {
+        "reference": "./output/rtdetr_r18vd_6x_coco",
+        "candidate": "./output/rtdetr_r18vd_dut_anti_uav"
+      },
+      "remap_mscoco_category": {
+        "reference": true,
+        "candidate": false
+      },
+      "test_dataset.ann_file": {
+        "reference": "<absent>",
+        "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/test.json"
+      },
+      "test_dataset.img_folder": {
+        "reference": "<absent>",
+        "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/images/test/"
+      },
+      "train_dataloader.dataset.ann_file": {
+        "reference": "./dataset/coco/annotations/instances_train2017.json",
+        "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/train.json"
+      },
+      "train_dataloader.dataset.img_folder": {
+        "reference": "./dataset/coco/train2017/",
+        "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/images/train/"
+      },
+      "val_dataloader.dataset.ann_file": {
+        "reference": "./dataset/coco/annotations/instances_val2017.json",
+        "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/val.json"
+      },
+      "val_dataloader.dataset.img_folder": {
+        "reference": "./dataset/coco/val2017/",
+        "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/images/val/"
+      }
+    },
+    "methods": {
+      "Baseline": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav.yml",
+        "baseline_differences": {},
+        "MERT": {
+          "enabled": false
+        },
+        "SECD": {
+          "enabled": false
+        }
+      },
+      "MERT": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_mert_late_xywh.yml",
+        "baseline_differences": {
+          "MERT.beta": {
+            "reference": "<absent>",
+            "candidate": 0.01
+          },
+          "MERT.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "MERT.forward_mode": {
+            "reference": "<absent>",
+            "candidate": "concat"
+          },
+          "MERT.loss_weight": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "MERT.schedule.enabled": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "MERT.shift_pixels": {
+            "reference": "<absent>",
+            "candidate": 1
+          },
+          "MERT.shifted_detection_loss": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "MERT.small_object_weighting.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "MERT.small_object_weighting.gamma": {
+            "reference": "<absent>",
+            "candidate": 0.5
+          },
+          "MERT.small_object_weighting.max_weight": {
+            "reference": "<absent>",
+            "candidate": 4.0
+          },
+          "MERT.small_object_weighting.min_weight": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "MERT.small_object_weighting.reference_area": {
+            "reference": "<absent>",
+            "candidate": 256.0
+          },
+          "MERT.trajectory_layers": {
+            "reference": "<absent>",
+            "candidate": "last_2"
+          },
+          "MERT.wh_weight": {
+            "reference": "<absent>",
+            "candidate": 0.25
+          },
+          "MERT.xy_weight": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_mert_late_xywh"
+          }
+        },
+        "MERT": {
+          "enabled": true,
+          "forward_mode": "concat",
+          "shift_pixels": 1,
+          "beta": 0.01,
+          "xy_weight": 1.0,
+          "wh_weight": 0.25,
+          "trajectory_layers": "last_2",
+          "loss_weight": 0.1,
+          "shifted_detection_loss": true,
+          "small_object_weighting": {
+            "enabled": true,
+            "reference_area": 256.0,
+            "gamma": 0.5,
+            "min_weight": 1.0,
+            "max_weight": 4.0
+          },
+          "schedule": {
+            "enabled": false
+          }
+        },
+        "SECD": {
+          "enabled": false
+        }
+      },
+      "SECD34": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_secd_34.yml",
+        "baseline_differences": {
+          "SECD.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "SECD.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "SECD.alpha_mode": {
+            "reference": "<absent>",
+            "candidate": "bounded_tanh"
+          },
+          "SECD.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "SECD.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "SECD.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "SECD.temperature": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "SECD.transitions": {
+            "reference": "<absent>",
+            "candidate": [
+              "3to4"
+            ]
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_secd_34"
+          }
+        },
+        "MERT": {
+          "enabled": false
+        },
+        "SECD": {
+          "enabled": true,
+          "transitions": [
+            "3to4"
+          ],
+          "groups": 8,
+          "temperature": 0.1,
+          "eps": 1e-06,
+          "alpha_init": 0.0,
+          "alpha_max": 0.2,
+          "alpha_mode": "bounded_tanh"
+        }
+      },
+      "SECD45": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_secd_45.yml",
+        "baseline_differences": {
+          "SECD.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "SECD.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "SECD.alpha_mode": {
+            "reference": "<absent>",
+            "candidate": "bounded_tanh"
+          },
+          "SECD.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "SECD.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "SECD.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "SECD.temperature": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "SECD.transitions": {
+            "reference": "<absent>",
+            "candidate": [
+              "4to5"
+            ]
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav_secd_34.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_secd_45"
+          }
+        },
+        "MERT": {
+          "enabled": false
+        },
+        "SECD": {
+          "enabled": true,
+          "transitions": [
+            "4to5"
+          ],
+          "groups": 8,
+          "temperature": 0.1,
+          "eps": 1e-06,
+          "alpha_init": 0.0,
+          "alpha_max": 0.2,
+          "alpha_mode": "bounded_tanh"
+        }
+      },
+      "SECD345": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_secd_345.yml",
+        "baseline_differences": {
+          "SECD.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "SECD.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "SECD.alpha_mode": {
+            "reference": "<absent>",
+            "candidate": "bounded_tanh"
+          },
+          "SECD.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "SECD.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "SECD.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "SECD.temperature": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "SECD.transitions": {
+            "reference": "<absent>",
+            "candidate": [
+              "3to4",
+              "4to5"
+            ]
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav_secd_34.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_secd_345"
+          }
+        },
+        "MERT": {
+          "enabled": false
+        },
+        "SECD": {
+          "enabled": true,
+          "transitions": [
+            "3to4",
+            "4to5"
+          ],
+          "groups": 8,
+          "temperature": 0.1,
+          "eps": 1e-06,
+          "alpha_init": 0.0,
+          "alpha_max": 0.2,
+          "alpha_mode": "bounded_tanh"
+        }
+      },
+      "SECD34+MERT": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_secd_34_mert_late_xywh.yml",
+        "baseline_differences": {
+          "MERT.beta": {
+            "reference": "<absent>",
+            "candidate": 0.01
+          },
+          "MERT.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "MERT.forward_mode": {
+            "reference": "<absent>",
+            "candidate": "concat"
+          },
+          "MERT.loss_weight": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "MERT.schedule.enabled": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "MERT.shift_pixels": {
+            "reference": "<absent>",
+            "candidate": 1
+          },
+          "MERT.shifted_detection_loss": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "MERT.small_object_weighting.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "MERT.small_object_weighting.gamma": {
+            "reference": "<absent>",
+            "candidate": 0.5
+          },
+          "MERT.small_object_weighting.max_weight": {
+            "reference": "<absent>",
+            "candidate": 4.0
+          },
+          "MERT.small_object_weighting.min_weight": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "MERT.small_object_weighting.reference_area": {
+            "reference": "<absent>",
+            "candidate": 256.0
+          },
+          "MERT.trajectory_layers": {
+            "reference": "<absent>",
+            "candidate": "last_2"
+          },
+          "MERT.wh_weight": {
+            "reference": "<absent>",
+            "candidate": 0.25
+          },
+          "MERT.xy_weight": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "SECD.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "SECD.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "SECD.alpha_mode": {
+            "reference": "<absent>",
+            "candidate": "bounded_tanh"
+          },
+          "SECD.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "SECD.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "SECD.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "SECD.temperature": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "SECD.transitions": {
+            "reference": "<absent>",
+            "candidate": [
+              "3to4"
+            ]
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav_mert_late_xywh.yml",
+              "./rtdetr_r18vd_dut_anti_uav_secd_34.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_secd_34_mert_late_xywh"
+          }
+        },
+        "MERT": {
+          "enabled": true,
+          "forward_mode": "concat",
+          "shift_pixels": 1,
+          "beta": 0.01,
+          "xy_weight": 1.0,
+          "wh_weight": 0.25,
+          "trajectory_layers": "last_2",
+          "loss_weight": 0.1,
+          "shifted_detection_loss": true,
+          "small_object_weighting": {
+            "enabled": true,
+            "reference_area": 256.0,
+            "gamma": 0.5,
+            "min_weight": 1.0,
+            "max_weight": 4.0
+          },
+          "schedule": {
+            "enabled": false
+          }
+        },
+        "SECD": {
+          "enabled": true,
+          "transitions": [
+            "3to4"
+          ],
+          "groups": 8,
+          "temperature": 0.1,
+          "eps": 1e-06,
+          "alpha_init": 0.0,
+          "alpha_max": 0.2,
+          "alpha_mode": "bounded_tanh"
+        }
+      },
+      "SECD345+MERT": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_secd_345_mert_late_xywh.yml",
+        "baseline_differences": {
+          "MERT.beta": {
+            "reference": "<absent>",
+            "candidate": 0.01
+          },
+          "MERT.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "MERT.forward_mode": {
+            "reference": "<absent>",
+            "candidate": "concat"
+          },
+          "MERT.loss_weight": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "MERT.schedule.enabled": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "MERT.shift_pixels": {
+            "reference": "<absent>",
+            "candidate": 1
+          },
+          "MERT.shifted_detection_loss": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "MERT.small_object_weighting.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "MERT.small_object_weighting.gamma": {
+            "reference": "<absent>",
+            "candidate": 0.5
+          },
+          "MERT.small_object_weighting.max_weight": {
+            "reference": "<absent>",
+            "candidate": 4.0
+          },
+          "MERT.small_object_weighting.min_weight": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "MERT.small_object_weighting.reference_area": {
+            "reference": "<absent>",
+            "candidate": 256.0
+          },
+          "MERT.trajectory_layers": {
+            "reference": "<absent>",
+            "candidate": "last_2"
+          },
+          "MERT.wh_weight": {
+            "reference": "<absent>",
+            "candidate": 0.25
+          },
+          "MERT.xy_weight": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "SECD.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "SECD.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "SECD.alpha_mode": {
+            "reference": "<absent>",
+            "candidate": "bounded_tanh"
+          },
+          "SECD.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "SECD.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "SECD.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "SECD.temperature": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "SECD.transitions": {
+            "reference": "<absent>",
+            "candidate": [
+              "3to4",
+              "4to5"
+            ]
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav_secd_34_mert_late_xywh.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_secd_345_mert_late_xywh"
+          }
+        },
+        "MERT": {
+          "enabled": true,
+          "forward_mode": "concat",
+          "shift_pixels": 1,
+          "beta": 0.01,
+          "xy_weight": 1.0,
+          "wh_weight": 0.25,
+          "trajectory_layers": "last_2",
+          "loss_weight": 0.1,
+          "shifted_detection_loss": true,
+          "small_object_weighting": {
+            "enabled": true,
+            "reference_area": 256.0,
+            "gamma": 0.5,
+            "min_weight": 1.0,
+            "max_weight": 4.0
+          },
+          "schedule": {
+            "enabled": false
+          }
+        },
+        "SECD": {
+          "enabled": true,
+          "transitions": [
+            "3to4",
+            "4to5"
+          ],
+          "groups": 8,
+          "temperature": 0.1,
+          "eps": 1e-06,
+          "alpha_init": 0.0,
+          "alpha_max": 0.2,
+          "alpha_mode": "bounded_tanh"
+        }
+      }
+    },
+    "protocol": {
+      "epoches": 72,
+      "train_batch_size_per_rank": 4,
+      "val_batch_size_per_rank": 8,
+      "optimizer": {
+        "type": "AdamW",
+        "params": [
+          {
+            "params": "^(?=.*backbone)(?=.*norm).*$",
+            "lr": 1e-05,
+            "weight_decay": 0.0
+          },
+          {
+            "params": "^(?=.*backbone)(?!.*norm).*$",
+            "lr": 1e-05
+          },
+          {
+            "params": "^(?=.*(?:encoder|decoder))(?=.*(?:norm|bias)).*$",
+            "weight_decay": 0.0
+          }
+        ],
+        "lr": 0.0001,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "weight_decay": 0.0001
+      },
+      "lr_scheduler": {
+        "type": "MultiStepLR",
+        "milestones": [
+          1000
+        ],
+        "gamma": 0.1
+      },
+      "multi_scale": [
+        480,
+        512,
+        544,
+        576,
+        608,
+        640,
+        640,
+        640,
+        672,
+        704,
+        736,
+        768,
+        800
+      ],
+      "train_transforms": {
+        "type": "Compose",
+        "ops": [
+          {
+            "type": "RandomPhotometricDistort",
+            "p": 0.5
+          },
+          {
+            "type": "RandomZoomOut",
+            "fill": 0
+          },
+          {
+            "type": "RandomIoUCrop",
+            "p": 0.8
+          },
+          {
+            "type": "SanitizeBoundingBox",
+            "min_size": 1
+          },
+          {
+            "type": "RandomHorizontalFlip"
+          },
+          {
+            "type": "Resize",
+            "size": [
+              640,
+              640
+            ]
+          },
+          {
+            "type": "ToImageTensor"
+          },
+          {
+            "type": "ConvertDtype"
+          },
+          {
+            "type": "SanitizeBoundingBox",
+            "min_size": 1
+          },
+          {
+            "type": "ConvertBox",
+            "out_fmt": "cxcywh",
+            "normalize": true
+          }
+        ]
+      },
+      "val_transforms": {
+        "type": "Compose",
+        "ops": [
+          {
+            "type": "Resize",
+            "size": [
+              640,
+              640
+            ]
+          },
+          {
+            "type": "ToImageTensor"
+          },
+          {
+            "type": "ConvertDtype"
+          }
+        ]
+      },
+      "encoder_eval_spatial_size": [
+        640,
+        640
+      ],
+      "decoder_eval_spatial_size": [
+        640,
+        640
+      ],
+      "PResNet_pretrained_training_policy": true,
+      "use_amp_yaml": false,
+      "use_ema": true,
+      "clip_max_norm": 0.1,
+      "seed": "CLI-controlled; use the same --seed for every training run"
+    }
+  },
+  "measurement_protocol": {
+    "input": [
+      1,
+      3,
+      640,
+      640
+    ],
+    "device": "cpu",
+    "dtype": "float32",
+    "model_mode": "eval, non-deploy (same as original validation/test)",
+    "AMP": false,
+    "seed": 0,
+    "threads": 4,
+    "pretrained": "Disabled ONLY in profiling memory; no download or YAML edits",
+    "weights": "random initialization; not accuracy evaluation",
+    "scope": "One detector forward; no transforms/postprocessor/criterion/MERT training",
+    "environment_scope": "Selective source import does NOT verify dataset or full training dependencies; no dependency/model stubs are used.",
+    "model_process_isolation": "Fresh subprocess per method avoids global registry leakage",
+    "flops_warning": "LOWER BOUNDS, NOT total model FLOPs. Profiler zero-FLOP operators include grid sampling, normalization, softmax, fused attention, and some SECD arithmetic; operator list also includes metadata. Hook MACs count only executed Conv2d/Linear modules, not functional attention projections. 2*MACs is stated only for the hook metric."
+  },
+  "metrics": {
+    "Baseline": {
+      "method": "Baseline",
+      "params": 20083028,
+      "trainable_params": 20083028,
+      "conv_linear_macs_lower_bound": 30006963200,
+      "conv_linear_flops_lower_bound_2x_macs": 60013926400,
+      "torch_profiler_flops_lower_bound": 61151874600,
+      "torch_profiler_gflops_lower_bound": 61.1518746,
+      "counted_profiler_operators": {
+        "aten::conv2d": {
+          "flops": 51295027200,
+          "events": 69
+        },
+        "aten::add": {
+          "flops": 12762200,
+          "events": 49
+        },
+        "aten::mm": {
+          "flops": 157286400,
+          "events": 3
+        },
+        "aten::bmm": {
+          "flops": 558284800,
+          "events": 11
+        },
+        "aten::addmm": {
+          "flops": 9125222400,
+          "events": 51
+        },
+        "aten::mul": {
+          "flops": 3291600,
+          "events": 13
+        }
+      },
+      "uncounted_operator_events_including_metadata": {
+        "aten::convolution": 69,
+        "aten::_convolution": 69,
+        "aten::mkldnn_convolution": 69,
+        "aten::empty": 612,
+        "aten::as_strided_": 73,
+        "aten::batch_norm": 69,
+        "aten::_batch_norm_impl_index": 69,
+        "aten::native_batch_norm": 69,
+        "aten::empty_like": 77,
+        "aten::relu_": 30,
+        "aten::clamp_min_": 30,
+        "aten::max_pool2d": 1,
+        "aten::max_pool2d_with_indices": 1,
+        "aten::avg_pool2d": 3,
+        "aten::flatten": 25,
+        "aten::_reshape_alias": 78,
+        "aten::permute": 33,
+        "aten::as_strided": 337,
+        "aten::transpose": 89,
+        "aten::chunk": 8,
+        "aten::split": 8,
+        "aten::narrow": 34,
+        "aten::slice": 85,
+        "aten::linear": 57,
+        "aten::t": 57,
+        "aten::matmul": 14,
+        "aten::reshape": 53,
+        "aten::resolve_conj": 127,
+        "aten::_unsafe_view": 14,
+        "aten::add_": 6,
+        "aten::view": 155,
+        "aten::scaled_dot_product_attention": 4,
+        "aten::_scaled_dot_product_attention_math": 4,
+        "aten::div": 14,
+        "aten::to": 38,
+        "aten::_to_copy": 24,
+        "aten::empty_strided": 24,
+        "aten::copy_": 87,
+        "aten::expand": 79,
+        "aten::softmax": 7,
+        "aten::_softmax": 7,
+        "aten::contiguous": 8,
+        "aten::clone": 8,
+        "aten::dropout": 15,
+        "aten::layer_norm": 12,
+        "aten::native_layer_norm": 12,
+        "aten::gelu": 1,
+        "aten::silu_": 28,
+        "aten::upsample_nearest2d": 2,
+        "aten::concat": 5,
+        "aten::cat": 10,
+        "aten::ones": 2,
+        "aten::fill_": 5,
+        "aten::max": 1,
+        "aten::unsqueeze_": 2,
+        "aten::squeeze_": 2,
+        "aten::topk": 1,
+        "aten::unsqueeze": 18,
+        "aten::repeat": 3,
+        "aten::alias": 3,
+        "aten::unfold": 9,
+        "aten::expand_as": 3,
+        "aten::gather": 3,
+        "aten::sigmoid": 5,
+        "aten::detach": 2,
+        "aten::split_with_sizes": 3,
+        "aten::sub": 6,
+        "aten::select": 11,
+        "aten::grid_sampler": 9,
+        "aten::grid_sampler_2d": 9,
+        "aten::stack": 5,
+        "aten::sum": 3,
+        "aten::relu": 3,
+        "aten::clamp_min": 3,
+        "aten::clamp": 12,
+        "aten::clip": 9,
+        "aten::rsub": 3,
+        "aten::log": 3
+      },
+      "forward_calls": 1,
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "output_sha256": "71aa26c320b0dcaf37a516ad14ef391408b0a3fff8855846e7e60bebb8ce249b",
+      "state_sha256": "09487e88ed2f86587895d5894d209e045d4d5dffcffcc33d964cfdaa5cf97e85",
+      "structure_sha256": "3fcfe2e7a35d2e57da5d1ef5f22d33cbee83a15fe9c6ba73e1630860b3ad8809",
+      "module_execution_sha256": "7543c52856ed0179427a6839a8f9213616807ef154f3e31c2537ddded6d21a97",
+      "torch_version": "2.0.0+cpu",
+      "source_import": "selective-real-model-modules"
+    },
+    "MERT": {
+      "method": "MERT",
+      "params": 20083028,
+      "trainable_params": 20083028,
+      "conv_linear_macs_lower_bound": 30006963200,
+      "conv_linear_flops_lower_bound_2x_macs": 60013926400,
+      "torch_profiler_flops_lower_bound": 61151874600,
+      "torch_profiler_gflops_lower_bound": 61.1518746,
+      "counted_profiler_operators": {
+        "aten::conv2d": {
+          "flops": 51295027200,
+          "events": 69
+        },
+        "aten::add": {
+          "flops": 12762200,
+          "events": 49
+        },
+        "aten::mm": {
+          "flops": 157286400,
+          "events": 3
+        },
+        "aten::bmm": {
+          "flops": 558284800,
+          "events": 11
+        },
+        "aten::addmm": {
+          "flops": 9125222400,
+          "events": 51
+        },
+        "aten::mul": {
+          "flops": 3291600,
+          "events": 13
+        }
+      },
+      "uncounted_operator_events_including_metadata": {
+        "aten::convolution": 69,
+        "aten::_convolution": 69,
+        "aten::mkldnn_convolution": 69,
+        "aten::empty": 612,
+        "aten::as_strided_": 73,
+        "aten::batch_norm": 69,
+        "aten::_batch_norm_impl_index": 69,
+        "aten::native_batch_norm": 69,
+        "aten::empty_like": 77,
+        "aten::relu_": 30,
+        "aten::clamp_min_": 30,
+        "aten::max_pool2d": 1,
+        "aten::max_pool2d_with_indices": 1,
+        "aten::avg_pool2d": 3,
+        "aten::flatten": 25,
+        "aten::_reshape_alias": 78,
+        "aten::permute": 33,
+        "aten::as_strided": 337,
+        "aten::transpose": 89,
+        "aten::chunk": 8,
+        "aten::split": 8,
+        "aten::narrow": 34,
+        "aten::slice": 85,
+        "aten::linear": 57,
+        "aten::t": 57,
+        "aten::matmul": 14,
+        "aten::reshape": 53,
+        "aten::resolve_conj": 127,
+        "aten::_unsafe_view": 14,
+        "aten::add_": 6,
+        "aten::view": 155,
+        "aten::scaled_dot_product_attention": 4,
+        "aten::_scaled_dot_product_attention_math": 4,
+        "aten::div": 14,
+        "aten::to": 38,
+        "aten::_to_copy": 24,
+        "aten::empty_strided": 24,
+        "aten::copy_": 87,
+        "aten::expand": 79,
+        "aten::softmax": 7,
+        "aten::_softmax": 7,
+        "aten::contiguous": 8,
+        "aten::clone": 8,
+        "aten::dropout": 15,
+        "aten::layer_norm": 12,
+        "aten::native_layer_norm": 12,
+        "aten::gelu": 1,
+        "aten::silu_": 28,
+        "aten::upsample_nearest2d": 2,
+        "aten::concat": 5,
+        "aten::cat": 10,
+        "aten::ones": 2,
+        "aten::fill_": 5,
+        "aten::max": 1,
+        "aten::unsqueeze_": 2,
+        "aten::squeeze_": 2,
+        "aten::topk": 1,
+        "aten::unsqueeze": 18,
+        "aten::repeat": 3,
+        "aten::alias": 3,
+        "aten::unfold": 9,
+        "aten::expand_as": 3,
+        "aten::gather": 3,
+        "aten::sigmoid": 5,
+        "aten::detach": 2,
+        "aten::split_with_sizes": 3,
+        "aten::sub": 6,
+        "aten::select": 11,
+        "aten::grid_sampler": 9,
+        "aten::grid_sampler_2d": 9,
+        "aten::stack": 5,
+        "aten::sum": 3,
+        "aten::relu": 3,
+        "aten::clamp_min": 3,
+        "aten::clamp": 12,
+        "aten::clip": 9,
+        "aten::rsub": 3,
+        "aten::log": 3
+      },
+      "forward_calls": 1,
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "output_sha256": "71aa26c320b0dcaf37a516ad14ef391408b0a3fff8855846e7e60bebb8ce249b",
+      "state_sha256": "09487e88ed2f86587895d5894d209e045d4d5dffcffcc33d964cfdaa5cf97e85",
+      "structure_sha256": "3fcfe2e7a35d2e57da5d1ef5f22d33cbee83a15fe9c6ba73e1630860b3ad8809",
+      "module_execution_sha256": "7543c52856ed0179427a6839a8f9213616807ef154f3e31c2537ddded6d21a97",
+      "torch_version": "2.0.0+cpu",
+      "source_import": "selective-real-model-modules"
+    },
+    "SECD34": {
+      "method": "SECD34",
+      "params": 20116309,
+      "trainable_params": 20116309,
+      "conv_linear_macs_lower_bound": 30059392000,
+      "conv_linear_flops_lower_bound_2x_macs": 60118784000,
+      "torch_profiler_flops_lower_bound": 61257269802,
+      "torch_profiler_gflops_lower_bound": 61.257269802,
+      "counted_profiler_operators": {
+        "aten::conv2d": {
+          "flops": 51399884800,
+          "events": 70
+        },
+        "aten::add": {
+          "flops": 13223000,
+          "events": 51
+        },
+        "aten::mul": {
+          "flops": 3368402,
+          "events": 18
+        },
+        "aten::mm": {
+          "flops": 157286400,
+          "events": 3
+        },
+        "aten::bmm": {
+          "flops": 558284800,
+          "events": 11
+        },
+        "aten::addmm": {
+          "flops": 9125222400,
+          "events": 51
+        }
+      },
+      "uncounted_operator_events_including_metadata": {
+        "aten::convolution": 70,
+        "aten::_convolution": 70,
+        "aten::mkldnn_convolution": 70,
+        "aten::empty": 620,
+        "aten::as_strided_": 74,
+        "aten::batch_norm": 70,
+        "aten::_batch_norm_impl_index": 70,
+        "aten::native_batch_norm": 70,
+        "aten::empty_like": 78,
+        "aten::relu_": 30,
+        "aten::clamp_min_": 30,
+        "aten::max_pool2d": 1,
+        "aten::max_pool2d_with_indices": 1,
+        "aten::avg_pool2d": 3,
+        "aten::slice": 102,
+        "aten::as_strided": 359,
+        "aten::stack": 6,
+        "aten::cat": 11,
+        "aten::narrow": 35,
+        "aten::view": 156,
+        "aten::mean": 2,
+        "aten::sum": 7,
+        "aten::fill_": 9,
+        "aten::div_": 2,
+        "aten::to": 50,
+        "aten::_to_copy": 32,
+        "aten::empty_strided": 32,
+        "aten::copy_": 95,
+        "aten::sub": 8,
+        "aten::reshape": 55,
+        "aten::_reshape_alias": 80,
+        "aten::square": 2,
+        "aten::pow": 2,
+        "aten::result_type": 2,
+        "aten::sqrt": 1,
+        "aten::div": 16,
+        "aten::softmax": 8,
+        "aten::_softmax": 8,
+        "aten::clamp": 13,
+        "aten::unsqueeze": 20,
+        "aten::tanh": 1,
+        "aten::flatten": 25,
+        "aten::permute": 33,
+        "aten::transpose": 89,
+        "aten::chunk": 8,
+        "aten::split": 8,
+        "aten::linear": 57,
+        "aten::t": 57,
+        "aten::matmul": 14,
+        "aten::resolve_conj": 127,
+        "aten::_unsafe_view": 14,
+        "aten::add_": 6,
+        "aten::scaled_dot_product_attention": 4,
+        "aten::_scaled_dot_product_attention_math": 4,
+        "aten::expand": 79,
+        "aten::contiguous": 8,
+        "aten::clone": 8,
+        "aten::dropout": 15,
+        "aten::layer_norm": 12,
+        "aten::native_layer_norm": 12,
+        "aten::gelu": 1,
+        "aten::silu_": 28,
+        "aten::upsample_nearest2d": 2,
+        "aten::concat": 5,
+        "aten::ones": 2,
+        "aten::max": 1,
+        "aten::unsqueeze_": 2,
+        "aten::squeeze_": 2,
+        "aten::topk": 1,
+        "aten::repeat": 3,
+        "aten::alias": 3,
+        "aten::unfold": 9,
+        "aten::expand_as": 3,
+        "aten::gather": 3,
+        "aten::sigmoid": 5,
+        "aten::detach": 2,
+        "aten::split_with_sizes": 3,
+        "aten::select": 11,
+        "aten::grid_sampler": 9,
+        "aten::grid_sampler_2d": 9,
+        "aten::relu": 3,
+        "aten::clamp_min": 3,
+        "aten::clip": 9,
+        "aten::rsub": 3,
+        "aten::log": 3
+      },
+      "forward_calls": 1,
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "output_sha256": "71aa26c320b0dcaf37a516ad14ef391408b0a3fff8855846e7e60bebb8ce249b",
+      "state_sha256": "7b869abdafc0ed9d799a8923d5ec179bf9aa8b9b5d3de584464ba4a3fcc5d50c",
+      "structure_sha256": "148796382667e119b4e4e4fb237d888b77a9d36bbacc301ce8f3766ff54871d8",
+      "module_execution_sha256": "4903ddd1960b4e4d0b4a55d99bbe739608f346757cb8769dc0bb672d8b3cf8e1",
+      "torch_version": "2.0.0+cpu",
+      "source_import": "selective-real-model-modules"
+    },
+    "SECD45": {
+      "method": "SECD45",
+      "params": 20215125,
+      "trainable_params": 20215125,
+      "conv_linear_macs_lower_bound": 30059392000,
+      "conv_linear_flops_lower_bound_2x_macs": 60118784000,
+      "torch_profiler_flops_lower_bound": 61256969002,
+      "torch_profiler_gflops_lower_bound": 61.256969002,
+      "counted_profiler_operators": {
+        "aten::conv2d": {
+          "flops": 51399884800,
+          "events": 70
+        },
+        "aten::add": {
+          "flops": 12979800,
+          "events": 51
+        },
+        "aten::mul": {
+          "flops": 3310802,
+          "events": 18
+        },
+        "aten::mm": {
+          "flops": 157286400,
+          "events": 3
+        },
+        "aten::bmm": {
+          "flops": 558284800,
+          "events": 11
+        },
+        "aten::addmm": {
+          "flops": 9125222400,
+          "events": 51
+        }
+      },
+      "uncounted_operator_events_including_metadata": {
+        "aten::convolution": 70,
+        "aten::_convolution": 70,
+        "aten::mkldnn_convolution": 70,
+        "aten::empty": 620,
+        "aten::as_strided_": 74,
+        "aten::batch_norm": 70,
+        "aten::_batch_norm_impl_index": 70,
+        "aten::native_batch_norm": 70,
+        "aten::empty_like": 78,
+        "aten::relu_": 30,
+        "aten::clamp_min_": 30,
+        "aten::max_pool2d": 1,
+        "aten::max_pool2d_with_indices": 1,
+        "aten::avg_pool2d": 3,
+        "aten::slice": 102,
+        "aten::as_strided": 359,
+        "aten::stack": 6,
+        "aten::cat": 11,
+        "aten::narrow": 35,
+        "aten::view": 156,
+        "aten::mean": 2,
+        "aten::sum": 7,
+        "aten::fill_": 9,
+        "aten::div_": 2,
+        "aten::to": 50,
+        "aten::_to_copy": 32,
+        "aten::empty_strided": 32,
+        "aten::copy_": 95,
+        "aten::sub": 8,
+        "aten::reshape": 55,
+        "aten::_reshape_alias": 80,
+        "aten::square": 2,
+        "aten::pow": 2,
+        "aten::result_type": 2,
+        "aten::sqrt": 1,
+        "aten::div": 16,
+        "aten::softmax": 8,
+        "aten::_softmax": 8,
+        "aten::clamp": 13,
+        "aten::unsqueeze": 20,
+        "aten::tanh": 1,
+        "aten::flatten": 25,
+        "aten::permute": 33,
+        "aten::transpose": 89,
+        "aten::chunk": 8,
+        "aten::split": 8,
+        "aten::linear": 57,
+        "aten::t": 57,
+        "aten::matmul": 14,
+        "aten::resolve_conj": 127,
+        "aten::_unsafe_view": 14,
+        "aten::add_": 6,
+        "aten::scaled_dot_product_attention": 4,
+        "aten::_scaled_dot_product_attention_math": 4,
+        "aten::expand": 79,
+        "aten::contiguous": 8,
+        "aten::clone": 8,
+        "aten::dropout": 15,
+        "aten::layer_norm": 12,
+        "aten::native_layer_norm": 12,
+        "aten::gelu": 1,
+        "aten::silu_": 28,
+        "aten::upsample_nearest2d": 2,
+        "aten::concat": 5,
+        "aten::ones": 2,
+        "aten::max": 1,
+        "aten::unsqueeze_": 2,
+        "aten::squeeze_": 2,
+        "aten::topk": 1,
+        "aten::repeat": 3,
+        "aten::alias": 3,
+        "aten::unfold": 9,
+        "aten::expand_as": 3,
+        "aten::gather": 3,
+        "aten::sigmoid": 5,
+        "aten::detach": 2,
+        "aten::split_with_sizes": 3,
+        "aten::select": 11,
+        "aten::grid_sampler": 9,
+        "aten::grid_sampler_2d": 9,
+        "aten::relu": 3,
+        "aten::clamp_min": 3,
+        "aten::clip": 9,
+        "aten::rsub": 3,
+        "aten::log": 3
+      },
+      "forward_calls": 1,
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "output_sha256": "71aa26c320b0dcaf37a516ad14ef391408b0a3fff8855846e7e60bebb8ce249b",
+      "state_sha256": "90a8d73850d45b321c9cb26eb9d1e7af87724dce17c83e24c6444dd8c9b92951",
+      "structure_sha256": "67dc8a9e785e71f9990da32486a0cbc8b6af2a8e06809ce13bb7fd3f7751848a",
+      "module_execution_sha256": "448c1ed74b7e9998d3602ab19c5fb1aa63a8e5eb280817ffa7a3606f1388a0c1",
+      "torch_version": "2.0.0+cpu",
+      "source_import": "selective-real-model-modules"
+    },
+    "SECD345": {
+      "method": "SECD345",
+      "params": 20248406,
+      "trainable_params": 20248406,
+      "conv_linear_macs_lower_bound": 30111820800,
+      "conv_linear_flops_lower_bound_2x_macs": 60223641600,
+      "torch_profiler_flops_lower_bound": 61362364204,
+      "torch_profiler_gflops_lower_bound": 61.362364204,
+      "counted_profiler_operators": {
+        "aten::conv2d": {
+          "flops": 51504742400,
+          "events": 71
+        },
+        "aten::add": {
+          "flops": 13440600,
+          "events": 53
+        },
+        "aten::mul": {
+          "flops": 3387604,
+          "events": 23
+        },
+        "aten::mm": {
+          "flops": 157286400,
+          "events": 3
+        },
+        "aten::bmm": {
+          "flops": 558284800,
+          "events": 11
+        },
+        "aten::addmm": {
+          "flops": 9125222400,
+          "events": 51
+        }
+      },
+      "uncounted_operator_events_including_metadata": {
+        "aten::convolution": 71,
+        "aten::_convolution": 71,
+        "aten::mkldnn_convolution": 71,
+        "aten::empty": 628,
+        "aten::as_strided_": 75,
+        "aten::batch_norm": 71,
+        "aten::_batch_norm_impl_index": 71,
+        "aten::native_batch_norm": 71,
+        "aten::empty_like": 79,
+        "aten::relu_": 30,
+        "aten::clamp_min_": 30,
+        "aten::max_pool2d": 1,
+        "aten::max_pool2d_with_indices": 1,
+        "aten::avg_pool2d": 3,
+        "aten::slice": 119,
+        "aten::as_strided": 381,
+        "aten::stack": 7,
+        "aten::cat": 12,
+        "aten::narrow": 36,
+        "aten::view": 157,
+        "aten::mean": 4,
+        "aten::sum": 11,
+        "aten::fill_": 13,
+        "aten::div_": 4,
+        "aten::to": 62,
+        "aten::_to_copy": 40,
+        "aten::empty_strided": 40,
+        "aten::copy_": 103,
+        "aten::sub": 10,
+        "aten::reshape": 57,
+        "aten::_reshape_alias": 82,
+        "aten::square": 4,
+        "aten::pow": 4,
+        "aten::result_type": 4,
+        "aten::sqrt": 2,
+        "aten::div": 18,
+        "aten::softmax": 9,
+        "aten::_softmax": 9,
+        "aten::clamp": 14,
+        "aten::unsqueeze": 22,
+        "aten::tanh": 2,
+        "aten::flatten": 25,
+        "aten::permute": 33,
+        "aten::transpose": 89,
+        "aten::chunk": 8,
+        "aten::split": 8,
+        "aten::linear": 57,
+        "aten::t": 57,
+        "aten::matmul": 14,
+        "aten::resolve_conj": 127,
+        "aten::_unsafe_view": 14,
+        "aten::add_": 6,
+        "aten::scaled_dot_product_attention": 4,
+        "aten::_scaled_dot_product_attention_math": 4,
+        "aten::expand": 79,
+        "aten::contiguous": 8,
+        "aten::clone": 8,
+        "aten::dropout": 15,
+        "aten::layer_norm": 12,
+        "aten::native_layer_norm": 12,
+        "aten::gelu": 1,
+        "aten::silu_": 28,
+        "aten::upsample_nearest2d": 2,
+        "aten::concat": 5,
+        "aten::ones": 2,
+        "aten::max": 1,
+        "aten::unsqueeze_": 2,
+        "aten::squeeze_": 2,
+        "aten::topk": 1,
+        "aten::repeat": 3,
+        "aten::alias": 3,
+        "aten::unfold": 9,
+        "aten::expand_as": 3,
+        "aten::gather": 3,
+        "aten::sigmoid": 5,
+        "aten::detach": 2,
+        "aten::split_with_sizes": 3,
+        "aten::select": 11,
+        "aten::grid_sampler": 9,
+        "aten::grid_sampler_2d": 9,
+        "aten::relu": 3,
+        "aten::clamp_min": 3,
+        "aten::clip": 9,
+        "aten::rsub": 3,
+        "aten::log": 3
+      },
+      "forward_calls": 1,
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "output_sha256": "71aa26c320b0dcaf37a516ad14ef391408b0a3fff8855846e7e60bebb8ce249b",
+      "state_sha256": "12d8b9c05debe20ed183b4b89bd3a3eec429acd8bd886cb01362535a5c79ffd3",
+      "structure_sha256": "eac10100d91964bec15eb13edea953be8256a342120d02754b92bd41c52859ab",
+      "module_execution_sha256": "029d7463cd108b7a1c610e700ccc36ee722aa91f7f8a632e440336600c494df7",
+      "torch_version": "2.0.0+cpu",
+      "source_import": "selective-real-model-modules"
+    },
+    "SECD34+MERT": {
+      "method": "SECD34+MERT",
+      "params": 20116309,
+      "trainable_params": 20116309,
+      "conv_linear_macs_lower_bound": 30059392000,
+      "conv_linear_flops_lower_bound_2x_macs": 60118784000,
+      "torch_profiler_flops_lower_bound": 61257269802,
+      "torch_profiler_gflops_lower_bound": 61.257269802,
+      "counted_profiler_operators": {
+        "aten::conv2d": {
+          "flops": 51399884800,
+          "events": 70
+        },
+        "aten::add": {
+          "flops": 13223000,
+          "events": 51
+        },
+        "aten::mul": {
+          "flops": 3368402,
+          "events": 18
+        },
+        "aten::mm": {
+          "flops": 157286400,
+          "events": 3
+        },
+        "aten::bmm": {
+          "flops": 558284800,
+          "events": 11
+        },
+        "aten::addmm": {
+          "flops": 9125222400,
+          "events": 51
+        }
+      },
+      "uncounted_operator_events_including_metadata": {
+        "aten::convolution": 70,
+        "aten::_convolution": 70,
+        "aten::mkldnn_convolution": 70,
+        "aten::empty": 620,
+        "aten::as_strided_": 74,
+        "aten::batch_norm": 70,
+        "aten::_batch_norm_impl_index": 70,
+        "aten::native_batch_norm": 70,
+        "aten::empty_like": 78,
+        "aten::relu_": 30,
+        "aten::clamp_min_": 30,
+        "aten::max_pool2d": 1,
+        "aten::max_pool2d_with_indices": 1,
+        "aten::avg_pool2d": 3,
+        "aten::slice": 102,
+        "aten::as_strided": 359,
+        "aten::stack": 6,
+        "aten::cat": 11,
+        "aten::narrow": 35,
+        "aten::view": 156,
+        "aten::mean": 2,
+        "aten::sum": 7,
+        "aten::fill_": 9,
+        "aten::div_": 2,
+        "aten::to": 50,
+        "aten::_to_copy": 32,
+        "aten::empty_strided": 32,
+        "aten::copy_": 95,
+        "aten::sub": 8,
+        "aten::reshape": 55,
+        "aten::_reshape_alias": 80,
+        "aten::square": 2,
+        "aten::pow": 2,
+        "aten::result_type": 2,
+        "aten::sqrt": 1,
+        "aten::div": 16,
+        "aten::softmax": 8,
+        "aten::_softmax": 8,
+        "aten::clamp": 13,
+        "aten::unsqueeze": 20,
+        "aten::tanh": 1,
+        "aten::flatten": 25,
+        "aten::permute": 33,
+        "aten::transpose": 89,
+        "aten::chunk": 8,
+        "aten::split": 8,
+        "aten::linear": 57,
+        "aten::t": 57,
+        "aten::matmul": 14,
+        "aten::resolve_conj": 127,
+        "aten::_unsafe_view": 14,
+        "aten::add_": 6,
+        "aten::scaled_dot_product_attention": 4,
+        "aten::_scaled_dot_product_attention_math": 4,
+        "aten::expand": 79,
+        "aten::contiguous": 8,
+        "aten::clone": 8,
+        "aten::dropout": 15,
+        "aten::layer_norm": 12,
+        "aten::native_layer_norm": 12,
+        "aten::gelu": 1,
+        "aten::silu_": 28,
+        "aten::upsample_nearest2d": 2,
+        "aten::concat": 5,
+        "aten::ones": 2,
+        "aten::max": 1,
+        "aten::unsqueeze_": 2,
+        "aten::squeeze_": 2,
+        "aten::topk": 1,
+        "aten::repeat": 3,
+        "aten::alias": 3,
+        "aten::unfold": 9,
+        "aten::expand_as": 3,
+        "aten::gather": 3,
+        "aten::sigmoid": 5,
+        "aten::detach": 2,
+        "aten::split_with_sizes": 3,
+        "aten::select": 11,
+        "aten::grid_sampler": 9,
+        "aten::grid_sampler_2d": 9,
+        "aten::relu": 3,
+        "aten::clamp_min": 3,
+        "aten::clip": 9,
+        "aten::rsub": 3,
+        "aten::log": 3
+      },
+      "forward_calls": 1,
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "output_sha256": "71aa26c320b0dcaf37a516ad14ef391408b0a3fff8855846e7e60bebb8ce249b",
+      "state_sha256": "7b869abdafc0ed9d799a8923d5ec179bf9aa8b9b5d3de584464ba4a3fcc5d50c",
+      "structure_sha256": "148796382667e119b4e4e4fb237d888b77a9d36bbacc301ce8f3766ff54871d8",
+      "module_execution_sha256": "4903ddd1960b4e4d0b4a55d99bbe739608f346757cb8769dc0bb672d8b3cf8e1",
+      "torch_version": "2.0.0+cpu",
+      "source_import": "selective-real-model-modules"
+    },
+    "SECD345+MERT": {
+      "method": "SECD345+MERT",
+      "params": 20248406,
+      "trainable_params": 20248406,
+      "conv_linear_macs_lower_bound": 30111820800,
+      "conv_linear_flops_lower_bound_2x_macs": 60223641600,
+      "torch_profiler_flops_lower_bound": 61362364204,
+      "torch_profiler_gflops_lower_bound": 61.362364204,
+      "counted_profiler_operators": {
+        "aten::conv2d": {
+          "flops": 51504742400,
+          "events": 71
+        },
+        "aten::add": {
+          "flops": 13440600,
+          "events": 53
+        },
+        "aten::mul": {
+          "flops": 3387604,
+          "events": 23
+        },
+        "aten::mm": {
+          "flops": 157286400,
+          "events": 3
+        },
+        "aten::bmm": {
+          "flops": 558284800,
+          "events": 11
+        },
+        "aten::addmm": {
+          "flops": 9125222400,
+          "events": 51
+        }
+      },
+      "uncounted_operator_events_including_metadata": {
+        "aten::convolution": 71,
+        "aten::_convolution": 71,
+        "aten::mkldnn_convolution": 71,
+        "aten::empty": 628,
+        "aten::as_strided_": 75,
+        "aten::batch_norm": 71,
+        "aten::_batch_norm_impl_index": 71,
+        "aten::native_batch_norm": 71,
+        "aten::empty_like": 79,
+        "aten::relu_": 30,
+        "aten::clamp_min_": 30,
+        "aten::max_pool2d": 1,
+        "aten::max_pool2d_with_indices": 1,
+        "aten::avg_pool2d": 3,
+        "aten::slice": 119,
+        "aten::as_strided": 381,
+        "aten::stack": 7,
+        "aten::cat": 12,
+        "aten::narrow": 36,
+        "aten::view": 157,
+        "aten::mean": 4,
+        "aten::sum": 11,
+        "aten::fill_": 13,
+        "aten::div_": 4,
+        "aten::to": 62,
+        "aten::_to_copy": 40,
+        "aten::empty_strided": 40,
+        "aten::copy_": 103,
+        "aten::sub": 10,
+        "aten::reshape": 57,
+        "aten::_reshape_alias": 82,
+        "aten::square": 4,
+        "aten::pow": 4,
+        "aten::result_type": 4,
+        "aten::sqrt": 2,
+        "aten::div": 18,
+        "aten::softmax": 9,
+        "aten::_softmax": 9,
+        "aten::clamp": 14,
+        "aten::unsqueeze": 22,
+        "aten::tanh": 2,
+        "aten::flatten": 25,
+        "aten::permute": 33,
+        "aten::transpose": 89,
+        "aten::chunk": 8,
+        "aten::split": 8,
+        "aten::linear": 57,
+        "aten::t": 57,
+        "aten::matmul": 14,
+        "aten::resolve_conj": 127,
+        "aten::_unsafe_view": 14,
+        "aten::add_": 6,
+        "aten::scaled_dot_product_attention": 4,
+        "aten::_scaled_dot_product_attention_math": 4,
+        "aten::expand": 79,
+        "aten::contiguous": 8,
+        "aten::clone": 8,
+        "aten::dropout": 15,
+        "aten::layer_norm": 12,
+        "aten::native_layer_norm": 12,
+        "aten::gelu": 1,
+        "aten::silu_": 28,
+        "aten::upsample_nearest2d": 2,
+        "aten::concat": 5,
+        "aten::ones": 2,
+        "aten::max": 1,
+        "aten::unsqueeze_": 2,
+        "aten::squeeze_": 2,
+        "aten::topk": 1,
+        "aten::repeat": 3,
+        "aten::alias": 3,
+        "aten::unfold": 9,
+        "aten::expand_as": 3,
+        "aten::gather": 3,
+        "aten::sigmoid": 5,
+        "aten::detach": 2,
+        "aten::split_with_sizes": 3,
+        "aten::select": 11,
+        "aten::grid_sampler": 9,
+        "aten::grid_sampler_2d": 9,
+        "aten::relu": 3,
+        "aten::clamp_min": 3,
+        "aten::clip": 9,
+        "aten::rsub": 3,
+        "aten::log": 3
+      },
+      "forward_calls": 1,
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "output_sha256": "71aa26c320b0dcaf37a516ad14ef391408b0a3fff8855846e7e60bebb8ce249b",
+      "state_sha256": "12d8b9c05debe20ed183b4b89bd3a3eec429acd8bd886cb01362535a5c79ffd3",
+      "structure_sha256": "eac10100d91964bec15eb13edea953be8256a342120d02754b92bd41c52859ab",
+      "module_execution_sha256": "029d7463cd108b7a1c610e700ccc36ee722aa91f7f8a632e440336600c494df7",
+      "torch_version": "2.0.0+cpu",
+      "source_import": "selective-real-model-modules"
+    }
+  },
+  "inference_pair_equivalence": {
+    "Baseline == MERT": {
+      "passed": true,
+      "compared_fields": [
+        "params",
+        "trainable_params",
+        "structure_sha256",
+        "state_sha256",
+        "output_shapes",
+        "output_sha256",
+        "forward_calls",
+        "conv_linear_macs_lower_bound",
+        "torch_profiler_flops_lower_bound",
+        "counted_profiler_operators",
+        "module_execution_sha256"
+      ],
+      "mismatches": [],
+      "uncounted_operator_event_counts_equal": true,
+      "uncounted_events_note": "Diagnostic only: PyTorch 2.0 Windows event counts can vary even for repeats of the same model/config. Actual module execution trace is compared separately."
+    },
+    "SECD34 == SECD34+MERT": {
+      "passed": true,
+      "compared_fields": [
+        "params",
+        "trainable_params",
+        "structure_sha256",
+        "state_sha256",
+        "output_shapes",
+        "output_sha256",
+        "forward_calls",
+        "conv_linear_macs_lower_bound",
+        "torch_profiler_flops_lower_bound",
+        "counted_profiler_operators",
+        "module_execution_sha256"
+      ],
+      "mismatches": [],
+      "uncounted_operator_event_counts_equal": true,
+      "uncounted_events_note": "Diagnostic only: PyTorch 2.0 Windows event counts can vary even for repeats of the same model/config. Actual module execution trace is compared separately."
+    },
+    "SECD345 == SECD345+MERT": {
+      "passed": true,
+      "compared_fields": [
+        "params",
+        "trainable_params",
+        "structure_sha256",
+        "state_sha256",
+        "output_shapes",
+        "output_sha256",
+        "forward_calls",
+        "conv_linear_macs_lower_bound",
+        "torch_profiler_flops_lower_bound",
+        "counted_profiler_operators",
+        "module_execution_sha256"
+      ],
+      "mismatches": [],
+      "uncounted_operator_event_counts_equal": true,
+      "uncounted_events_note": "Diagnostic only: PyTorch 2.0 Windows event counts can vary even for repeats of the same model/config. Actual module execution trace is compared separately."
+    }
+  }
+}

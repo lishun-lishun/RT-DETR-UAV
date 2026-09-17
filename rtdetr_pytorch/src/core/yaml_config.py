@@ -15,7 +15,12 @@ class YAMLConfig(BaseConfig):
     def __init__(self, cfg_path: str, **kwargs) -> None:
         super().__init__()
 
-        cfg = load_config(cfg_path)
+        # The original resolver has a mutable default dict. Every experiment
+        # needs its own config so previous MERT/SECD switches cannot leak in.
+        cfg = load_config(cfg_path, {})
+        # Clear a previous shared SECD setting even when loading official YAML
+        # in the same process. Default-off does not instantiate any module.
+        cfg.setdefault('SECD', {'enabled': False})
         merge_dict(cfg, kwargs)
 
         # pprint(cfg)

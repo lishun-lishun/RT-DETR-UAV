@@ -1,0 +1,15 @@
+__include__: [
+  './rtdetr_r18vd_dut_anti_uav.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_secd_34
+
+SECD:
+  enabled: true
+  transitions: [3to4]
+  groups: 8
+  temperature: 0.10
+  eps: 1.0e-6
+  alpha_init: 0.0
+  alpha_max: 0.20
+  alpha_mode: bounded_tanh

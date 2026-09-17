@@ -1,0 +1,8 @@
+__include__: [
+  './rtdetr_r18vd_dut_anti_uav_secd_34.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_secd_345
+
+SECD:
+  transitions: [3to4, 4to5]

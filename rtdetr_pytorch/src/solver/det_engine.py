@@ -16,6 +16,32 @@ import torch.amp
 
 from src.data import CocoEvaluator
 from src.misc import (MetricLogger, SmoothedValue, reduce_dict)
+from .mert import MERT, disable_internal_multiscale, split_concatenated_outputs, average_loss_dicts
+
+
+def _forward_mert_views(model, pair, mert):
+    # One concatenated detector call is the distributed-safe formal path.
+    with disable_internal_multiscale(model):
+        if mert.forward_mode == 'concat':
+            return model(pair.concatenated_samples, pair.concatenated_targets)
+        return (model(pair.samples, pair.targets),
+                model(pair.shifted_samples, pair.shifted_targets))
+
+
+def _mert_train_losses(outputs, pair, mert, criterion):
+    if mert.forward_mode == 'concat':
+        original, shifted = split_concatenated_outputs(outputs, len(pair.targets))
+        # Preserve original criterion normalization/DN on the concatenated
+        # batch. Its matcher still processes each image independently.
+        losses = criterion(outputs, pair.concatenated_targets) \
+            if mert.shifted_detection_loss else criterion(original, pair.targets)
+    else:
+        original, shifted = outputs
+        losses = criterion(original, pair.targets)
+        if mert.shifted_detection_loss:
+            losses = average_loss_dicts(losses, criterion(shifted, pair.shifted_targets))
+    losses.update(mert.calculate_loss(original, shifted, pair, criterion.matcher))
+    return losses
 
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
@@ -31,17 +57,26 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     
     ema = kwargs.get('ema', None)
     scaler = kwargs.get('scaler', None)
+    mert_config = kwargs.get('mert_config') or {}
+    # Default-off does not construct a plugin, shift targets or extra views.
+    mert = MERT(mert_config) if mert_config.get('enabled', False) else None
+    if mert is not None and mert.forward_mode == 'sequential' and \
+            isinstance(model, torch.nn.parallel.DistributedDataParallel):
+        raise ValueError('Distributed MERT requires forward_mode=concat (one DDP forward).')
 
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        pair = mert.prepare(samples, targets, model) if mert is not None else None
 
         if scaler is not None:
             with torch.autocast(device_type=str(device), cache_enabled=True):
-                outputs = model(samples, targets)
+                outputs = model(samples, targets) if mert is None else \
+                    _forward_mert_views(model, pair, mert)
             
             with torch.autocast(device_type=str(device), enabled=False):
-                loss_dict = criterion(outputs, targets)
+                loss_dict = criterion(outputs, targets) if mert is None else \
+                    _mert_train_losses(outputs, pair, mert, criterion)
 
             loss = sum(loss_dict.values())
             scaler.scale(loss).backward()
@@ -55,8 +90,10 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             optimizer.zero_grad()
 
         else:
-            outputs = model(samples, targets)
-            loss_dict = criterion(outputs, targets)
+            outputs = model(samples, targets) if mert is None else \
+                _forward_mert_views(model, pair, mert)
+            loss_dict = criterion(outputs, targets) if mert is None else \
+                _mert_train_losses(outputs, pair, mert, criterion)
             
             loss = sum(loss_dict.values())
             optimizer.zero_grad()

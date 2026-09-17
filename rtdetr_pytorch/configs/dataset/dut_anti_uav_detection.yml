@@ -1,0 +1,21 @@
+# Read from the actual train/val/test COCO annotations: one category, id=0 (UAV).
+# Only dataset metadata/paths are adapted. Loader, transforms, batch sizes and
+# all training settings are inherited from the original R18/COCO configuration.
+num_classes: 1
+remap_mscoco_category: False
+
+train_dataloader:
+  dataset:
+    img_folder: ../DUT-Anti-UAV/DUT-Anti-UAV/images/train/
+    ann_file: ../DUT-Anti-UAV/DUT-Anti-UAV/labels/train.json
+
+val_dataloader:
+  dataset:
+    img_folder: ../DUT-Anti-UAV/DUT-Anti-UAV/images/val/
+    ann_file: ../DUT-Anti-UAV/DUT-Anti-UAV/labels/val.json
+
+# Metadata for tools/test_dut.py; no extra Dataset implementation or training
+# loader is created. The original --test-only still evaluates val_dataloader.
+test_dataset:
+  img_folder: ../DUT-Anti-UAV/DUT-Anti-UAV/images/test/
+  ann_file: ../DUT-Anti-UAV/DUT-Anti-UAV/labels/test.json

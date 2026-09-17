@@ -1,0 +1,803 @@
+{
+  "resolved_audit": {
+    "passed": true,
+    "failures": [],
+    "baseline_original_differences": {
+      "MERT.enabled": {
+        "reference": "<absent>",
+        "candidate": false
+      },
+      "SECD.enabled": {
+        "reference": "<absent>",
+        "candidate": false
+      },
+      "__include__": {
+        "reference": [
+          "../dataset/coco_detection.yml",
+          "../runtime.yml",
+          "./include/dataloader.yml",
+          "./include/optimizer.yml",
+          "./include/rtdetr_r50vd.yml"
+        ],
+        "candidate": [
+          "./rtdetr_r18vd_6x_coco.yml",
+          "../dataset/dut_anti_uav_detection.yml"
+        ]
+      },
+      "num_classes": {
+        "reference": 80,
+        "candidate": 1
+      },
+      "output_dir": {
+        "reference": "./output/rtdetr_r18vd_6x_coco",
+        "candidate": "./output/rtdetr_r18vd_dut_anti_uav"
+      },
+      "remap_mscoco_category": {
+        "reference": true,
+        "candidate": false
+      },
+      "test_dataset.ann_file": {
+        "reference": "<absent>",
+        "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/test.json"
+      },
+      "test_dataset.img_folder": {
+        "reference": "<absent>",
+        "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/images/test/"
+      },
+      "train_dataloader.dataset.ann_file": {
+        "reference": "./dataset/coco/annotations/instances_train2017.json",
+        "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/train.json"
+      },
+      "train_dataloader.dataset.img_folder": {
+        "reference": "./dataset/coco/train2017/",
+        "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/images/train/"
+      },
+      "val_dataloader.dataset.ann_file": {
+        "reference": "./dataset/coco/annotations/instances_val2017.json",
+        "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/val.json"
+      },
+      "val_dataloader.dataset.img_folder": {
+        "reference": "./dataset/coco/val2017/",
+        "candidate": "../DUT-Anti-UAV/DUT-Anti-UAV/images/val/"
+      }
+    },
+    "methods": {
+      "Baseline": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav.yml",
+        "baseline_differences": {},
+        "MERT": {
+          "enabled": false
+        },
+        "SECD": {
+          "enabled": false
+        }
+      },
+      "MERT": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_mert_late_xywh.yml",
+        "baseline_differences": {
+          "MERT.beta": {
+            "reference": "<absent>",
+            "candidate": 0.01
+          },
+          "MERT.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "MERT.forward_mode": {
+            "reference": "<absent>",
+            "candidate": "concat"
+          },
+          "MERT.loss_weight": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "MERT.schedule.enabled": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "MERT.shift_pixels": {
+            "reference": "<absent>",
+            "candidate": 1
+          },
+          "MERT.shifted_detection_loss": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "MERT.small_object_weighting.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "MERT.small_object_weighting.gamma": {
+            "reference": "<absent>",
+            "candidate": 0.5
+          },
+          "MERT.small_object_weighting.max_weight": {
+            "reference": "<absent>",
+            "candidate": 4.0
+          },
+          "MERT.small_object_weighting.min_weight": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "MERT.small_object_weighting.reference_area": {
+            "reference": "<absent>",
+            "candidate": 256.0
+          },
+          "MERT.trajectory_layers": {
+            "reference": "<absent>",
+            "candidate": "last_2"
+          },
+          "MERT.wh_weight": {
+            "reference": "<absent>",
+            "candidate": 0.25
+          },
+          "MERT.xy_weight": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_mert_late_xywh"
+          }
+        },
+        "MERT": {
+          "enabled": true,
+          "forward_mode": "concat",
+          "shift_pixels": 1,
+          "beta": 0.01,
+          "xy_weight": 1.0,
+          "wh_weight": 0.25,
+          "trajectory_layers": "last_2",
+          "loss_weight": 0.1,
+          "shifted_detection_loss": true,
+          "small_object_weighting": {
+            "enabled": true,
+            "reference_area": 256.0,
+            "gamma": 0.5,
+            "min_weight": 1.0,
+            "max_weight": 4.0
+          },
+          "schedule": {
+            "enabled": false
+          }
+        },
+        "SECD": {
+          "enabled": false
+        }
+      },
+      "SECD34": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_secd_34.yml",
+        "baseline_differences": {
+          "SECD.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "SECD.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "SECD.alpha_mode": {
+            "reference": "<absent>",
+            "candidate": "bounded_tanh"
+          },
+          "SECD.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "SECD.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "SECD.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "SECD.temperature": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "SECD.transitions": {
+            "reference": "<absent>",
+            "candidate": [
+              "3to4"
+            ]
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_secd_34"
+          }
+        },
+        "MERT": {
+          "enabled": false
+        },
+        "SECD": {
+          "enabled": true,
+          "transitions": [
+            "3to4"
+          ],
+          "groups": 8,
+          "temperature": 0.1,
+          "eps": 1e-06,
+          "alpha_init": 0.0,
+          "alpha_max": 0.2,
+          "alpha_mode": "bounded_tanh"
+        }
+      },
+      "SECD45": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_secd_45.yml",
+        "baseline_differences": {
+          "SECD.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "SECD.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "SECD.alpha_mode": {
+            "reference": "<absent>",
+            "candidate": "bounded_tanh"
+          },
+          "SECD.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "SECD.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "SECD.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "SECD.temperature": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "SECD.transitions": {
+            "reference": "<absent>",
+            "candidate": [
+              "4to5"
+            ]
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav_secd_34.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_secd_45"
+          }
+        },
+        "MERT": {
+          "enabled": false
+        },
+        "SECD": {
+          "enabled": true,
+          "transitions": [
+            "4to5"
+          ],
+          "groups": 8,
+          "temperature": 0.1,
+          "eps": 1e-06,
+          "alpha_init": 0.0,
+          "alpha_max": 0.2,
+          "alpha_mode": "bounded_tanh"
+        }
+      },
+      "SECD345": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_secd_345.yml",
+        "baseline_differences": {
+          "SECD.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "SECD.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "SECD.alpha_mode": {
+            "reference": "<absent>",
+            "candidate": "bounded_tanh"
+          },
+          "SECD.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "SECD.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "SECD.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "SECD.temperature": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "SECD.transitions": {
+            "reference": "<absent>",
+            "candidate": [
+              "3to4",
+              "4to5"
+            ]
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav_secd_34.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_secd_345"
+          }
+        },
+        "MERT": {
+          "enabled": false
+        },
+        "SECD": {
+          "enabled": true,
+          "transitions": [
+            "3to4",
+            "4to5"
+          ],
+          "groups": 8,
+          "temperature": 0.1,
+          "eps": 1e-06,
+          "alpha_init": 0.0,
+          "alpha_max": 0.2,
+          "alpha_mode": "bounded_tanh"
+        }
+      },
+      "SECD34+MERT": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_secd_34_mert_late_xywh.yml",
+        "baseline_differences": {
+          "MERT.beta": {
+            "reference": "<absent>",
+            "candidate": 0.01
+          },
+          "MERT.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "MERT.forward_mode": {
+            "reference": "<absent>",
+            "candidate": "concat"
+          },
+          "MERT.loss_weight": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "MERT.schedule.enabled": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "MERT.shift_pixels": {
+            "reference": "<absent>",
+            "candidate": 1
+          },
+          "MERT.shifted_detection_loss": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "MERT.small_object_weighting.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "MERT.small_object_weighting.gamma": {
+            "reference": "<absent>",
+            "candidate": 0.5
+          },
+          "MERT.small_object_weighting.max_weight": {
+            "reference": "<absent>",
+            "candidate": 4.0
+          },
+          "MERT.small_object_weighting.min_weight": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "MERT.small_object_weighting.reference_area": {
+            "reference": "<absent>",
+            "candidate": 256.0
+          },
+          "MERT.trajectory_layers": {
+            "reference": "<absent>",
+            "candidate": "last_2"
+          },
+          "MERT.wh_weight": {
+            "reference": "<absent>",
+            "candidate": 0.25
+          },
+          "MERT.xy_weight": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "SECD.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "SECD.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "SECD.alpha_mode": {
+            "reference": "<absent>",
+            "candidate": "bounded_tanh"
+          },
+          "SECD.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "SECD.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "SECD.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "SECD.temperature": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "SECD.transitions": {
+            "reference": "<absent>",
+            "candidate": [
+              "3to4"
+            ]
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav_mert_late_xywh.yml",
+              "./rtdetr_r18vd_dut_anti_uav_secd_34.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_secd_34_mert_late_xywh"
+          }
+        },
+        "MERT": {
+          "enabled": true,
+          "forward_mode": "concat",
+          "shift_pixels": 1,
+          "beta": 0.01,
+          "xy_weight": 1.0,
+          "wh_weight": 0.25,
+          "trajectory_layers": "last_2",
+          "loss_weight": 0.1,
+          "shifted_detection_loss": true,
+          "small_object_weighting": {
+            "enabled": true,
+            "reference_area": 256.0,
+            "gamma": 0.5,
+            "min_weight": 1.0,
+            "max_weight": 4.0
+          },
+          "schedule": {
+            "enabled": false
+          }
+        },
+        "SECD": {
+          "enabled": true,
+          "transitions": [
+            "3to4"
+          ],
+          "groups": 8,
+          "temperature": 0.1,
+          "eps": 1e-06,
+          "alpha_init": 0.0,
+          "alpha_max": 0.2,
+          "alpha_mode": "bounded_tanh"
+        }
+      },
+      "SECD345+MERT": {
+        "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_secd_345_mert_late_xywh.yml",
+        "baseline_differences": {
+          "MERT.beta": {
+            "reference": "<absent>",
+            "candidate": 0.01
+          },
+          "MERT.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "MERT.forward_mode": {
+            "reference": "<absent>",
+            "candidate": "concat"
+          },
+          "MERT.loss_weight": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "MERT.schedule.enabled": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "MERT.shift_pixels": {
+            "reference": "<absent>",
+            "candidate": 1
+          },
+          "MERT.shifted_detection_loss": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "MERT.small_object_weighting.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "MERT.small_object_weighting.gamma": {
+            "reference": "<absent>",
+            "candidate": 0.5
+          },
+          "MERT.small_object_weighting.max_weight": {
+            "reference": "<absent>",
+            "candidate": 4.0
+          },
+          "MERT.small_object_weighting.min_weight": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "MERT.small_object_weighting.reference_area": {
+            "reference": "<absent>",
+            "candidate": 256.0
+          },
+          "MERT.trajectory_layers": {
+            "reference": "<absent>",
+            "candidate": "last_2"
+          },
+          "MERT.wh_weight": {
+            "reference": "<absent>",
+            "candidate": 0.25
+          },
+          "MERT.xy_weight": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "SECD.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "SECD.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "SECD.alpha_mode": {
+            "reference": "<absent>",
+            "candidate": "bounded_tanh"
+          },
+          "SECD.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "SECD.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "SECD.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "SECD.temperature": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "SECD.transitions": {
+            "reference": "<absent>",
+            "candidate": [
+              "3to4",
+              "4to5"
+            ]
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav_secd_34_mert_late_xywh.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_secd_345_mert_late_xywh"
+          }
+        },
+        "MERT": {
+          "enabled": true,
+          "forward_mode": "concat",
+          "shift_pixels": 1,
+          "beta": 0.01,
+          "xy_weight": 1.0,
+          "wh_weight": 0.25,
+          "trajectory_layers": "last_2",
+          "loss_weight": 0.1,
+          "shifted_detection_loss": true,
+          "small_object_weighting": {
+            "enabled": true,
+            "reference_area": 256.0,
+            "gamma": 0.5,
+            "min_weight": 1.0,
+            "max_weight": 4.0
+          },
+          "schedule": {
+            "enabled": false
+          }
+        },
+        "SECD": {
+          "enabled": true,
+          "transitions": [
+            "3to4",
+            "4to5"
+          ],
+          "groups": 8,
+          "temperature": 0.1,
+          "eps": 1e-06,
+          "alpha_init": 0.0,
+          "alpha_max": 0.2,
+          "alpha_mode": "bounded_tanh"
+        }
+      }
+    },
+    "protocol": {
+      "epoches": 72,
+      "train_batch_size_per_rank": 4,
+      "val_batch_size_per_rank": 8,
+      "optimizer": {
+        "type": "AdamW",
+        "params": [
+          {
+            "params": "^(?=.*backbone)(?=.*norm).*$",
+            "lr": 1e-05,
+            "weight_decay": 0.0
+          },
+          {
+            "params": "^(?=.*backbone)(?!.*norm).*$",
+            "lr": 1e-05
+          },
+          {
+            "params": "^(?=.*(?:encoder|decoder))(?=.*(?:norm|bias)).*$",
+            "weight_decay": 0.0
+          }
+        ],
+        "lr": 0.0001,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "weight_decay": 0.0001
+      },
+      "lr_scheduler": {
+        "type": "MultiStepLR",
+        "milestones": [
+          1000
+        ],
+        "gamma": 0.1
+      },
+      "multi_scale": [
+        480,
+        512,
+        544,
+        576,
+        608,
+        640,
+        640,
+        640,
+        672,
+        704,
+        736,
+        768,
+        800
+      ],
+      "train_transforms": {
+        "type": "Compose",
+        "ops": [
+          {
+            "type": "RandomPhotometricDistort",
+            "p": 0.5
+          },
+          {
+            "type": "RandomZoomOut",
+            "fill": 0
+          },
+          {
+            "type": "RandomIoUCrop",
+            "p": 0.8
+          },
+          {
+            "type": "SanitizeBoundingBox",
+            "min_size": 1
+          },
+          {
+            "type": "RandomHorizontalFlip"
+          },
+          {
+            "type": "Resize",
+            "size": [
+              640,
+              640
+            ]
+          },
+          {
+            "type": "ToImageTensor"
+          },
+          {
+            "type": "ConvertDtype"
+          },
+          {
+            "type": "SanitizeBoundingBox",
+            "min_size": 1
+          },
+          {
+            "type": "ConvertBox",
+            "out_fmt": "cxcywh",
+            "normalize": true
+          }
+        ]
+      },
+      "val_transforms": {
+        "type": "Compose",
+        "ops": [
+          {
+            "type": "Resize",
+            "size": [
+              640,
+              640
+            ]
+          },
+          {
+            "type": "ToImageTensor"
+          },
+          {
+            "type": "ConvertDtype"
+          }
+        ]
+      },
+      "encoder_eval_spatial_size": [
+        640,
+        640
+      ],
+      "decoder_eval_spatial_size": [
+        640,
+        640
+      ],
+      "PResNet_pretrained_training_policy": true,
+      "use_amp_yaml": false,
+      "use_ema": true,
+      "clip_max_norm": 0.1,
+      "seed": "CLI-controlled; use the same --seed for every training run"
+    }
+  }
+}

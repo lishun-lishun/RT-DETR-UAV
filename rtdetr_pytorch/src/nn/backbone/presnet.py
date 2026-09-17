@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from collections import OrderedDict
 
 from .common import get_activation, ConvNormLayer, FrozenBatchNorm2d
+from .secd import SECDTransition
 
 from src.core import register
 
@@ -140,6 +141,8 @@ class Blocks(nn.Module):
 
 @register
 class PResNet(nn.Module):
+    __share__ = ['SECD']
+
     def __init__(
         self, 
         depth, 
@@ -149,7 +152,8 @@ class PResNet(nn.Module):
         act='relu',
         freeze_at=-1, 
         freeze_norm=True, 
-        pretrained=False):
+        pretrained=False,
+        SECD=None):
         super().__init__()
 
         block_nums = ResNet_cfg[depth]
@@ -185,17 +189,56 @@ class PResNet(nn.Module):
         self.out_channels = [_out_channels[_i] for _i in return_idx]
         self.out_strides = [_out_strides[_i] for _i in return_idx]
 
+        # Separate bypass attributes preserve every original res_layers.* key.
+        # Disabled SECD creates no module/parameter and consumes no RNG state.
+        self.secd_34 = None
+        self.secd_45 = None
+        secd_cfg = {} if SECD is None else dict(SECD)
+        if secd_cfg.get('enabled', False):
+            transitions = secd_cfg.get('transitions', ['3to4'])
+            if not isinstance(transitions, (list, tuple)) or not transitions:
+                raise ValueError('SECD transitions must be a nonempty list')
+            if len(set(transitions)) != len(transitions):
+                raise ValueError('SECD transitions must not contain duplicates')
+            options = {k: v for k, v in secd_cfg.items()
+                       if k not in ('enabled', 'transitions')}
+            # Keep subsequent encoder/decoder initialization on the original
+            # seeded RNG stream while deterministically initializing bypasses.
+            with torch.random.fork_rng(devices=[]):
+                for transition in transitions:
+                    if transition not in ('3to4', '4to5'):
+                        raise ValueError(f'Unknown SECD transition: {transition}')
+                    target_idx = 2 if transition == '3to4' else 3
+                    if target_idx >= num_stages:
+                        raise ValueError(f'SECD {transition} requires stage S{target_idx + 2}')
+                    bypass = SECDTransition(_out_channels[target_idx - 1],
+                                            _out_channels[target_idx], **options)
+                    setattr(self, 'secd_34' if target_idx == 2 else 'secd_45', bypass)
+
         if freeze_at >= 0:
             self._freeze_parameters(self.conv1)
             for i in range(min(freeze_at, num_stages)):
                 self._freeze_parameters(self.res_layers[i])
+            if self.secd_34 is not None and freeze_at > 2:
+                self._freeze_parameters(self.secd_34)
+            if self.secd_45 is not None and freeze_at > 3:
+                self._freeze_parameters(self.secd_45)
 
         if freeze_norm:
             self._freeze_norm(self)
 
         if pretrained:
             state = torch.hub.load_state_dict_from_url(donwload_url[depth])
-            self.load_state_dict(state)
+            if self.secd_34 is None and self.secd_45 is None:
+                self.load_state_dict(state)
+            else:
+                incompatible = self.load_state_dict(state, strict=False)
+                missing = [k for k in incompatible.missing_keys
+                           if not k.startswith(('secd_34.', 'secd_45.'))]
+                if missing or incompatible.unexpected_keys:
+                    raise RuntimeError('PResNet pretrained backbone keys mismatch: '
+                                       f'missing={missing}, '
+                                       f'unexpected={incompatible.unexpected_keys}')
             print(f'Load PResNet{depth} state_dict')
             
     def _freeze_parameters(self, m: nn.Module):
@@ -215,9 +258,23 @@ class PResNet(nn.Module):
     def forward(self, x):
         conv1 = self.conv1(x)
         x = F.max_pool2d(conv1, kernel_size=3, stride=2, padding=1)
+        if self.secd_34 is not None or self.secd_45 is not None:
+            return self._forward_secd(x)
         outs = []
         for idx, stage in enumerate(self.res_layers):
             x = stage(x)
+            if idx in self.return_idx:
+                outs.append(x)
+        return outs
+
+    def _forward_secd(self, x):
+        outs = []
+        for idx, stage in enumerate(self.res_layers):
+            stage_input = x
+            x = stage(stage_input)
+            bypass = self.secd_34 if idx == 2 else self.secd_45 if idx == 3 else None
+            if bypass is not None:
+                x = x + bypass(stage_input)
             if idx in self.return_idx:
                 outs.append(x)
         return outs

@@ -1,0 +1,24 @@
+__include__: [
+  './rtdetr_r18vd_dut_anti_uav.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_mert_late_xywh
+
+MERT:
+  enabled: true
+  forward_mode: concat
+  shift_pixels: 1
+  beta: 0.01
+  xy_weight: 1.0
+  wh_weight: 0.25
+  trajectory_layers: last_2
+  loss_weight: 0.10
+  shifted_detection_loss: true
+  small_object_weighting:
+    enabled: true
+    reference_area: 256.0
+    gamma: 0.5
+    min_weight: 1.0
+    max_weight: 4.0
+  schedule:
+    enabled: false
