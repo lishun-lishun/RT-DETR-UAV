@@ -31,6 +31,9 @@ PREFIX = "rtdetr_r18vd_dut_anti_uav"
 # Explicit user-approved deviation from official train=4 / val=8. Methods
 # must all share this exact value; other official hyperparameters stay guarded.
 DUT_BATCH_SIZE = 16
+# Explicit user-approved common training/save policy for all DUT experiments.
+DUT_EPOCHES = 200
+DUT_CHECKPOINT_STEP = 10
 METHODS = {
     "Baseline": "",
     "MERT": "_mert_late_xywh",
@@ -85,6 +88,7 @@ def permitted_difference(key, original=False):
         return True
     if original:
         return (key in ("num_classes", "remap_mscoco_category")
+                or key in ("epoches", "checkpoint_step")
                 or key in ("train_dataloader.batch_size", "val_dataloader.batch_size")
                 or key.startswith("test_dataset.")
                 or key == "test_dataset"
@@ -100,6 +104,10 @@ def resolved_audit():
     official_diff = differences(original, baseline)
     failures = ["Baseline vs original: " + key for key in official_diff
                 if not permitted_difference(key, original=True)]
+    if baseline.get("epoches") != DUT_EPOCHES:
+        failures.append(f"Baseline.epoches must be {DUT_EPOCHES}")
+    if baseline.get("checkpoint_step") != DUT_CHECKPOINT_STEP:
+        failures.append(f"Baseline.checkpoint_step must be {DUT_CHECKPOINT_STEP}")
     methods = {}
     for method in METHODS:
         cfg = fresh_config(config_path(method))
@@ -135,6 +143,7 @@ def resolved_audit():
         "methods": methods,
         "protocol": {
             "epoches": baseline.get("epoches"),
+            "checkpoint_step": baseline.get("checkpoint_step"),
             "train_batch_size_per_rank": baseline["train_dataloader"]["batch_size"],
             "val_batch_size_per_rank": baseline["val_dataloader"]["batch_size"],
             "optimizer": baseline["optimizer"],

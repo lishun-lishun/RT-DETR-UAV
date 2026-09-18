@@ -16,6 +16,7 @@ class BaseSolver(object):
     def __init__(self, cfg: BaseConfig) -> None:
         
         self.cfg = cfg 
+        self.best_stat = {'epoch': -1}
 
     def setup(self, ):
         '''Avoid instantiating unnecessary classes 
@@ -76,6 +77,9 @@ class BaseSolver(object):
 
         # TODO
         state['last_epoch'] = last_epoch
+        # Keep the selection threshold across resumes: a worse validation AP
+        # after restarting must not overwrite the existing best model.
+        state['best_stat'] = dict(self.best_stat)
 
         if self.optimizer is not None:
             state['optimizer'] = self.optimizer.state_dict()
@@ -97,9 +101,13 @@ class BaseSolver(object):
         '''load state dict
         '''
         # TODO
-        if getattr(self, 'last_epoch', None) and 'last_epoch' in state:
+        if getattr(self, 'last_epoch', None) is not None and 'last_epoch' in state:
             self.last_epoch = state['last_epoch']
             print('Loading last_epoch')
+
+        if 'best_stat' in state:
+            self.best_stat = dict(state['best_stat'])
+            print(f'Loading best_stat: {self.best_stat}')
 
         if getattr(self, 'model', None) and 'model' in state:
             if dist.is_parallel(self.model):

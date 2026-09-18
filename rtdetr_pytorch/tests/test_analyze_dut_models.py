@@ -21,12 +21,36 @@ class FairnessGuardTests(unittest.TestCase):
         self.assertEqual(diff["MERT.enabled"]["reference"], "<absent>")
 
     def test_hyperparameters_cannot_be_exempted(self):
-        for key in ("optimizer.lr", "optimizer.params", "epoches", "use_amp",
+        for key in ("optimizer.lr", "optimizer.params", "use_amp",
                     "RTDETR.multi_scale",
                     "HybridEncoder.eval_spatial_size", "RTDETRTransformer.num_queries",
                     "train_dataloader.dataset.transforms.ops"):
             self.assertFalse(analyze.permitted_difference(key, original=True), key)
             self.assertFalse(analyze.permitted_difference(key), key)
+
+    def test_common_epoch_save_overrides_only_exempted_against_official(self):
+        for key in ("epoches", "checkpoint_step"):
+            self.assertTrue(analyze.permitted_difference(key, original=True), key)
+            self.assertFalse(analyze.permitted_difference(key), key)
+
+    def test_common_policy_is_exactly_200_epochs_and_ten_epoch_snapshots(self):
+        report = analyze.resolved_audit()
+        self.assertTrue(report["passed"], report["failures"])
+        self.assertEqual(report["protocol"]["epoches"], 200)
+        self.assertEqual(report["protocol"]["checkpoint_step"], 10)
+
+    def test_authorized_epoch_override_does_not_allow_arbitrary_values(self):
+        original_loader = analyze.fresh_config
+        for field, wrong_value in (("epoches", 72), ("checkpoint_step", 1)):
+            def wrong_policy(path):
+                cfg = original_loader(path)
+                if "dut_anti_uav" in str(path):
+                    cfg[field] = wrong_value
+                return cfg
+            with self.subTest(field=field), patch.object(analyze, "fresh_config", side_effect=wrong_policy):
+                report = analyze.resolved_audit()
+                self.assertFalse(report["passed"])
+                self.assertTrue(any(field in reason for reason in report["failures"]))
 
     def test_dataset_adaptations_only_exempted_against_official(self):
         for key in ("num_classes", "remap_mscoco_category", "test_dataset.ann_file",

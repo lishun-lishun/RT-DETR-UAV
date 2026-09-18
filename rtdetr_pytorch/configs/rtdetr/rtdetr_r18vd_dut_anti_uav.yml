@@ -5,6 +5,11 @@ __include__: [
 
 output_dir: ./output/rtdetr_r18vd_dut_anti_uav
 
+# Shared by Baseline, MERT, SECD and all five Backbone plugin experiments.
+# Validate every epoch; keep a numbered checkpoint every 10 completed epochs.
+epoches: 200
+checkpoint_step: 10
+
 # User-requested override: all DUT methods inherit 16 original images per GPU.
 # MERT concat adds 16 shifted images; val and true-test use batch_size=16.
 train_dataloader:
