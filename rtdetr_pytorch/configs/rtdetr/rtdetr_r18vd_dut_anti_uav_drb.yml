@@ -1,0 +1,14 @@
+__include__: ['./rtdetr_r18vd_dut_anti_uav.yml']
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_drb
+
+RTDETR:
+  backbone: PResNetWithPlugin
+
+BackbonePlugin:
+  enabled: true
+  name: drb
+  placement: uav_placement
+  stages: [S4]
+  conv: conv2
+  params: {kernel_size: 7}

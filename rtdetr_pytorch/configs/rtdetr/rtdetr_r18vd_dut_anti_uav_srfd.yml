@@ -1,0 +1,12 @@
+__include__: ['./rtdetr_r18vd_dut_anti_uav.yml']
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_srfd
+
+RTDETR:
+  backbone: PResNetWithPlugin
+
+BackbonePlugin:
+  enabled: true
+  name: srfd
+  placement: uav_placement
+  stages: [Stem]

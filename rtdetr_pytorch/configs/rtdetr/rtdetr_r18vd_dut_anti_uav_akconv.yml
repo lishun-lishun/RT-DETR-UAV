@@ -1,0 +1,14 @@
+__include__: ['./rtdetr_r18vd_dut_anti_uav.yml']
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_akconv
+
+RTDETR:
+  backbone: PResNetWithPlugin
+
+BackbonePlugin:
+  enabled: true
+  name: akconv
+  placement: uav_placement
+  stages: [S3, S4]
+  conv: conv2
+  params: {num_param: 5}
