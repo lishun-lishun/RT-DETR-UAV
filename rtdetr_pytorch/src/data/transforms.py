@@ -118,6 +118,27 @@ class RandomIoUCrop(T.RandomIoUCrop):
 
         return super().forward(*inputs)
 
+    def _transform(self, inpt: Any, params: Dict[str, Any]) -> Any:
+        # ZoomOut can create a legitimate in-memory canvas above PIL's file
+        # decoding limit. Image.crop repeats that limit on its output even
+        # though no compressed file is being decoded. Keep file-open security
+        # enabled and handle only integer crops entirely inside this canvas.
+        limit = Image.MAX_IMAGE_PIXELS
+        if params and isinstance(inpt, Image.Image) and limit is not None:
+            left, top = params['left'], params['top']
+            width, height = params['width'], params['height']
+            right, bottom = left + width, top + height
+            integer_crop = all(isinstance(v, int) for v in (left, top, width, height))
+            bounded = (0 <= left < right <= inpt.width and
+                       0 <= top < bottom <= inpt.height)
+            if integer_crop and bounded and width * height > limit:
+                inpt.load()
+                # This is the same ImagingCore crop and Image._new wrapping
+                # used by PIL.Image.crop, without its redundant bomb check.
+                # The checked bounds prevent padding/expanding the allocation.
+                return inpt._new(inpt.im.crop((left, top, right, bottom)))
+        return super()._transform(inpt, params)
+
 
 @register
 class ConvertBox(T.Transform):
