@@ -8,7 +8,7 @@ import re
 import copy
 
 from .config import BaseConfig
-from .yaml_utils import load_config, merge_config, create, merge_dict
+from .yaml_utils import load_config, merge_config, create, merge_dict, GLOBAL_CONFIG
 
 
 class YAMLConfig(BaseConfig):
@@ -22,6 +22,15 @@ class YAMLConfig(BaseConfig):
         # in the same process. Default-off does not instantiate any module.
         cfg.setdefault('SECD', {'enabled': False})
         merge_dict(cfg, kwargs)
+        # Complete default-off point switches for official/legacy YAMLs, without
+        # altering a file or constructing plugins. Reject invalid values in the
+        # backbone rather than silently dropping misspelled point names.
+        points = cfg.get('BackbonePlugins', {})
+        if not isinstance(points, dict):
+            raise ValueError('BackbonePlugins must be a mapping')
+        cfg['BackbonePlugins'] = {name: {'enabled': False}
+                                  for name in ('P0', 'P1', 'P2', 'P3', 'P4')}
+        cfg['BackbonePlugins'].update(copy.deepcopy(points))
 
         # pprint(cfg)
 
@@ -46,6 +55,10 @@ class YAMLConfig(BaseConfig):
     def model(self, ) -> torch.nn.Module:
         if self._model is None and 'model' in self.yaml_cfg:
             merge_config(self.yaml_cfg)
+            # merge_config deep-merges a process-global registry. Replace this
+            # shared mapping atomically so previous point options cannot leak
+            # across candidate -> candidate -> Baseline construction.
+            GLOBAL_CONFIG['BackbonePlugins'] = copy.deepcopy(self.yaml_cfg['BackbonePlugins'])
             self._model = create(self.yaml_cfg['model'])
         return self._model 
 

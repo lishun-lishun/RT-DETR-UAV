@@ -1,0 +1,1508 @@
+{
+  "audit": {
+    "passed": true,
+    "failures": [],
+    "methods": {
+      "Baseline": {
+        "config": "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav.yml",
+        "baseline_differences": {},
+        "enabled_points": []
+      },
+      "P0-SRFD": {
+        "config": "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_p0_srfd.yml",
+        "baseline_differences": {
+          "BackbonePlugins.P0.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "BackbonePlugins.P0.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "BackbonePlugins.P0.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "BackbonePlugins.P0.type": {
+            "reference": "<absent>",
+            "candidate": "srfd"
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_p0_srfd"
+          }
+        },
+        "enabled_points": [
+          "P0"
+        ]
+      },
+      "P1-DEConv": {
+        "config": "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_p1_deconv.yml",
+        "baseline_differences": {
+          "BackbonePlugins.P1.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "BackbonePlugins.P1.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "BackbonePlugins.P1.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "BackbonePlugins.P1.type": {
+            "reference": "<absent>",
+            "candidate": "deconv"
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_p1_deconv"
+          }
+        },
+        "enabled_points": [
+          "P1"
+        ]
+      },
+      "P2-DCNv4": {
+        "config": "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_p2_dcnv4.yml",
+        "baseline_differences": {
+          "BackbonePlugins.P2.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "BackbonePlugins.P2.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "BackbonePlugins.P2.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "BackbonePlugins.P2.groups": {
+            "reference": "<absent>",
+            "candidate": 1
+          },
+          "BackbonePlugins.P2.type": {
+            "reference": "<absent>",
+            "candidate": "dcnv4"
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_p2_dcnv4"
+          }
+        },
+        "enabled_points": [
+          "P2"
+        ]
+      },
+      "P3-SECD34": {
+        "config": "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_p3_secd34.yml",
+        "baseline_differences": {
+          "BackbonePlugins.P3.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "BackbonePlugins.P3.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "BackbonePlugins.P3.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "BackbonePlugins.P3.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "BackbonePlugins.P3.temperature": {
+            "reference": "<absent>",
+            "candidate": 0.1
+          },
+          "BackbonePlugins.P3.type": {
+            "reference": "<absent>",
+            "candidate": "secd"
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_p3_secd34"
+          }
+        },
+        "enabled_points": [
+          "P3"
+        ]
+      },
+      "P4-FADC": {
+        "config": "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_p4_fadc.yml",
+        "baseline_differences": {
+          "BackbonePlugins.P4.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "BackbonePlugins.P4.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "BackbonePlugins.P4.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "BackbonePlugins.P4.type": {
+            "reference": "<absent>",
+            "candidate": "fadc"
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_p4_fadc"
+          }
+        },
+        "enabled_points": [
+          "P4"
+        ]
+      },
+      "P4-WTConv": {
+        "config": "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_p4_wtconv.yml",
+        "baseline_differences": {
+          "BackbonePlugins.P4.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "BackbonePlugins.P4.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "BackbonePlugins.P4.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "BackbonePlugins.P4.type": {
+            "reference": "<absent>",
+            "candidate": "wtconv"
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_p4_wtconv"
+          }
+        },
+        "enabled_points": [
+          "P4"
+        ]
+      }
+    },
+    "unchanged_protocol": {
+      "PResNet": {
+        "depth": 18,
+        "variant": "d",
+        "freeze_at": -1,
+        "return_idx": [
+          1,
+          2,
+          3
+        ],
+        "num_stages": 4,
+        "freeze_norm": false,
+        "pretrained": true
+      },
+      "RTDETR": {
+        "backbone": "PResNet",
+        "encoder": "HybridEncoder",
+        "decoder": "RTDETRTransformer",
+        "multi_scale": [
+          480,
+          512,
+          544,
+          576,
+          608,
+          640,
+          640,
+          640,
+          672,
+          704,
+          736,
+          768,
+          800
+        ]
+      },
+      "HybridEncoder": {
+        "in_channels": [
+          128,
+          256,
+          512
+        ],
+        "feat_strides": [
+          8,
+          16,
+          32
+        ],
+        "hidden_dim": 256,
+        "use_encoder_idx": [
+          2
+        ],
+        "num_encoder_layers": 1,
+        "nhead": 8,
+        "dim_feedforward": 1024,
+        "dropout": 0.0,
+        "enc_act": "gelu",
+        "pe_temperature": 10000,
+        "expansion": 0.5,
+        "depth_mult": 1,
+        "act": "silu",
+        "eval_spatial_size": [
+          640,
+          640
+        ]
+      },
+      "RTDETRTransformer": {
+        "feat_channels": [
+          256,
+          256,
+          256
+        ],
+        "feat_strides": [
+          8,
+          16,
+          32
+        ],
+        "hidden_dim": 256,
+        "num_levels": 3,
+        "num_queries": 300,
+        "num_decoder_layers": 3,
+        "num_denoising": 100,
+        "eval_idx": -1,
+        "eval_spatial_size": [
+          640,
+          640
+        ]
+      },
+      "SetCriterion": {
+        "weight_dict": {
+          "loss_vfl": 1,
+          "loss_bbox": 5,
+          "loss_giou": 2
+        },
+        "losses": [
+          "vfl",
+          "boxes"
+        ],
+        "alpha": 0.75,
+        "gamma": 2.0,
+        "matcher": {
+          "type": "HungarianMatcher",
+          "weight_dict": {
+            "cost_class": 2,
+            "cost_bbox": 5,
+            "cost_giou": 2
+          },
+          "alpha": 0.25,
+          "gamma": 2.0
+        }
+      },
+      "HungarianMatcher": null,
+      "optimizer": {
+        "type": "AdamW",
+        "params": [
+          {
+            "params": "^(?=.*backbone)(?=.*norm).*$",
+            "lr": 1e-05,
+            "weight_decay": 0.0
+          },
+          {
+            "params": "^(?=.*backbone)(?!.*norm).*$",
+            "lr": 1e-05
+          },
+          {
+            "params": "^(?=.*(?:encoder|decoder))(?=.*(?:norm|bias)).*$",
+            "weight_decay": 0.0
+          }
+        ],
+        "lr": 0.0001,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "weight_decay": 0.0001
+      },
+      "lr_scheduler": {
+        "type": "MultiStepLR",
+        "milestones": [
+          1000
+        ],
+        "gamma": 0.1
+      },
+      "epoches": 200,
+      "checkpoint_step": 10,
+      "train_dataloader": {
+        "type": "DataLoader",
+        "dataset": {
+          "type": "CocoDetection",
+          "img_folder": "../DUT-Anti-UAV/DUT-Anti-UAV/images/train/",
+          "ann_file": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/train.json",
+          "transforms": {
+            "type": "Compose",
+            "ops": [
+              {
+                "type": "RandomPhotometricDistort",
+                "p": 0.5
+              },
+              {
+                "type": "RandomZoomOut",
+                "fill": 0
+              },
+              {
+                "type": "RandomIoUCrop",
+                "p": 0.8
+              },
+              {
+                "type": "SanitizeBoundingBox",
+                "min_size": 1
+              },
+              {
+                "type": "RandomHorizontalFlip"
+              },
+              {
+                "type": "Resize",
+                "size": [
+                  640,
+                  640
+                ]
+              },
+              {
+                "type": "ToImageTensor"
+              },
+              {
+                "type": "ConvertDtype"
+              },
+              {
+                "type": "SanitizeBoundingBox",
+                "min_size": 1
+              },
+              {
+                "type": "ConvertBox",
+                "out_fmt": "cxcywh",
+                "normalize": true
+              }
+            ]
+          },
+          "return_masks": false
+        },
+        "shuffle": true,
+        "batch_size": 16,
+        "num_workers": 4,
+        "drop_last": true,
+        "collate_fn": "default_collate_fn"
+      },
+      "val_dataloader": {
+        "type": "DataLoader",
+        "dataset": {
+          "type": "CocoDetection",
+          "img_folder": "../DUT-Anti-UAV/DUT-Anti-UAV/images/val/",
+          "ann_file": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/val.json",
+          "transforms": {
+            "type": "Compose",
+            "ops": [
+              {
+                "type": "Resize",
+                "size": [
+                  640,
+                  640
+                ]
+              },
+              {
+                "type": "ToImageTensor"
+              },
+              {
+                "type": "ConvertDtype"
+              }
+            ]
+          }
+        },
+        "shuffle": false,
+        "batch_size": 16,
+        "num_workers": 4,
+        "drop_last": false,
+        "collate_fn": "default_collate_fn"
+      },
+      "MERT": {
+        "enabled": false
+      },
+      "SECD": {
+        "enabled": false
+      }
+    }
+  },
+  "measurement_protocol": {
+    "input": [
+      1,
+      3,
+      640,
+      640
+    ],
+    "scope": "both full detector and backbone",
+    "torch": "2.10.0+cu128",
+    "device": "cuda",
+    "amp": false,
+    "gpu": "NVIDIA GeForce RTX 5060 Ti",
+    "seed": 0,
+    "model_only_import": true,
+    "pretrained_download": false,
+    "checkpoint": null,
+    "deploy": false,
+    "flops_scope": "counted-operator LOWER BOUNDS, not complete GFLOPs",
+    "not_counted": "FFT, deformable sampling/convolution, transposed convolutions, some fused attention, normalization and elementwise math"
+  },
+  "results": {
+    "Baseline": {
+      "params": 20083028,
+      "trainable_params": 20083028,
+      "backbone_params": 11199968,
+      "counted_operator_gflops_lower_bound": 60.711554609,
+      "backbone_counted_operator_gflops_lower_bound": 33.7375232,
+      "status": "passed",
+      "backbone_shapes": [
+        [
+          1,
+          128,
+          80,
+          80
+        ],
+        [
+          1,
+          256,
+          40,
+          40
+        ],
+        [
+          1,
+          512,
+          20,
+          20
+        ]
+      ],
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "counted_operator_flops": {
+        "aten::conv2d": 51295027200,
+        "aten::add": 12762209,
+        "aten::mm": 275251200,
+        "aten::addmm": 9125222400,
+        "aten::mul": 3291600
+      },
+      "uncounted_operator_names": [
+        "aten::_batch_norm_impl_index",
+        "aten::_convolution",
+        "aten::_efficient_attention_forward",
+        "aten::_reshape_alias",
+        "aten::_scaled_dot_product_efficient_attention",
+        "aten::_softmax",
+        "aten::_to_copy",
+        "aten::_unsafe_view",
+        "aten::add_",
+        "aten::arange",
+        "aten::as_strided",
+        "aten::avg_pool2d",
+        "aten::batch_norm",
+        "aten::cat",
+        "aten::chunk",
+        "aten::clamp",
+        "aten::clamp_min",
+        "aten::clamp_min_",
+        "aten::clip",
+        "aten::clone",
+        "aten::concat",
+        "aten::contiguous",
+        "aten::convolution",
+        "aten::copy_",
+        "aten::cudnn_batch_norm",
+        "aten::cudnn_convolution",
+        "aten::detach",
+        "aten::div",
+        "aten::dropout",
+        "aten::empty",
+        "aten::empty_like",
+        "aten::empty_strided",
+        "aten::expand",
+        "aten::expand_as",
+        "aten::flatten",
+        "aten::gather",
+        "aten::gelu",
+        "aten::grid_sampler",
+        "aten::grid_sampler_2d",
+        "aten::layer_norm",
+        "aten::linear",
+        "aten::log",
+        "aten::matmul",
+        "aten::max",
+        "aten::max_pool2d",
+        "aten::max_pool2d_with_indices",
+        "aten::narrow",
+        "aten::native_layer_norm",
+        "aten::permute",
+        "aten::relu",
+        "aten::relu_",
+        "aten::repeat",
+        "aten::reshape",
+        "aten::resize_",
+        "aten::rsub",
+        "aten::scaled_dot_product_attention",
+        "aten::select",
+        "aten::sigmoid",
+        "aten::silu_",
+        "aten::slice",
+        "aten::softmax",
+        "aten::split",
+        "aten::split_with_sizes",
+        "aten::stack",
+        "aten::sub",
+        "aten::sum",
+        "aten::t",
+        "aten::to",
+        "aten::topk",
+        "aten::transpose",
+        "aten::unfold",
+        "aten::unsqueeze",
+        "aten::upsample_nearest2d",
+        "aten::view"
+      ],
+      "backbone_counted_operator_flops": {
+        "aten::conv2d": 33731379200,
+        "aten::add": 6144000
+      },
+      "backbone_uncounted_operator_names": [
+        "aten::_batch_norm_impl_index",
+        "aten::_convolution",
+        "aten::avg_pool2d",
+        "aten::batch_norm",
+        "aten::clamp_min_",
+        "aten::convolution",
+        "aten::cudnn_batch_norm",
+        "aten::cudnn_convolution",
+        "aten::empty",
+        "aten::empty_like",
+        "aten::max_pool2d",
+        "aten::max_pool2d_with_indices",
+        "aten::relu_",
+        "aten::view"
+      ],
+      "fadc_dense_convolution_gflops_not_counted_by_profiler": 0,
+      "added_params": 0,
+      "added_counted_operator_gflops_lower_bound": 0.0,
+      "added_backbone_counted_operator_gflops_lower_bound": 0.0
+    },
+    "P0-SRFD": {
+      "params": 20112597,
+      "trainable_params": 20112597,
+      "backbone_params": 11229537,
+      "counted_operator_gflops_lower_bound": 64.969756211,
+      "backbone_counted_operator_gflops_lower_bound": 37.995724802,
+      "status": "passed",
+      "backbone_shapes": [
+        [
+          1,
+          128,
+          80,
+          80
+        ],
+        [
+          1,
+          256,
+          40,
+          40
+        ],
+        [
+          1,
+          512,
+          20,
+          20
+        ]
+      ],
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "counted_operator_flops": {
+        "aten::conv2d": 55551590400,
+        "aten::mul": 3291602,
+        "aten::add": 14400609,
+        "aten::mm": 275251200,
+        "aten::addmm": 9125222400
+      },
+      "uncounted_operator_names": [
+        "aten::_batch_norm_impl_index",
+        "aten::_conv_depthwise2d",
+        "aten::_convolution",
+        "aten::_efficient_attention_forward",
+        "aten::_reshape_alias",
+        "aten::_scaled_dot_product_efficient_attention",
+        "aten::_softmax",
+        "aten::_to_copy",
+        "aten::_unsafe_view",
+        "aten::add_",
+        "aten::arange",
+        "aten::as_strided",
+        "aten::avg_pool2d",
+        "aten::batch_norm",
+        "aten::cat",
+        "aten::chunk",
+        "aten::clamp",
+        "aten::clamp_min",
+        "aten::clamp_min_",
+        "aten::clip",
+        "aten::clone",
+        "aten::concat",
+        "aten::contiguous",
+        "aten::convolution",
+        "aten::copy_",
+        "aten::cudnn_batch_norm",
+        "aten::cudnn_convolution",
+        "aten::detach",
+        "aten::div",
+        "aten::dropout",
+        "aten::empty",
+        "aten::empty_like",
+        "aten::empty_strided",
+        "aten::expand",
+        "aten::expand_as",
+        "aten::flatten",
+        "aten::gather",
+        "aten::gelu",
+        "aten::grid_sampler",
+        "aten::grid_sampler_2d",
+        "aten::layer_norm",
+        "aten::linear",
+        "aten::log",
+        "aten::matmul",
+        "aten::max",
+        "aten::max_pool2d",
+        "aten::max_pool2d_with_indices",
+        "aten::narrow",
+        "aten::native_layer_norm",
+        "aten::permute",
+        "aten::relu",
+        "aten::relu_",
+        "aten::repeat",
+        "aten::reshape",
+        "aten::resize_",
+        "aten::rsub",
+        "aten::scaled_dot_product_attention",
+        "aten::select",
+        "aten::sigmoid",
+        "aten::silu_",
+        "aten::slice",
+        "aten::softmax",
+        "aten::split",
+        "aten::split_with_sizes",
+        "aten::stack",
+        "aten::sub",
+        "aten::sum",
+        "aten::t",
+        "aten::tanh",
+        "aten::to",
+        "aten::topk",
+        "aten::transpose",
+        "aten::unfold",
+        "aten::unsqueeze",
+        "aten::upsample_nearest2d",
+        "aten::view"
+      ],
+      "backbone_counted_operator_flops": {
+        "aten::conv2d": 37987942400,
+        "aten::mul": 2,
+        "aten::add": 7782400
+      },
+      "backbone_uncounted_operator_names": [
+        "aten::_batch_norm_impl_index",
+        "aten::_conv_depthwise2d",
+        "aten::_convolution",
+        "aten::add_",
+        "aten::as_strided",
+        "aten::avg_pool2d",
+        "aten::batch_norm",
+        "aten::cat",
+        "aten::clamp_min_",
+        "aten::convolution",
+        "aten::cudnn_batch_norm",
+        "aten::cudnn_convolution",
+        "aten::empty",
+        "aten::empty_like",
+        "aten::max_pool2d",
+        "aten::max_pool2d_with_indices",
+        "aten::relu_",
+        "aten::reshape",
+        "aten::resize_",
+        "aten::slice",
+        "aten::tanh",
+        "aten::to",
+        "aten::view"
+      ],
+      "fadc_dense_convolution_gflops_not_counted_by_profiler": 0,
+      "added_params": 29569,
+      "added_counted_operator_gflops_lower_bound": 4.258201602000007,
+      "added_backbone_counted_operator_gflops_lower_bound": 4.258201602
+    },
+    "P1-DEConv": {
+      "params": 20218645,
+      "trainable_params": 20218645,
+      "backbone_params": 11335585,
+      "counted_operator_gflops_lower_bound": 62.600777523,
+      "backbone_counted_operator_gflops_lower_bound": 35.626746114,
+      "status": "passed",
+      "backbone_shapes": [
+        [
+          1,
+          128,
+          80,
+          80
+        ],
+        [
+          1,
+          256,
+          40,
+          40
+        ],
+        [
+          1,
+          512,
+          20,
+          20
+        ]
+      ],
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "counted_operator_flops": {
+        "aten::conv2d": 53182464000,
+        "aten::add": 14548321,
+        "aten::mul": 3291602,
+        "aten::mm": 275251200,
+        "aten::addmm": 9125222400
+      },
+      "uncounted_operator_names": [
+        "aten::_batch_norm_impl_index",
+        "aten::_convolution",
+        "aten::_efficient_attention_forward",
+        "aten::_index_put_impl_",
+        "aten::_reshape_alias",
+        "aten::_scaled_dot_product_efficient_attention",
+        "aten::_softmax",
+        "aten::_to_copy",
+        "aten::_unsafe_view",
+        "aten::add_",
+        "aten::arange",
+        "aten::as_strided",
+        "aten::avg_pool2d",
+        "aten::batch_norm",
+        "aten::cat",
+        "aten::chunk",
+        "aten::clamp",
+        "aten::clamp_min",
+        "aten::clamp_min_",
+        "aten::clip",
+        "aten::clone",
+        "aten::concat",
+        "aten::contiguous",
+        "aten::convolution",
+        "aten::copy_",
+        "aten::cudnn_batch_norm",
+        "aten::cudnn_convolution",
+        "aten::detach",
+        "aten::div",
+        "aten::dropout",
+        "aten::empty",
+        "aten::empty_like",
+        "aten::empty_strided",
+        "aten::expand",
+        "aten::expand_as",
+        "aten::fill_",
+        "aten::flatten",
+        "aten::gather",
+        "aten::gelu",
+        "aten::grid_sampler",
+        "aten::grid_sampler_2d",
+        "aten::index",
+        "aten::index_put_",
+        "aten::layer_norm",
+        "aten::lift_fresh",
+        "aten::linear",
+        "aten::log",
+        "aten::matmul",
+        "aten::max",
+        "aten::max_pool2d",
+        "aten::max_pool2d_with_indices",
+        "aten::narrow",
+        "aten::native_layer_norm",
+        "aten::neg",
+        "aten::new_empty",
+        "aten::new_zeros",
+        "aten::permute",
+        "aten::relu",
+        "aten::relu_",
+        "aten::repeat",
+        "aten::reshape",
+        "aten::resize_",
+        "aten::rsub",
+        "aten::scaled_dot_product_attention",
+        "aten::select",
+        "aten::sigmoid",
+        "aten::silu",
+        "aten::silu_",
+        "aten::slice",
+        "aten::softmax",
+        "aten::split",
+        "aten::split_with_sizes",
+        "aten::stack",
+        "aten::sub",
+        "aten::sum",
+        "aten::t",
+        "aten::tanh",
+        "aten::to",
+        "aten::topk",
+        "aten::transpose",
+        "aten::unfold",
+        "aten::unsqueeze",
+        "aten::upsample_nearest2d",
+        "aten::view",
+        "aten::zero_"
+      ],
+      "backbone_counted_operator_flops": {
+        "aten::conv2d": 35618816000,
+        "aten::add": 7930112,
+        "aten::mul": 2
+      },
+      "backbone_uncounted_operator_names": [
+        "aten::_batch_norm_impl_index",
+        "aten::_convolution",
+        "aten::_index_put_impl_",
+        "aten::_to_copy",
+        "aten::add_",
+        "aten::as_strided",
+        "aten::avg_pool2d",
+        "aten::batch_norm",
+        "aten::clamp_min_",
+        "aten::clone",
+        "aten::convolution",
+        "aten::copy_",
+        "aten::cudnn_batch_norm",
+        "aten::cudnn_convolution",
+        "aten::empty",
+        "aten::empty_like",
+        "aten::empty_strided",
+        "aten::fill_",
+        "aten::flatten",
+        "aten::index",
+        "aten::index_put_",
+        "aten::lift_fresh",
+        "aten::max_pool2d",
+        "aten::max_pool2d_with_indices",
+        "aten::neg",
+        "aten::new_empty",
+        "aten::new_zeros",
+        "aten::relu_",
+        "aten::reshape",
+        "aten::select",
+        "aten::silu",
+        "aten::sub",
+        "aten::sum",
+        "aten::tanh",
+        "aten::to",
+        "aten::view",
+        "aten::zero_"
+      ],
+      "fadc_dense_convolution_gflops_not_counted_by_profiler": 0,
+      "added_params": 135617,
+      "added_counted_operator_gflops_lower_bound": 1.8892229140000012,
+      "added_backbone_counted_operator_gflops_lower_bound": 1.8892229140000012
+    },
+    "P2-DCNv4": {
+      "params": 20120437,
+      "trainable_params": 20120437,
+      "backbone_params": 11237377,
+      "counted_operator_gflops_lower_bound": null,
+      "backbone_counted_operator_gflops_lower_bound": null,
+      "status": "unavailable",
+      "error": "P2 requires the REAL DCNv4 CUDA extension (DCNv4.ext). Build reference ultralytics/nn/extra_modules/DCNv4_op in the server training environment; see docs/backbone_plugin_points.md. No DCNv2/3/AKConv fallback is used.",
+      "added_params": 37409,
+      "added_counted_operator_gflops_lower_bound": null,
+      "added_backbone_counted_operator_gflops_lower_bound": null
+    },
+    "P3-SECD34": {
+      "params": 20116309,
+      "trainable_params": 20116309,
+      "backbone_params": 11233249,
+      "counted_operator_gflops_lower_bound": 60.816949811,
+      "backbone_counted_operator_gflops_lower_bound": 33.842918402,
+      "status": "passed",
+      "backbone_shapes": [
+        [
+          1,
+          128,
+          80,
+          80
+        ],
+        [
+          1,
+          256,
+          40,
+          40
+        ],
+        [
+          1,
+          512,
+          20,
+          20
+        ]
+      ],
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "counted_operator_flops": {
+        "aten::conv2d": 51399884800,
+        "aten::add": 13223009,
+        "aten::mul": 3368402,
+        "aten::mm": 275251200,
+        "aten::addmm": 9125222400
+      },
+      "uncounted_operator_names": [
+        "aten::_batch_norm_impl_index",
+        "aten::_convolution",
+        "aten::_efficient_attention_forward",
+        "aten::_reshape_alias",
+        "aten::_scaled_dot_product_efficient_attention",
+        "aten::_softmax",
+        "aten::_to_copy",
+        "aten::_unsafe_view",
+        "aten::add_",
+        "aten::arange",
+        "aten::as_strided",
+        "aten::avg_pool2d",
+        "aten::batch_norm",
+        "aten::cat",
+        "aten::chunk",
+        "aten::clamp",
+        "aten::clamp_min",
+        "aten::clamp_min_",
+        "aten::clip",
+        "aten::clone",
+        "aten::concat",
+        "aten::contiguous",
+        "aten::convolution",
+        "aten::copy_",
+        "aten::cudnn_batch_norm",
+        "aten::cudnn_convolution",
+        "aten::detach",
+        "aten::div",
+        "aten::dropout",
+        "aten::empty",
+        "aten::empty_like",
+        "aten::empty_strided",
+        "aten::expand",
+        "aten::expand_as",
+        "aten::flatten",
+        "aten::gather",
+        "aten::gelu",
+        "aten::grid_sampler",
+        "aten::grid_sampler_2d",
+        "aten::layer_norm",
+        "aten::linear",
+        "aten::log",
+        "aten::matmul",
+        "aten::max",
+        "aten::max_pool2d",
+        "aten::max_pool2d_with_indices",
+        "aten::mean",
+        "aten::narrow",
+        "aten::native_layer_norm",
+        "aten::permute",
+        "aten::pow",
+        "aten::relu",
+        "aten::relu_",
+        "aten::repeat",
+        "aten::reshape",
+        "aten::resize_",
+        "aten::result_type",
+        "aten::rsub",
+        "aten::scaled_dot_product_attention",
+        "aten::select",
+        "aten::sigmoid",
+        "aten::silu_",
+        "aten::slice",
+        "aten::softmax",
+        "aten::split",
+        "aten::split_with_sizes",
+        "aten::sqrt",
+        "aten::square",
+        "aten::stack",
+        "aten::sub",
+        "aten::sum",
+        "aten::t",
+        "aten::tanh",
+        "aten::to",
+        "aten::topk",
+        "aten::transpose",
+        "aten::unfold",
+        "aten::unsqueeze",
+        "aten::upsample_nearest2d",
+        "aten::view"
+      ],
+      "backbone_counted_operator_flops": {
+        "aten::conv2d": 33836236800,
+        "aten::add": 6604800,
+        "aten::mul": 76802
+      },
+      "backbone_uncounted_operator_names": [
+        "aten::_batch_norm_impl_index",
+        "aten::_convolution",
+        "aten::_softmax",
+        "aten::as_strided",
+        "aten::avg_pool2d",
+        "aten::batch_norm",
+        "aten::cat",
+        "aten::clamp",
+        "aten::clamp_min_",
+        "aten::convolution",
+        "aten::cudnn_batch_norm",
+        "aten::cudnn_convolution",
+        "aten::div",
+        "aten::empty",
+        "aten::empty_like",
+        "aten::max_pool2d",
+        "aten::max_pool2d_with_indices",
+        "aten::mean",
+        "aten::pow",
+        "aten::relu_",
+        "aten::reshape",
+        "aten::result_type",
+        "aten::slice",
+        "aten::softmax",
+        "aten::sqrt",
+        "aten::square",
+        "aten::stack",
+        "aten::sub",
+        "aten::sum",
+        "aten::tanh",
+        "aten::to",
+        "aten::unsqueeze",
+        "aten::view"
+      ],
+      "fadc_dense_convolution_gflops_not_counted_by_profiler": 0,
+      "added_params": 33281,
+      "added_counted_operator_gflops_lower_bound": 0.10539520200000396,
+      "added_backbone_counted_operator_gflops_lower_bound": 0.10539520200000396
+    },
+    "P4-FADC": {
+      "params": 20707428,
+      "trainable_params": 20707428,
+      "backbone_params": 11824368,
+      "counted_operator_gflops_lower_bound": 60.826669816,
+      "backbone_counted_operator_gflops_lower_bound": 33.852638407,
+      "status": "passed",
+      "backbone_shapes": [
+        [
+          1,
+          128,
+          80,
+          80
+        ],
+        [
+          1,
+          256,
+          40,
+          40
+        ],
+        [
+          1,
+          512,
+          20,
+          20
+        ]
+      ],
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "counted_operator_flops": {
+        "aten::conv2d": 51405619200,
+        "aten::add": 15629409,
+        "aten::mul": 4947607,
+        "aten::mm": 275251200,
+        "aten::addmm": 9125222400
+      },
+      "uncounted_operator_names": [
+        "aten::_batch_norm_impl_index",
+        "aten::_convolution",
+        "aten::_efficient_attention_forward",
+        "aten::_fft_c2c",
+        "aten::_local_scalar_dense",
+        "aten::_reshape_alias",
+        "aten::_scaled_dot_product_efficient_attention",
+        "aten::_softmax",
+        "aten::_to_copy",
+        "aten::_unsafe_view",
+        "aten::add_",
+        "aten::addmm_",
+        "aten::arange",
+        "aten::as_strided",
+        "aten::as_strided_",
+        "aten::avg_pool2d",
+        "aten::batch_norm",
+        "aten::cat",
+        "aten::chunk",
+        "aten::clamp",
+        "aten::clamp_min",
+        "aten::clamp_min_",
+        "aten::clip",
+        "aten::clone",
+        "aten::concat",
+        "aten::contiguous",
+        "aten::convolution",
+        "aten::copy_",
+        "aten::cudnn_batch_norm",
+        "aten::cudnn_convolution",
+        "aten::detach",
+        "aten::div",
+        "aten::dropout",
+        "aten::empty",
+        "aten::empty_like",
+        "aten::empty_strided",
+        "aten::expand",
+        "aten::expand_as",
+        "aten::fft_fft2",
+        "aten::fft_fftshift",
+        "aten::fft_ifft2",
+        "aten::fft_ifftshift",
+        "aten::fill_",
+        "aten::flatten",
+        "aten::gather",
+        "aten::gelu",
+        "aten::grid_sampler",
+        "aten::grid_sampler_2d",
+        "aten::item",
+        "aten::layer_norm",
+        "aten::lift_fresh",
+        "aten::linear",
+        "aten::log",
+        "aten::matmul",
+        "aten::max",
+        "aten::max_pool2d",
+        "aten::max_pool2d_with_indices",
+        "aten::mul_",
+        "aten::narrow",
+        "aten::native_layer_norm",
+        "aten::new_empty",
+        "aten::new_zeros",
+        "aten::permute",
+        "aten::real",
+        "aten::relu",
+        "aten::relu_",
+        "aten::repeat",
+        "aten::reshape",
+        "aten::resize_",
+        "aten::roll",
+        "aten::rsub",
+        "aten::scaled_dot_product_attention",
+        "aten::select",
+        "aten::sigmoid",
+        "aten::silu_",
+        "aten::slice",
+        "aten::softmax",
+        "aten::split",
+        "aten::split_with_sizes",
+        "aten::squeeze",
+        "aten::stack",
+        "aten::sub",
+        "aten::sum",
+        "aten::t",
+        "aten::tanh",
+        "aten::to",
+        "aten::topk",
+        "aten::transpose",
+        "aten::transpose_",
+        "aten::unfold",
+        "aten::unsqueeze",
+        "aten::upsample_nearest2d",
+        "aten::view",
+        "aten::view_as",
+        "aten::view_as_real",
+        "aten::zero_",
+        "aten::zeros"
+      ],
+      "backbone_counted_operator_flops": {
+        "aten::conv2d": 33841971200,
+        "aten::add": 9011200,
+        "aten::mul": 1656007
+      },
+      "backbone_uncounted_operator_names": [
+        "aten::_batch_norm_impl_index",
+        "aten::_convolution",
+        "aten::_fft_c2c",
+        "aten::_local_scalar_dense",
+        "aten::_to_copy",
+        "aten::add_",
+        "aten::addmm_",
+        "aten::as_strided",
+        "aten::as_strided_",
+        "aten::avg_pool2d",
+        "aten::batch_norm",
+        "aten::clamp_min",
+        "aten::clamp_min_",
+        "aten::convolution",
+        "aten::copy_",
+        "aten::cudnn_batch_norm",
+        "aten::cudnn_convolution",
+        "aten::empty",
+        "aten::empty_like",
+        "aten::empty_strided",
+        "aten::fft_fft2",
+        "aten::fft_fftshift",
+        "aten::fft_ifft2",
+        "aten::fft_ifftshift",
+        "aten::fill_",
+        "aten::flatten",
+        "aten::item",
+        "aten::lift_fresh",
+        "aten::max_pool2d",
+        "aten::max_pool2d_with_indices",
+        "aten::mul_",
+        "aten::new_empty",
+        "aten::new_zeros",
+        "aten::permute",
+        "aten::real",
+        "aten::relu",
+        "aten::relu_",
+        "aten::reshape",
+        "aten::resize_",
+        "aten::roll",
+        "aten::select",
+        "aten::sigmoid",
+        "aten::slice",
+        "aten::squeeze",
+        "aten::sub",
+        "aten::tanh",
+        "aten::to",
+        "aten::transpose_",
+        "aten::view",
+        "aten::view_as",
+        "aten::view_as_real",
+        "aten::zero_",
+        "aten::zeros"
+      ],
+      "fadc_dense_convolution_gflops_not_counted_by_profiler": 1.8874368,
+      "added_params": 624400,
+      "added_counted_operator_gflops_lower_bound": 0.11511520700000233,
+      "added_backbone_counted_operator_gflops_lower_bound": 0.11511520700000233
+    },
+    "P4-WTConv": {
+      "params": 20124757,
+      "trainable_params": 20116565,
+      "backbone_params": 11241697,
+      "counted_operator_gflops_lower_bound": 60.756714291,
+      "backbone_counted_operator_gflops_lower_bound": 33.782682882,
+      "status": "passed",
+      "backbone_shapes": [
+        [
+          1,
+          128,
+          80,
+          80
+        ],
+        [
+          1,
+          256,
+          40,
+          40
+        ],
+        [
+          1,
+          512,
+          20,
+          20
+        ]
+      ],
+      "output_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "counted_operator_flops": {
+        "aten::conv2d": 51339264000,
+        "aten::add": 13683809,
+        "aten::mul": 3292882,
+        "aten::mm": 275251200,
+        "aten::addmm": 9125222400
+      },
+      "uncounted_operator_names": [
+        "aten::_batch_norm_impl_index",
+        "aten::_conv_depthwise2d",
+        "aten::_convolution",
+        "aten::_efficient_attention_forward",
+        "aten::_reshape_alias",
+        "aten::_scaled_dot_product_efficient_attention",
+        "aten::_softmax",
+        "aten::_to_copy",
+        "aten::_unsafe_view",
+        "aten::add_",
+        "aten::alias",
+        "aten::arange",
+        "aten::as_strided",
+        "aten::avg_pool2d",
+        "aten::batch_norm",
+        "aten::cat",
+        "aten::chunk",
+        "aten::clamp",
+        "aten::clamp_min",
+        "aten::clamp_min_",
+        "aten::clip",
+        "aten::clone",
+        "aten::concat",
+        "aten::contiguous",
+        "aten::conv_transpose2d",
+        "aten::convolution",
+        "aten::copy_",
+        "aten::cudnn_batch_norm",
+        "aten::cudnn_convolution",
+        "aten::cudnn_convolution_transpose",
+        "aten::detach",
+        "aten::div",
+        "aten::dropout",
+        "aten::empty",
+        "aten::empty_like",
+        "aten::empty_strided",
+        "aten::expand",
+        "aten::expand_as",
+        "aten::flatten",
+        "aten::gather",
+        "aten::gelu",
+        "aten::grid_sampler",
+        "aten::grid_sampler_2d",
+        "aten::layer_norm",
+        "aten::linear",
+        "aten::log",
+        "aten::matmul",
+        "aten::max",
+        "aten::max_pool2d",
+        "aten::max_pool2d_with_indices",
+        "aten::narrow",
+        "aten::native_layer_norm",
+        "aten::permute",
+        "aten::relu",
+        "aten::relu_",
+        "aten::repeat",
+        "aten::reshape",
+        "aten::reshape_as",
+        "aten::resize_",
+        "aten::rsub",
+        "aten::scaled_dot_product_attention",
+        "aten::select",
+        "aten::sigmoid",
+        "aten::silu_",
+        "aten::slice",
+        "aten::softmax",
+        "aten::split",
+        "aten::split_with_sizes",
+        "aten::stack",
+        "aten::sub",
+        "aten::sum",
+        "aten::t",
+        "aten::tanh",
+        "aten::to",
+        "aten::topk",
+        "aten::transpose",
+        "aten::unfold",
+        "aten::unsqueeze",
+        "aten::upsample_nearest2d",
+        "aten::view"
+      ],
+      "backbone_counted_operator_flops": {
+        "aten::conv2d": 33775616000,
+        "aten::add": 7065600,
+        "aten::mul": 1282
+      },
+      "backbone_uncounted_operator_names": [
+        "aten::_batch_norm_impl_index",
+        "aten::_conv_depthwise2d",
+        "aten::_convolution",
+        "aten::alias",
+        "aten::as_strided",
+        "aten::avg_pool2d",
+        "aten::batch_norm",
+        "aten::cat",
+        "aten::clamp_min_",
+        "aten::conv_transpose2d",
+        "aten::convolution",
+        "aten::cudnn_batch_norm",
+        "aten::cudnn_convolution",
+        "aten::cudnn_convolution_transpose",
+        "aten::empty",
+        "aten::empty_like",
+        "aten::flatten",
+        "aten::max_pool2d",
+        "aten::max_pool2d_with_indices",
+        "aten::narrow",
+        "aten::relu_",
+        "aten::reshape",
+        "aten::reshape_as",
+        "aten::resize_",
+        "aten::select",
+        "aten::slice",
+        "aten::tanh",
+        "aten::to",
+        "aten::unsqueeze",
+        "aten::view"
+      ],
+      "fadc_dense_convolution_gflops_not_counted_by_profiler": 0,
+      "added_params": 41729,
+      "added_counted_operator_gflops_lower_bound": 0.045159682000004864,
+      "added_backbone_counted_operator_gflops_lower_bound": 0.045159682000004864
+    }
+  }
+}

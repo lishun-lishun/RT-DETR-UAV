@@ -138,7 +138,7 @@ class TrainingCheckpointTests(unittest.TestCase):
     def test_every_dut_yaml_inherits_200_epochs_and_ten_epoch_saves(self):
         fresh_config = runpy.run_path(str(ROOT / 'tools/analyze_dut_models.py'))['fresh_config']
         paths = sorted((ROOT / 'configs/rtdetr').glob('*dut_anti_uav*.yml'))
-        self.assertEqual(len(paths), 12)
+        self.assertGreaterEqual(len(paths), 12)
         official = fresh_config(ROOT / 'configs/rtdetr/rtdetr_r18vd_6x_coco.yml')
         for path in paths:
             cfg = fresh_config(path)

@@ -141,7 +141,7 @@ class Blocks(nn.Module):
 
 @register
 class PResNet(nn.Module):
-    __share__ = ['SECD']
+    __share__ = ['SECD', 'BackbonePlugins']
 
     def __init__(
         self, 
@@ -153,7 +153,8 @@ class PResNet(nn.Module):
         freeze_at=-1, 
         freeze_norm=True, 
         pretrained=False,
-        SECD=None):
+        SECD=None,
+        BackbonePlugins=None):
         super().__init__()
 
         block_nums = ResNet_cfg[depth]
@@ -215,6 +216,13 @@ class PResNet(nn.Module):
                                             _out_channels[target_idx], **options)
                     setattr(self, 'secd_34' if target_idx == 2 else 'secd_45', bypass)
 
+        self.plugins = None
+        if BackbonePlugins is not None:
+            from .plugin_points import build_plugins
+            self.plugins = build_plugins(BackbonePlugins, depth, variant, num_stages)
+            if self.plugins is not None and (self.secd_34 is not None or self.secd_45 is not None):
+                raise ValueError('Use P3 for new plugin-point SECD; do not mix legacy SECD and BackbonePlugins')
+
         if freeze_at >= 0:
             self._freeze_parameters(self.conv1)
             for i in range(min(freeze_at, num_stages)):
@@ -223,18 +231,23 @@ class PResNet(nn.Module):
                 self._freeze_parameters(self.secd_34)
             if self.secd_45 is not None and freeze_at > 3:
                 self._freeze_parameters(self.secd_45)
+            if self.plugins is not None:
+                for point, plugin in self.plugins.items():
+                    stage_idx = {'p0': -1, 'p1': 0, 'p2': 1, 'p3': 2, 'p4': 2}[point]
+                    if stage_idx < freeze_at:
+                        self._freeze_parameters(plugin)
 
         if freeze_norm:
             self._freeze_norm(self)
 
         if pretrained:
             state = torch.hub.load_state_dict_from_url(donwload_url[depth])
-            if self.secd_34 is None and self.secd_45 is None:
+            if self.secd_34 is None and self.secd_45 is None and self.plugins is None:
                 self.load_state_dict(state)
             else:
                 incompatible = self.load_state_dict(state, strict=False)
                 missing = [k for k in incompatible.missing_keys
-                           if not k.startswith(('secd_34.', 'secd_45.'))]
+                           if not k.startswith(('secd_34.', 'secd_45.', 'plugins.'))]
                 if missing or incompatible.unexpected_keys:
                     raise RuntimeError('PResNet pretrained backbone keys mismatch: '
                                        f'missing={missing}, '
@@ -256,13 +269,38 @@ class PResNet(nn.Module):
         return m
 
     def forward(self, x):
+        image = x
         conv1 = self.conv1(x)
         x = F.max_pool2d(conv1, kernel_size=3, stride=2, padding=1)
+        if self.plugins is not None:
+            return self._forward_plugins(x, image)
         if self.secd_34 is not None or self.secd_45 is not None:
             return self._forward_secd(x)
         outs = []
         for idx, stage in enumerate(self.res_layers):
             x = stage(x)
+            if idx in self.return_idx:
+                outs.append(x)
+        return outs
+
+    def _forward_plugins(self, x, image):
+        # Original conv1, Blocks, BasicBlocks and res_layers.* keys stay intact.
+        if 'p0' in self.plugins:
+            x = x + self.plugins['p0'](image)
+        outs = []
+        for idx, stage in enumerate(self.res_layers):
+            stage_input = x
+            x = stage(stage_input)
+            if idx == 0 and 'p1' in self.plugins:       # complete S2, stride4
+                x = x + self.plugins['p1'](x)
+            elif idx == 1 and 'p2' in self.plugins:     # complete S3, stride8
+                x = x + self.plugins['p2'](x)
+            elif idx == 2:                              # complete S4, stride16
+                if 'p3' in self.plugins:                # S3 -> S4 side branch
+                    x = x + self.plugins['p3'](stage_input)
+                if 'p4' in self.plugins:
+                    x = x + self.plugins['p4'](x)
+            # S5 executes exactly its original stage, with no plugin hook.
             if idx in self.return_idx:
                 outs.append(x)
         return outs

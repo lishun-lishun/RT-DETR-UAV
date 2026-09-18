@@ -1,0 +1,4 @@
+__include__: ['./rtdetr_r18vd_dut_anti_uav.yml']
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_p4_wtconv
+BackbonePlugins:
+  P4: {enabled: true, type: wtconv, alpha_init: 0.0, alpha_max: 0.20}
