@@ -93,6 +93,53 @@ def _run_rank(rank, rendezvous):
             optimizer.step()
             assert calls == {'ddp': step + 1, 'detector': step + 1, 'secd': step + 1}, calls
         assert batches == [2, 2]
+
+        # Regression for global pair normalization: rank 0 contributes one
+        # low-error pair while rank 1 contributes two high-error pairs. The
+        # averaged DDP loss must equal the global three-pair mean, not the mean
+        # of two independently normalized rank means.
+        audit_mert = MERT({'enabled': True,
+                           'small_object_weighting': {'enabled': False}})
+        pair_count = rank + 1
+        audit_targets = [{'boxes': torch.tensor([[.3 + .2 * i, .5, .1, .1]
+                                                 for i in range(pair_count)]),
+                          'labels': torch.zeros(pair_count, dtype=torch.long),
+                          'image_id': torch.tensor([rank]),
+                          'orig_size': torch.tensor([128, 128]),
+                          'size': torch.tensor([128, 128])}]
+        audit_pair = audit_mert.prepare(torch.zeros(1, 3, 128, 128), audit_targets,
+                                        detector, shifts=[[1, 0]])
+        base = audit_pair.targets[0]['boxes']
+        original_trajectory = base[None, None].expand(3, 1, pair_count, 4).clone()
+        shifted_trajectory = original_trajectory.clone()
+        shifted_trajectory[..., 0] += 1 / 128
+        error = .02 if rank == 0 else .04
+        shifted_trajectory[1:, ..., 0] += torch.tensor([error, 2 * error])[:, None, None]
+
+        def outputs(trajectory):
+            logits = torch.zeros(1, pair_count, 1)
+            return {'pred_boxes': trajectory[-1], 'pred_logits': logits,
+                    'aux_outputs': [
+                        {'pred_boxes': trajectory[0], 'pred_logits': logits},
+                        {'pred_boxes': trajectory[1], 'pred_logits': logits},
+                        {'pred_boxes': torch.zeros_like(trajectory[0]), 'pred_logits': logits}]}
+
+        class IdentityMatcher:
+            def __call__(self, output, targets):
+                indices = torch.arange(len(targets[0]['boxes']))
+                return [(indices, indices)]
+
+        audit_loss = audit_mert.calculate_loss(outputs(original_trajectory),
+                                               outputs(shifted_trajectory),
+                                               audit_pair, IdentityMatcher())['loss_mert']
+        averaged_loss = audit_loss.detach().clone()
+        distributed.all_reduce(averaged_loss)
+        averaged_loss /= distributed.get_world_size()
+        expected = .1 * (torch.nn.functional.smooth_l1_loss(
+            torch.tensor(0.), torch.tensor(.02), beta=.01) +
+            2 * torch.nn.functional.smooth_l1_loss(
+                torch.tensor(0.), torch.tensor(.04), beta=.01)) / 3
+        assert torch.allclose(averaged_loss, expected), (rank, audit_loss, averaged_loss, expected)
         for hook in hooks:
             hook.remove()
         distributed.barrier()

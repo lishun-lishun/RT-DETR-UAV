@@ -10,7 +10,9 @@ transitions and N GTs matched in both views and fully visible in both views:
 SL1 compares the two refinement deltas, not the absolute boxes. Coordinates
 are summed; objects and transitions are averaged (there is no hidden /4).
 Small-object weights use GT area at the sampled training resolution, and do
-not change the denominator. R18's three decoder outputs give two transitions.
+not change the denominator. Under DDP, N is the global pair count divided by
+world size, matching the original criterion's gradient-normalization rule.
+R18's three decoder outputs give two transitions.
 """
 
 from contextlib import contextmanager
@@ -349,8 +351,16 @@ class MERT:
             raise ValueError('MERT views must expose the same decoder layers and batch size.')
         zero = original.sum() * 0.0 + shifted.sum() * 0.0
         transitions = min(2, len(original) - 1)
-        if transitions == 0 or not any(len(t['boxes']) for t in batch.targets) or \
-                not any(len(t['boxes']) for t in batch.shifted_targets):
+        if transitions == 0:
+            return {'loss_mert': zero}
+        distributed = torch.distributed.is_available() and \
+            torch.distributed.is_initialized()
+        # In single-process mode, retain the cheap empty-target path. Under
+        # DDP every rank must continue to the pair-count collective even when
+        # its local batch has no valid pair, otherwise ranks can deadlock or
+        # normalize their gradients with different denominators.
+        if not distributed and (not any(len(t['boxes']) for t in batch.targets) or
+                                not any(len(t['boxes']) for t in batch.shifted_targets)):
             return {'loss_mert': zero}
         # Independently use the original final-layer Hungarian matcher. Never
         # assume equal query indices, and never rematch intermediate layers.
@@ -387,9 +397,13 @@ class MERT:
             weights = self._object_weights(target['boxes'][gi].float(), batch.spatial_size)
             total = total + ((coordinate_loss * coordinate_weights).sum(-1) * weights).sum()
             pair_count += len(pairs)
-        if pair_count == 0:
+        normalizer = original.new_tensor(float(pair_count))
+        if distributed:
+            torch.distributed.all_reduce(normalizer)
+            normalizer = normalizer / torch.distributed.get_world_size()
+        if normalizer.item() == 0:
             return {'loss_mert': zero}
-        return {'loss_mert': self.loss_weight * total / (pair_count * transitions)}
+        return {'loss_mert': self.loss_weight * total / (normalizer * transitions)}
 
 
 MERTTrainingPlugin = MERT

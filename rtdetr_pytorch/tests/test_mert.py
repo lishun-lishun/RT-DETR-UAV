@@ -409,6 +409,45 @@ class MERTTests(unittest.TestCase):
         expected = torch.tensor((0.02 - 0.005) * (4 + 2 + 1 + 1) / 4 * 0.10)
         torch.testing.assert_close(loss, expected)
 
+    def test_ddp_uses_global_mean_pair_count_and_empty_rank_joins_collective(self):
+        target = make_target([[0.5, 0.5, 0.2, 0.2]], ids=[42])
+        batch = self.batch(target, shift=(1, 0))
+        original = target['boxes'][None, None].expand(3, 1, 1, 4).clone()
+        shifted = original.clone()
+        shifted[..., 0] += 1 / 20
+        shifted[1:, ..., 0] += torch.tensor([.02, .04])[:, None, None]
+
+        def global_three_pairs(value):
+            value.fill_(3)
+
+        with patch('torch.distributed.is_available', return_value=True), \
+                patch('torch.distributed.is_initialized', return_value=True), \
+                patch('torch.distributed.get_world_size', return_value=2), \
+                patch('torch.distributed.all_reduce', side_effect=global_three_pairs) as reduce:
+            loss = self.plugin.calculate_loss(make_outputs(original), make_outputs(shifted),
+                                              batch, single_pair_matcher())['loss_mert']
+        # One local pair / (three global pairs / two ranks). Each transition
+        # has the same .02 error and the MERT loss weight is .10.
+        coordinate = F.smooth_l1_loss(torch.tensor(0.), torch.tensor(.02), beta=.01)
+        torch.testing.assert_close(loss, .10 * coordinate / 1.5)
+        reduce.assert_called_once()
+
+        empty = self.batch(make_target([]), shift=(1, 0))
+        empty_trajectory = torch.rand(3, 1, 1, 4, requires_grad=True)
+        no_matches = Mock(side_effect=[[(torch.empty(0, dtype=torch.long),
+                                         torch.empty(0, dtype=torch.long))]] * 2)
+        with patch('torch.distributed.is_available', return_value=True), \
+                patch('torch.distributed.is_initialized', return_value=True), \
+                patch('torch.distributed.get_world_size', return_value=2), \
+                patch('torch.distributed.all_reduce', side_effect=lambda value: value.fill_(2)) as reduce:
+            loss = self.plugin.calculate_loss(make_outputs(empty_trajectory),
+                                              make_outputs(empty_trajectory.clone()),
+                                              empty, no_matches)['loss_mert']
+        self.assertEqual(loss.item(), 0)
+        reduce.assert_called_once()  # Must not return early and deadlock peers.
+        loss.backward()
+        self.assertIsNotNone(empty_trajectory.grad)
+
     def test_concatenated_outputs_and_dn_metadata_split_without_mutation(self):
         trajectory = torch.rand(3, 4, 5, 4, requires_grad=True)
         output = make_outputs(trajectory)
