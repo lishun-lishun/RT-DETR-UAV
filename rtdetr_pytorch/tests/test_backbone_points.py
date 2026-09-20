@@ -1,13 +1,14 @@
 """Real backbone/detector smoke tests, without data, training or downloads.
 
 python -m unittest discover -s tests -p test_backbone_points.py -v
-Native DCNv4 tests explicitly skip if its extension is absent. CUDA AMP tests
-use the same autocast/GradScaler mechanism as det_engine; prediction-derived
+UAV-DCNv4 uses torchvision's packaged deformable sampler and needs no custom
+extension. CUDA AMP tests use the same autocast/GradScaler mechanism as det_engine; prediction-derived
 smoke losses do NOT test the full COCO loss/matcher or detection accuracy.
 """
 
 import ast
 import importlib.util
+import math
 from pathlib import Path
 import subprocess
 import sys
@@ -28,20 +29,10 @@ spec.loader.exec_module(benchmark)
 core = benchmark.audit.import_model_source(selective=True)
 from src.nn.backbone.presnet import PResNet
 from src.nn.backbone.plugin_points import build_plugins
-from src.nn.backbone.plugin_points.dcnv4 import load_backend
+from src.nn.backbone.plugin_points.dcnv4 import UAVDCNv4, load_backend
 
 
-def has_dcnv4():
-    try:
-        load_backend()
-        return torch.cuda.is_available()
-    except RuntimeError:
-        return False
-
-
-HAS_DCNV4 = has_dcnv4()
-RUNNABLE = [m for m in benchmark.METHODS if m != 'Baseline'
-            and (m != 'P2-DCNv4' or HAS_DCNV4)]
+RUNNABLE = [m for m in benchmark.METHODS if m != 'Baseline']
 
 
 def original_class():
@@ -93,17 +84,9 @@ class BackbonePointTests(unittest.TestCase):
             with self.subTest(method=method):
                 model, _ = benchmark.build_model(method, selective=True)
                 model.eval()
-                if method == 'P2-DCNv4':
-                    model.cuda()
-                    ref_gpu = reference.cuda()
-                    with torch.no_grad():
-                        features, prediction = model.backbone(image.cuda()), model(image.cuda())
-                        ref_features, ref_prediction = ref_gpu.backbone(image.cuda()), ref_gpu(image.cuda())
-                    reference.cpu()
-                else:
-                    with torch.no_grad():
-                        features, prediction = model.backbone(image), model(image)
-                        ref_features, ref_prediction = reference.backbone(image), reference(image)
+                with torch.no_grad():
+                    features, prediction = model.backbone(image), model(image)
+                    ref_features, ref_prediction = reference.backbone(image), reference(image)
                 self.assertEqual([list(f.shape) for f in features],
                                  [[1, 128, 80, 80], [1, 256, 40, 40], [1, 512, 20, 20]])
                 for a, b in zip(features, ref_features):
@@ -122,9 +105,8 @@ class BackbonePointTests(unittest.TestCase):
             with self.subTest(method=method):
                 model, _ = benchmark.build_model(method, selective=True)
                 backbone = model.backbone.train()
-                device = 'cuda' if method == 'P2-DCNv4' else 'cpu'
-                backbone.to(device)
-                features = backbone(torch.randn(2, 3, 96, 96, device=device))
+                backbone.to('cpu')
+                features = backbone(torch.randn(2, 3, 96, 96))
                 loss = sum(t.square().mean() for t in features)
                 loss.backward()
                 for plugin in backbone.plugins.values():
@@ -137,12 +119,11 @@ class BackbonePointTests(unittest.TestCase):
             with self.subTest(method=method):
                 model, _ = benchmark.build_model(method, selective=True)
                 backbone = model.backbone.train()
-                device = 'cuda' if method == 'P2-DCNv4' else 'cpu'
-                backbone.to(device)
+                backbone.to('cpu')
                 with torch.no_grad():
                     for plugin in backbone.plugins.values():
                         plugin.raw_alpha.fill_(.4)
-                features = backbone(torch.randn(2, 3, 96, 96, device=device))
+                features = backbone(torch.randn(2, 3, 96, 96))
                 sum(t.square().mean() for t in features).backward()
                 for name, parameter in backbone.named_parameters():
                     if parameter.requires_grad:
@@ -201,20 +182,40 @@ class BackbonePointTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'do not mix'):
             PResNet(18, SECD={'enabled': True}, BackbonePlugins={'P3': {'enabled': True}})
 
-    def test_missing_dcnv4_no_fake_fallback_and_nonzero_raw_masks(self):
-        model, _ = benchmark.build_model('P2-DCNv4', selective=True)
+    def test_uav_dcnv4_self_contained_math_and_backward(self):
+        model, _ = benchmark.build_model('P2-UAVDCNv4', selective=True)
         module = model.backbone.plugins.p2.branch
-        self.assertTrue(torch.equal(module.offset_mask.bias[:18], torch.zeros(18)))
-        torch.testing.assert_close(module.offset_mask.bias[18:27], torch.full((9,), 1 / 9))
-        with self.assertRaisesRegex(RuntimeError, 'CUDA-only'):
-            model.backbone(torch.randn(1, 3, 96, 96))
+        self.assertIsInstance(module, UAVDCNv4)
+        self.assertTrue(callable(load_backend()))
+        self.assertEqual(module.groups, 4)
+        self.assertTrue(torch.equal(module.offset_mask.weight,
+                                    torch.zeros_like(module.offset_mask.weight)))
+        x = torch.randn(2, 128, 15, 17, requires_grad=True)
+        offset, mask = module._predict_offset_mask(x)
+        self.assertTrue(torch.equal(offset, torch.zeros_like(offset)))
+        normalized = mask.reshape(2, 4, 9, 15, 17).sum(2)
+        torch.testing.assert_close(normalized, torch.ones_like(normalized))
+        result = module(x)
+        self.assertEqual(result.shape, x.shape)
+        self.assertTrue(torch.isfinite(result).all())
+        result.square().mean().backward()
+        self.assertTrue(torch.isfinite(x.grad).all())
+        self.assertGreater(module.offset_mask.weight.grad.abs().sum().item(), 0)
 
-    @unittest.skipUnless(HAS_DCNV4, 'real DCNv4.ext missing; native forward/backward NOT validated')
-    def test_native_dcnv4_available(self):
-        model, _ = benchmark.build_model('P2-DCNv4', selective=True)
-        model.backbone.cuda().train()
-        result = model.backbone(torch.randn(2, 3, 96, 96, device='cuda'))
-        sum(x.square().mean() for x in result).backward()
+        # At initialization, zero offsets + uniform masks reproduce a local
+        # mean, which cancels in the adaptive term. The remaining branch is
+        # exactly the configured high-frequency evidence (up to BN epsilon).
+        small = UAVDCNv4(4, groups=1, detail_gain=.5).eval()
+        image = torch.randn(2, 4, 11, 13)
+        expected = .5 * (image - F.avg_pool2d(
+            image, 3, stride=1, padding=1, count_include_pad=True))
+        expected = expected / math.sqrt(1 + small.bn.eps)
+        torch.testing.assert_close(small(image), expected, atol=1e-6, rtol=1e-6)
+
+        for options in ({'groups': 3}, {'max_offset': 0},
+                        {'temperature': 0}, {'detail_gain': 1}):
+            with self.assertRaises(ValueError):
+                UAVDCNv4(128, **options)
 
     @unittest.skipUnless(torch.cuda.is_available(), 'CUDA unavailable')
     def test_cuda_amp_train_backbone_640_and_fp16_output_dtype(self):

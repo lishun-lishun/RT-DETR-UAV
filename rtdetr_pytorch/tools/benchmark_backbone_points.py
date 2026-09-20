@@ -4,7 +4,7 @@ No dataset, training or pretrained download is needed. GFLOPs are explicitly
 counted-operator lower bounds, NOT complete FLOPs: sampling/FFT/fused attention
 and some normalization/elementwise math are uncounted. FADC's dense convolution
 arithmetic is additionally reported because the native op is profiler-opaque.
-Missing DCNv4 is reported as unavailable, NEVER substituted by another op.
+UAV-DCNv4 is self-contained and uses torchvision's packaged deformable sampler.
 """
 
 import argparse
@@ -17,7 +17,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 PREFIX = 'rtdetr_r18vd_dut_anti_uav'
 METHODS = {'Baseline': '', 'P0-SRFD': '_p0_srfd', 'P1-DEConv': '_p1_deconv',
-           'P2-DCNv4': '_p2_dcnv4', 'P3-SECD34': '_p3_secd34',
+           'P2-UAVDCNv4': '_p2_dcnv4', 'P3-SECD34': '_p3_secd34',
            'P4-FADC': '_p4_fadc', 'P4-WTConv': '_p4_wtconv'}
 spec = importlib.util.spec_from_file_location('_plugin_points_audit', ROOT / 'tools/analyze_dut_models.py')
 audit = importlib.util.module_from_spec(spec)
@@ -87,12 +87,6 @@ def measure(method, args):
     try:
         with torch.inference_mode(), torch.autocast('cuda', enabled=args.amp):
             output = model(image)
-    except RuntimeError as error:
-        if method == 'P2-DCNv4' and ('DCNv4 CUDA extension' in str(error)
-                                      or 'CUDA-only' in str(error)):
-            result.update(status='unavailable', error=str(error))
-            return result
-        raise
     finally:
         hook.remove()
     if shapes != [[1, 128, 80, 80], [1, 256, 40, 40], [1, 512, 20, 20]]:

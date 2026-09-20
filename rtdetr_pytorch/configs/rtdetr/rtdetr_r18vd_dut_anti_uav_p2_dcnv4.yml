@@ -1,4 +1,5 @@
 __include__: ['./rtdetr_r18vd_dut_anti_uav.yml']
 output_dir: ./output/rtdetr_r18vd_dut_anti_uav_p2_dcnv4
 BackbonePlugins:
-  P2: {enabled: true, type: dcnv4, groups: 1, alpha_init: 0.0, alpha_max: 0.20}
+  # Self-contained UAV-DCNv4: no separately compiled DCNv4.ext is required.
+  P2: {enabled: true, type: uav_dcnv4, groups: 4, max_offset: 1.5, temperature: 1.0, detail_gain: 0.5, alpha_init: 0.0, alpha_max: 0.20}

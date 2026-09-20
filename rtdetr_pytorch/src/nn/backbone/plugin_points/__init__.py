@@ -9,7 +9,8 @@ from torch import nn
 from ..secd import SECDTransition
 
 
-TYPES = {'P0': ('srfd',), 'P1': ('deconv',), 'P2': ('dcnv4',),
+TYPES = {'P0': ('srfd',), 'P1': ('deconv',),
+         'P2': ('uav_dcnv4', 'dcnv4'),
          'P3': ('secd',), 'P4': ('fadc', 'wtconv')}
 
 
@@ -92,9 +93,9 @@ def build_plugins(config, depth, variant, num_stages):
                 # Restore source DEConv's own terminal BN/SiLU. Original stage
                 # BN/ReLU objects are untouched, unlike the old replacement.
                 branch = nn.Sequential(DEConvPlugin(64, 64), nn.BatchNorm2d(64), nn.SiLU())
-            elif kind == 'dcnv4':
-                from .dcnv4 import DCNv4Adapter
-                branch = DCNv4Adapter(128, **options)
+            elif kind in ('uav_dcnv4', 'dcnv4'):
+                from .dcnv4 import UAVDCNv4
+                branch = UAVDCNv4(128, **options)
             elif kind == 'fadc':
                 from .fadc import FADC
                 branch = FADC(256, **options)
