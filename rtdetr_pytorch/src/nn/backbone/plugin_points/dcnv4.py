@@ -3,7 +3,7 @@
 # Copyright (c) 2023 OpenGVLab
 # Licensed under The MIT License [see upstream LICENSE for details]
 # --------------------------------------------------------
-"""Minimal DCNv4 port from reference extra_modules/DCNv4_op/DCNv4.
+"""Minimal DCNv4 port from the bundled third_party/DCNv4_op/DCNv4.
 
 Sources: modules/dcnv4.py (DCNv4) and functions/dcnv4_func.py.
 Source YAML: rtdetr-DCNV4.yaml. No YOLO or FlashDeformAttn module is ported.
@@ -26,10 +26,9 @@ def load_backend():
         ext = importlib.import_module('DCNv4.ext')
     except (ImportError, OSError) as error:
         raise RuntimeError('P2 requires the REAL DCNv4 CUDA extension (DCNv4.ext). '
-                           'Build reference ultralytics/nn/extra_modules/DCNv4_op '
-                           'in the server training environment; see '
-                           'docs/backbone_plugin_points.md. No DCNv2/3/AKConv '
-                           'fallback is used.') from error
+                           'Build the bundled third_party/DCNv4_op in the server '
+                           'training environment; see third_party/DCNv4_op/'
+                           'README_RTDETR.md. No DCNv2/3/AKConv fallback is used.') from error
     if not all(hasattr(ext, name) for name in ('dcnv4_forward', 'dcnv4_backward')):
         raise RuntimeError('Incompatible DCNv4.ext: missing forward/backward symbols')
     return ext
