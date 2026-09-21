@@ -141,7 +141,7 @@ class Blocks(nn.Module):
 
 @register
 class PResNet(nn.Module):
-    __share__ = ['SECD', 'BackbonePlugins']
+    __share__ = ['SECD', 'BackbonePlugins', 'CCED', 'GRER']
 
     def __init__(
         self, 
@@ -154,7 +154,9 @@ class PResNet(nn.Module):
         freeze_norm=True, 
         pretrained=False,
         SECD=None,
-        BackbonePlugins=None):
+        BackbonePlugins=None,
+        CCED=None,
+        GRER=None):
         super().__init__()
 
         block_nums = ResNet_cfg[depth]
@@ -223,6 +225,34 @@ class PResNet(nn.Module):
             if self.plugins is not None and (self.secd_34 is not None or self.secd_45 is not None):
                 raise ValueError('Use P3 for new plugin-point SECD; do not mix legacy SECD and BackbonePlugins')
 
+        # CCED/GRER are parallel S3 -> S4 evidence branches. They never wrap or
+        # replace res_layers, so every original stage key remains unchanged.
+        self.cced_34 = None
+        self.grer_34 = None
+        cced_cfg = {} if CCED is None else dict(CCED)
+        grer_cfg = {} if GRER is None else dict(GRER)
+        for name, config in (('CCED', cced_cfg), ('GRER', grer_cfg)):
+            if not isinstance(config.get('enabled', False), bool):
+                raise ValueError(f'{name}.enabled must be a YAML boolean')
+        cced_enabled = cced_cfg.pop('enabled', False)
+        grer_enabled = grer_cfg.pop('enabled', False)
+        if cced_enabled or grer_enabled:
+            if depth != 18 or variant != 'd' or num_stages != 4:
+                raise ValueError('CCED/GRER first implementation requires PResNet18-d with four stages')
+            if self.secd_34 is not None or self.secd_45 is not None or self.plugins is not None:
+                raise ValueError('CCED/GRER screening cannot mix legacy SECD or BackbonePlugins')
+            # Do not shift initialization of HybridEncoder/decoder for a fixed
+            # seed; only the new bypasses consume this forked RNG stream.
+            with torch.random.fork_rng(devices=[]):
+                if cced_enabled:
+                    from .backbone_plugins.cced import CCEDTransition
+                    self.cced_34 = CCEDTransition(_out_channels[1], _out_channels[2],
+                                                  **cced_cfg)
+                if grer_enabled:
+                    from .backbone_plugins.grer import GRERRelay
+                    self.grer_34 = GRERRelay(_out_channels[1], _out_channels[2],
+                                             **grer_cfg)
+
         if freeze_at >= 0:
             self._freeze_parameters(self.conv1)
             for i in range(min(freeze_at, num_stages)):
@@ -231,6 +261,10 @@ class PResNet(nn.Module):
                 self._freeze_parameters(self.secd_34)
             if self.secd_45 is not None and freeze_at > 3:
                 self._freeze_parameters(self.secd_45)
+            if self.cced_34 is not None and freeze_at > 2:
+                self._freeze_parameters(self.cced_34)
+            if self.grer_34 is not None and freeze_at > 2:
+                self._freeze_parameters(self.grer_34)
             if self.plugins is not None:
                 for point, plugin in self.plugins.items():
                     stage_idx = {'p0': -1, 'p1': 0, 'p2': 1, 'p3': 2, 'p4': 2}[point]
@@ -242,12 +276,14 @@ class PResNet(nn.Module):
 
         if pretrained:
             state = torch.hub.load_state_dict_from_url(donwload_url[depth])
-            if self.secd_34 is None and self.secd_45 is None and self.plugins is None:
+            if (self.secd_34 is None and self.secd_45 is None and self.plugins is None
+                    and self.cced_34 is None and self.grer_34 is None):
                 self.load_state_dict(state)
             else:
                 incompatible = self.load_state_dict(state, strict=False)
                 missing = [k for k in incompatible.missing_keys
-                           if not k.startswith(('secd_34.', 'secd_45.', 'plugins.'))]
+                           if not k.startswith(('secd_34.', 'secd_45.', 'plugins.',
+                                                'cced_34.', 'grer_34.'))]
                 if missing or incompatible.unexpected_keys:
                     raise RuntimeError('PResNet pretrained backbone keys mismatch: '
                                        f'missing={missing}, '
@@ -274,11 +310,33 @@ class PResNet(nn.Module):
         x = F.max_pool2d(conv1, kernel_size=3, stride=2, padding=1)
         if self.plugins is not None:
             return self._forward_plugins(x, image)
+        if self.cced_34 is not None or self.grer_34 is not None:
+            return self._forward_cced_grer(x)
         if self.secd_34 is not None or self.secd_45 is not None:
             return self._forward_secd(x)
         outs = []
         for idx, stage in enumerate(self.res_layers):
             x = stage(x)
+            if idx in self.return_idx:
+                outs.append(x)
+        return outs
+
+    def _forward_cced_grer(self, x):
+        outs = []
+        for idx, stage in enumerate(self.res_layers):
+            stage_input = x
+            stage_base = stage(stage_input)
+            if idx == 2:  # complete original S4: stride8 -> stride16
+                x = stage_base
+                # Both branches independently read the exact same F3 and are
+                # added directly to the complete original F4_base.
+                if self.cced_34 is not None:
+                    x = x + self.cced_34(stage_input, base=stage_base)
+                if self.grer_34 is not None:
+                    x = x + self.grer_34(stage_input, base=stage_base)
+            else:
+                x = stage_base
+            # At idx=3, original S5 has consumed the already enhanced F4.
             if idx in self.return_idx:
                 outs.append(x)
         return outs

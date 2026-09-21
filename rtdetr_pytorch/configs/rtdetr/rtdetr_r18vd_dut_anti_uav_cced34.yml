@@ -1,0 +1,19 @@
+__include__: ['./rtdetr_r18vd_dut_anti_uav.yml']
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_cced34
+
+CCED:
+  enabled: true
+  transition: 3to4
+  groups: 8
+  eps: 1.0e-6
+  projection:
+    norm: true
+    activation: false
+  fusion:
+    alpha_init: 0.0
+    alpha_max: 0.20
+  debug: false
+
+GRER:
+  enabled: false

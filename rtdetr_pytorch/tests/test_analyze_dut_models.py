@@ -59,7 +59,8 @@ class FairnessGuardTests(unittest.TestCase):
             self.assertFalse(analyze.permitted_difference(key), key)
 
     def test_method_switches_exempted(self):
-        for key in ("MERT.enabled", "MERT.beta", "SECD.transitions", "SECD.enabled"):
+        for key in ("MERT.enabled", "MERT.beta", "SECD.transitions", "SECD.enabled",
+                    "CCED.enabled", "CCED.groups", "GRER.enabled", "GRER.threshold"):
             self.assertTrue(analyze.permitted_difference(key))
 
     def test_batch_override_is_only_exempted_against_official(self):

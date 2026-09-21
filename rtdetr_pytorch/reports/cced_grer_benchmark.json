@@ -1,0 +1,277 @@
+{
+  "audit": {
+    "passed": true,
+    "failures": [],
+    "configs": {
+      "Baseline": {
+        "path": "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav.yml",
+        "differences_from_baseline": {}
+      },
+      "CCED34": {
+        "path": "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_cced34.yml",
+        "differences_from_baseline": {
+          "CCED.debug": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "CCED.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "CCED.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "CCED.fusion.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "CCED.fusion.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "CCED.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "CCED.projection.activation": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "CCED.projection.norm": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "CCED.transition": {
+            "reference": "<absent>",
+            "candidate": "3to4"
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_cced34"
+          }
+        }
+      },
+      "GRER34": {
+        "path": "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_grer34.yml",
+        "differences_from_baseline": {
+          "GRER.debug": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "GRER.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "GRER.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "GRER.fusion.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "GRER.fusion.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "GRER.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "GRER.local_kernel": {
+            "reference": "<absent>",
+            "candidate": 3
+          },
+          "GRER.projection.activation": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "GRER.projection.norm": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "GRER.rarity.temperature": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "GRER.rarity.threshold": {
+            "reference": "<absent>",
+            "candidate": 2.0
+          },
+          "GRER.transition": {
+            "reference": "<absent>",
+            "candidate": "3to4"
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_grer34"
+          }
+        }
+      },
+      "CCED34+GRER34": {
+        "path": "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_cced34_grer34.yml",
+        "differences_from_baseline": {
+          "CCED.debug": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "CCED.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "CCED.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "CCED.fusion.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "CCED.fusion.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "CCED.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "CCED.projection.activation": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "CCED.projection.norm": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "CCED.transition": {
+            "reference": "<absent>",
+            "candidate": "3to4"
+          },
+          "GRER.debug": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "GRER.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "GRER.eps": {
+            "reference": "<absent>",
+            "candidate": 1e-06
+          },
+          "GRER.fusion.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.0
+          },
+          "GRER.fusion.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "GRER.groups": {
+            "reference": "<absent>",
+            "candidate": 8
+          },
+          "GRER.local_kernel": {
+            "reference": "<absent>",
+            "candidate": 3
+          },
+          "GRER.projection.activation": {
+            "reference": "<absent>",
+            "candidate": false
+          },
+          "GRER.projection.norm": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "GRER.rarity.temperature": {
+            "reference": "<absent>",
+            "candidate": 1.0
+          },
+          "GRER.rarity.threshold": {
+            "reference": "<absent>",
+            "candidate": 2.0
+          },
+          "GRER.transition": {
+            "reference": "<absent>",
+            "candidate": "3to4"
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_cced34_grer34"
+          }
+        }
+      }
+    }
+  },
+  "protocol": {
+    "input": [
+      1,
+      3,
+      640,
+      640
+    ],
+    "batch": 1,
+    "amp": true,
+    "warmup": 100,
+    "iterations": 500,
+    "timing": "torch.cuda.Event",
+    "torch": "2.10.0+cu128",
+    "gpu": "NVIDIA GeForce RTX 5060 Ti",
+    "flops": "PyTorch profiler counted-operator lower bound"
+  },
+  "results": {
+    "Baseline": {
+      "params": 20083028,
+      "trainable_params": 20083028,
+      "counted_operator_gflops_lower_bound": 112.006581809,
+      "latency_ms": {
+        "mean": 11.178894250869751,
+        "median": 10.600912094116211,
+        "p95": 15.203033876419067
+      },
+      "fps": 89.4542856886044,
+      "delta_params": 0,
+      "delta_counted_operator_gflops": 0.0
+    },
+    "CCED34": {
+      "params": 20116309,
+      "trainable_params": 20116309,
+      "counted_operator_gflops_lower_bound": 112.216829811,
+      "latency_ms": {
+        "mean": 11.825447311401367,
+        "median": 11.096335887908936,
+        "p95": 17.3872275352478
+      },
+      "fps": 84.56339736390873,
+      "delta_params": 33281,
+      "delta_counted_operator_gflops": 0.21024800200000016
+    },
+    "GRER34": {
+      "params": 20116309,
+      "trainable_params": 20116309,
+      "counted_operator_gflops_lower_bound": 112.216764211,
+      "latency_ms": {
+        "mean": 11.935651889801026,
+        "median": 11.025728225708008,
+        "p95": 17.764587688446042
+      },
+      "fps": 83.78260435481506,
+      "delta_params": 33281,
+      "delta_counted_operator_gflops": 0.21018240200000093
+    },
+    "CCED34+GRER34": {
+      "params": 20149590,
+      "trainable_params": 20149590,
+      "counted_operator_gflops_lower_bound": 112.427012213,
+      "latency_ms": {
+        "mean": 12.764974300384521,
+        "median": 11.600480079650879,
+        "p95": 19.13428001403808
+      },
+      "fps": 78.33936649366203,
+      "delta_params": 66562,
+      "delta_counted_operator_gflops": 0.4204304040000011
+    }
+  }
+}

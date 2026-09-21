@@ -86,6 +86,14 @@ def permitted_difference(key, original=False):
         return True
     if key == "SECD" or key.startswith("SECD."):
         return True
+    # Optional backbone branches are part of the model-selection surface, just
+    # like MERT/SECD.  Their disabled defaults are allowed to be absent from
+    # the untouched upstream COCO file, while every DUT method still inherits
+    # the same disabled values unless its own YAML explicitly opts in.
+    if key == "CCED" or key.startswith("CCED."):
+        return True
+    if key == "GRER" or key.startswith("GRER."):
+        return True
     if original:
         return (key in ("num_classes", "remap_mscoco_category")
                 or key in ("epoches", "checkpoint_step")
