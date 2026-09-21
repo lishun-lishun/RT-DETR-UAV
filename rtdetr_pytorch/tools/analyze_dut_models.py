@@ -96,6 +96,7 @@ def permitted_difference(key, original=False):
         return True
     if original:
         return (key in ("num_classes", "remap_mscoco_category")
+                or key in ("BackboneVariant", "BackboneVariant.type")
                 or key in ("epoches", "checkpoint_step")
                 or key in ("train_dataloader.batch_size", "val_dataloader.batch_size")
                 or key.startswith("test_dataset.")

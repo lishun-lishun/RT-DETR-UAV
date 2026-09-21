@@ -141,7 +141,8 @@ class Blocks(nn.Module):
 
 @register
 class PResNet(nn.Module):
-    __share__ = ['SECD', 'BackbonePlugins', 'CCED', 'GRER']
+    __share__ = ['SECD', 'BackbonePlugins', 'CCED', 'GRER',
+                 'BackboneVariant', 'PHSB']
 
     def __init__(
         self, 
@@ -156,10 +157,41 @@ class PResNet(nn.Module):
         SECD=None,
         BackbonePlugins=None,
         CCED=None,
-        GRER=None):
+        GRER=None,
+        BackboneVariant=None,
+        PHSB=None):
         super().__init__()
 
         block_nums = ResNet_cfg[depth]
+        variant_cfg = {} if BackboneVariant is None else dict(BackboneVariant)
+        self.backbone_variant_type = variant_cfg.get('type', 'baseline')
+        if self.backbone_variant_type not in ('baseline', 'hsdr', 'phsb'):
+            raise ValueError('BackboneVariant.type must be baseline, hsdr, or phsb')
+        self.backbone_variant_debug = variant_cfg.get('debug', False)
+        self.backbone_variant_debug_interval = variant_cfg.get('debug_interval', 100)
+        if (not isinstance(self.backbone_variant_debug, bool)
+                or not isinstance(self.backbone_variant_debug_interval, int)
+                or self.backbone_variant_debug_interval < 1):
+            raise ValueError('BackboneVariant debug must be boolean and interval positive')
+        self._variant_debug_iteration = 0
+        if self.backbone_variant_type != 'baseline':
+            if depth != 18 or variant != 'd' or num_stages != 4:
+                raise ValueError('HSDR/PHSB first round requires PResNet18-d with four stages')
+            old_methods = (
+                (SECD or {}).get('enabled', False),
+                (CCED or {}).get('enabled', False),
+                (GRER or {}).get('enabled', False),
+                any(isinstance(options, dict) and options.get('enabled', False)
+                    for options in (BackbonePlugins or {}).values()),
+            )
+            if any(old_methods):
+                raise ValueError('HSDR/PHSB first round cannot mix existing backbone plugins')
+        self.stage_blocks = list(block_nums[:num_stages])
+        if self.backbone_variant_type == 'hsdr':
+            requested = variant_cfg.get('stage_blocks')
+            if requested not in ([2, 3, 2, 1], [2, 4, 3, 1]):
+                raise ValueError('First-round HSDR stage_blocks must be [2,3,2,1] or [2,4,3,1]')
+            self.stage_blocks = list(requested)
         ch_in = 64
         if variant in ['c', 'd']:
             conv_def = [
@@ -187,6 +219,20 @@ class PResNet(nn.Module):
                 Blocks(block, ch_in, ch_out_list[i], block_nums[i], stage_num, act=act, variant=variant)
             )
             ch_in = _out_channels[i]
+
+        if self.backbone_variant_type == 'hsdr':
+            # Build the original eight blocks first, then alter only counts in
+            # a forked RNG stream. Existing weights/key names and the later
+            # Encoder/Decoder initialization remain aligned to Baseline.
+            with torch.random.fork_rng(devices=[]):
+                for idx, target_count in enumerate(self.stage_blocks):
+                    blocks = self.res_layers[idx].blocks
+                    for _ in range(target_count - len(blocks)):
+                        blocks.append(BasicBlock(_out_channels[idx], _out_channels[idx],
+                                                 stride=1, shortcut=True,
+                                                 variant=variant, act=act))
+                    while len(blocks) > target_count:
+                        del blocks[-1]
 
         self.return_idx = return_idx
         self.out_channels = [_out_channels[_i] for _i in return_idx]
@@ -253,6 +299,14 @@ class PResNet(nn.Module):
                     self.grer_34 = GRERRelay(_out_channels[1], _out_channels[2],
                                              **grer_cfg)
 
+        self.phsb = None
+        if self.backbone_variant_type == 'phsb':
+            from .phsb import PHSBBranch
+            phsb_cfg = {} if PHSB is None else dict(PHSB)
+            with torch.random.fork_rng(devices=[]):
+                self.phsb = PHSBBranch(_out_channels[1], _out_channels[2],
+                                       BasicBlock, **phsb_cfg)
+
         if freeze_at >= 0:
             self._freeze_parameters(self.conv1)
             for i in range(min(freeze_at, num_stages)):
@@ -265,6 +319,8 @@ class PResNet(nn.Module):
                 self._freeze_parameters(self.cced_34)
             if self.grer_34 is not None and freeze_at > 2:
                 self._freeze_parameters(self.grer_34)
+            if self.phsb is not None and freeze_at > 1:
+                self._freeze_parameters(self.phsb)
             if self.plugins is not None:
                 for point, plugin in self.plugins.items():
                     stage_idx = {'p0': -1, 'p1': 0, 'p2': 1, 'p3': 2, 'p4': 2}[point]
@@ -276,9 +332,36 @@ class PResNet(nn.Module):
 
         if pretrained:
             state = torch.hub.load_state_dict_from_url(donwload_url[depth])
-            if (self.secd_34 is None and self.secd_45 is None and self.plugins is None
+            if self.backbone_variant_type == 'hsdr':
+                incompatible = self.load_state_dict(state, strict=False)
+                extra = {(idx, block_idx)
+                         for idx, target_count in enumerate(self.stage_blocks)
+                         for block_idx in range(block_nums[idx], target_count)}
+                removed = {(idx, block_idx)
+                           for idx, target_count in enumerate(self.stage_blocks)
+                           for block_idx in range(target_count, block_nums[idx])}
+                def belongs_to(key, stage_blocks):
+                    return any(key.startswith(f'res_layers.{idx}.blocks.{block_idx}.')
+                               for idx, block_idx in stage_blocks)
+                invalid_missing = [key for key in incompatible.missing_keys
+                                   if not belongs_to(key, extra)]
+                invalid_unexpected = [key for key in incompatible.unexpected_keys
+                                      if not belongs_to(key, removed)]
+                if invalid_missing or invalid_unexpected:
+                    raise RuntimeError('HSDR pretrained backbone keys mismatch: '
+                                       f'missing={invalid_missing}, unexpected={invalid_unexpected}')
+            elif self.phsb is not None:
+                incompatible = self.load_state_dict(state, strict=False)
+                invalid_missing = [key for key in incompatible.missing_keys
+                                   if not key.startswith('phsb.')]
+                if invalid_missing or incompatible.unexpected_keys:
+                    raise RuntimeError('PHSB pretrained backbone keys mismatch: '
+                                       f'missing={invalid_missing}, '
+                                       f'unexpected={incompatible.unexpected_keys}')
+            elif (self.secd_34 is None and self.secd_45 is None and self.plugins is None
                     and self.cced_34 is None and self.grer_34 is None):
                 self.load_state_dict(state)
+                incompatible = None
             else:
                 incompatible = self.load_state_dict(state, strict=False)
                 missing = [k for k in incompatible.missing_keys
@@ -288,6 +371,18 @@ class PResNet(nn.Module):
                     raise RuntimeError('PResNet pretrained backbone keys mismatch: '
                                        f'missing={missing}, '
                                        f'unexpected={incompatible.unexpected_keys}')
+            missing_keys = [] if incompatible is None else list(incompatible.missing_keys)
+            unexpected_keys = [] if incompatible is None else list(incompatible.unexpected_keys)
+            loaded_keys = sorted(set(self.state_dict()).intersection(state))
+            self.pretrained_load_report = {
+                'loaded_keys': loaded_keys,
+                'missing_keys': missing_keys,
+                'unexpected_keys': unexpected_keys,
+            }
+            if self.backbone_variant_type != 'baseline':
+                print(f'{self.backbone_variant_type.upper()} pretrained: '
+                      f'loaded={len(loaded_keys)}, missing={missing_keys}, '
+                      f'unexpected={unexpected_keys}')
             print(f'Load PResNet{depth} state_dict')
             
     def _freeze_parameters(self, m: nn.Module):
@@ -312,6 +407,8 @@ class PResNet(nn.Module):
             return self._forward_plugins(x, image)
         if self.cced_34 is not None or self.grer_34 is not None:
             return self._forward_cced_grer(x)
+        if self.phsb is not None:
+            return self._forward_phsb(x)
         if self.secd_34 is not None or self.secd_45 is not None:
             return self._forward_secd(x)
         outs = []
@@ -319,6 +416,8 @@ class PResNet(nn.Module):
             x = stage(x)
             if idx in self.return_idx:
                 outs.append(x)
+        if self.backbone_variant_debug:
+            self._debug_variant_features(outs)
         return outs
 
     def _forward_cced_grer(self, x):
@@ -340,6 +439,38 @@ class PResNet(nn.Module):
             if idx in self.return_idx:
                 outs.append(x)
         return outs
+
+    def _forward_phsb(self, x):
+        f2 = self.res_layers[0](x)
+        f3_base = self.res_layers[1](f2)
+        # The main downsampling stage consumes the untouched F3_base, never
+        # the enhanced P3, so the branch only intervenes through two explicit
+        # and independently gated residuals.
+        f4_base = self.res_layers[2](f3_base)
+        p3_residual, p4_residual = self.phsb(f3_base, f4_base)
+        f3 = f3_base + p3_residual
+        f4 = f4_base + p4_residual
+        f5 = self.res_layers[3](f4)
+        levels = (f2, f3, f4, f5)
+        return [feature for idx, feature in enumerate(levels) if idx in self.return_idx]
+
+    def _debug_variant_features(self, features):
+        if self._variant_debug_iteration % self.backbone_variant_debug_interval == 0:
+            returned_stages = [idx for idx in range(len(self.res_layers))
+                               if idx in self.return_idx]
+            for stage_idx, feature in zip(returned_stages, features):
+                work = feature.float()
+                values = {
+                    'mean': work.mean(), 'std': work.std(unbiased=False),
+                    'L2': work.norm(),
+                    'spatial_var': work.var(dim=(-2, -1), unbiased=False).mean(),
+                    'channel_var': work.mean(dim=(-2, -1)).var(dim=1, unbiased=False).mean(),
+                }
+                message = ' '.join(f'{name}={float(value.detach()):.6g}'
+                                   for name, value in values.items())
+                print(f'[BackboneVariant {self.backbone_variant_type} '
+                      f'P{stage_idx + 2} iter={self._variant_debug_iteration}] {message}')
+        self._variant_debug_iteration += 1
 
     def _forward_plugins(self, x, image):
         # Original conv1, Blocks, BasicBlocks and res_layers.* keys stay intact.

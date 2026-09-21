@@ -30,3 +30,8 @@ CCED:
 
 GRER:
   enabled: false
+
+# First-round structure experiment; baseline constructs the original
+# [2,2,2,2] PResNet18 without any additional module or parameter.
+BackboneVariant:
+  type: baseline

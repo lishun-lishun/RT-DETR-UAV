@@ -1,0 +1,8 @@
+__include__: ['./rtdetr_r18vd_dut_anti_uav.yml']
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_hsdr_b
+
+BackboneVariant:
+  type: hsdr
+  stage_blocks: [2, 3, 2, 1]
+  debug: false

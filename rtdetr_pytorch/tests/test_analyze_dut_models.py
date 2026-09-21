@@ -63,6 +63,10 @@ class FairnessGuardTests(unittest.TestCase):
                     "CCED.enabled", "CCED.groups", "GRER.enabled", "GRER.threshold"):
             self.assertTrue(analyze.permitted_difference(key))
 
+    def test_baseline_variant_switch_is_only_exempted_against_official(self):
+        self.assertTrue(analyze.permitted_difference("BackboneVariant.type", original=True))
+        self.assertFalse(analyze.permitted_difference("BackboneVariant.type"))
+
     def test_batch_override_is_only_exempted_against_official(self):
         for key in ("train_dataloader.batch_size", "val_dataloader.batch_size"):
             self.assertTrue(analyze.permitted_difference(key, original=True), key)

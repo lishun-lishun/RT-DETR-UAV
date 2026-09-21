@@ -1,0 +1,13 @@
+__include__: ['./rtdetr_r18vd_dut_anti_uav.yml']
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_phsb
+
+BackboneVariant:
+  type: phsb
+
+PHSB:
+  branch_ratio: 0.75
+  num_blocks: 3
+  alpha_init: 0.0
+  alpha_max: 0.20
+  debug: false
