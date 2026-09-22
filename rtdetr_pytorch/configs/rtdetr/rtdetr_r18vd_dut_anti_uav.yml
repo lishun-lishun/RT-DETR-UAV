@@ -17,6 +17,8 @@ train_dataloader:
 
 val_dataloader:
   batch_size: 16
+  # Half of the inherited training workers (4); also used by --test-only.
+  num_workers: 2
 
 # Default-off switches: no extra inference structure or training views.
 MERT:
