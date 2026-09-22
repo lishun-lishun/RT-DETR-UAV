@@ -1,0 +1,19 @@
+__include__: ['./rtdetr_r18vd_dut_anti_uav.yml']
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_hcbr
+
+BackboneEnhancement:
+  bafr: false
+  hcbr: true
+
+HCBR:
+  inner_kernel: 3
+  near_kernel: 7
+  far_kernel: 11
+  gamma: 2.0
+  eps: 1.0e-6
+  lambda_init: 0.0
+  lambda_max: 0.20
+  use_p3: true
+  use_p4: true
+  debug: false

@@ -1,0 +1,20 @@
+__include__: ['./rtdetr_r18vd_dut_anti_uav.yml']
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_bafr
+
+BackboneEnhancement:
+  bafr: true
+  hcbr: false
+
+BAFR:
+  fine_kernel: 3
+  support_kernel: 7
+  eps: 1.0e-6
+  fine_branch:
+    kernel: 3
+    dilation: 1
+  support_branch:
+    kernel: 3
+    first_dilation: 1
+    second_dilation: 2
+  debug: false

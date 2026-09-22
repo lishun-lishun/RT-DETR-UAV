@@ -35,3 +35,8 @@ GRER:
 # [2,2,2,2] PResNet18 without any additional module or parameter.
 BackboneVariant:
   type: baseline
+
+# These default-off flags add no module or parameter to the original R18.
+BackboneEnhancement:
+  bafr: false
+  hcbr: false

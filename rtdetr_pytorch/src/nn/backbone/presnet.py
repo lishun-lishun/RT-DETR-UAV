@@ -142,7 +142,7 @@ class Blocks(nn.Module):
 @register
 class PResNet(nn.Module):
     __share__ = ['SECD', 'BackbonePlugins', 'CCED', 'GRER',
-                 'BackboneVariant', 'PHSB']
+                 'BackboneVariant', 'PHSB', 'BackboneEnhancement', 'BAFR', 'HCBR']
 
     def __init__(
         self, 
@@ -159,7 +159,10 @@ class PResNet(nn.Module):
         CCED=None,
         GRER=None,
         BackboneVariant=None,
-        PHSB=None):
+        PHSB=None,
+        BackboneEnhancement=None,
+        BAFR=None,
+        HCBR=None):
         super().__init__()
 
         block_nums = ResNet_cfg[depth]
@@ -174,6 +177,28 @@ class PResNet(nn.Module):
                 or self.backbone_variant_debug_interval < 1):
             raise ValueError('BackboneVariant debug must be boolean and interval positive')
         self._variant_debug_iteration = 0
+        enhancement = {} if BackboneEnhancement is None else dict(BackboneEnhancement)
+        unknown = set(enhancement) - {'bafr', 'hcbr'}
+        if unknown:
+            raise ValueError(f'Unknown BackboneEnhancement options: {sorted(unknown)}')
+        self.bafr_enabled = enhancement.get('bafr', False)
+        self.hcbr_enabled = enhancement.get('hcbr', False)
+        if not isinstance(self.bafr_enabled, bool) or not isinstance(self.hcbr_enabled, bool):
+            raise ValueError('BackboneEnhancement.bafr/hcbr must be YAML booleans')
+        if self.bafr_enabled or self.hcbr_enabled:
+            if depth != 18 or variant != 'd' or num_stages != 4:
+                raise ValueError('BAFR/HCBR first round requires PResNet18-d with four stages')
+            if self.backbone_variant_type != 'baseline':
+                raise ValueError('BAFR/HCBR cannot mix HSDR/PHSB in the first round')
+            old_methods = (
+                (SECD or {}).get('enabled', False),
+                (CCED or {}).get('enabled', False),
+                (GRER or {}).get('enabled', False),
+                any(isinstance(options, dict) and options.get('enabled', False)
+                    for options in (BackbonePlugins or {}).values()),
+            )
+            if any(old_methods):
+                raise ValueError('BAFR/HCBR cannot mix legacy backbone plugins in the first round')
         if self.backbone_variant_type != 'baseline':
             if depth != 18 or variant != 'd' or num_stages != 4:
                 raise ValueError('HSDR/PHSB first round requires PResNet18-d with four stages')
@@ -237,6 +262,17 @@ class PResNet(nn.Module):
         self.return_idx = return_idx
         self.out_channels = [_out_channels[_i] for _i in return_idx]
         self.out_strides = [_out_strides[_i] for _i in return_idx]
+
+        # S3 has two original BasicBlocks. Replace only its last spatial
+        # modelling block; the shortcut, later convolution and key hierarchy
+        # remain the original block's. New weights use an isolated RNG stream.
+        if self.bafr_enabled:
+            from .backbone_modules.bafr import BAFRBlock
+            with torch.random.fork_rng(devices=[]):
+                blocks = self.res_layers[1].blocks
+                if len(blocks) != 2 or not isinstance(blocks[-1], BasicBlock):
+                    raise RuntimeError('BAFR requires original two-block S3 BasicBlock stage')
+                blocks[-1] = BAFRBlock(blocks[-1], **({} if BAFR is None else dict(BAFR)))
 
         # Separate bypass attributes preserve every original res_layers.* key.
         # Disabled SECD creates no module/parameter and consumes no RNG state.
@@ -307,6 +343,25 @@ class PResNet(nn.Module):
                 self.phsb = PHSBBranch(_out_channels[1], _out_channels[2],
                                        BasicBlock, **phsb_cfg)
 
+        self.hcbr_p3 = None
+        self.hcbr_p4 = None
+        if self.hcbr_enabled:
+            from .backbone_modules.hcbr import HCBR as HCBRModule
+            hcbr_cfg = {} if HCBR is None else dict(HCBR)
+            use_p3 = hcbr_cfg.pop('use_p3', True)
+            use_p4 = hcbr_cfg.pop('use_p4', True)
+            if not isinstance(use_p3, bool) or not isinstance(use_p4, bool):
+                raise ValueError('HCBR.use_p3/use_p4 must be YAML booleans')
+            if not (use_p3 or use_p4):
+                raise ValueError('HCBR requires at least one of use_p3/use_p4')
+            with torch.random.fork_rng(devices=[]):
+                if use_p3:
+                    self.hcbr_p3 = HCBRModule(_out_channels[1], **hcbr_cfg)
+                    self.hcbr_p3.debug_name = 'P3'
+                if use_p4:
+                    self.hcbr_p4 = HCBRModule(_out_channels[2], **hcbr_cfg)
+                    self.hcbr_p4.debug_name = 'P4'
+
         if freeze_at >= 0:
             self._freeze_parameters(self.conv1)
             for i in range(min(freeze_at, num_stages)):
@@ -321,6 +376,10 @@ class PResNet(nn.Module):
                 self._freeze_parameters(self.grer_34)
             if self.phsb is not None and freeze_at > 1:
                 self._freeze_parameters(self.phsb)
+            if self.hcbr_p3 is not None and freeze_at > 1:
+                self._freeze_parameters(self.hcbr_p3)
+            if self.hcbr_p4 is not None and freeze_at > 2:
+                self._freeze_parameters(self.hcbr_p4)
             if self.plugins is not None:
                 for point, plugin in self.plugins.items():
                     stage_idx = {'p0': -1, 'p1': 0, 'p2': 1, 'p3': 2, 'p4': 2}[point]
@@ -358,6 +417,20 @@ class PResNet(nn.Module):
                     raise RuntimeError('PHSB pretrained backbone keys mismatch: '
                                        f'missing={invalid_missing}, '
                                        f'unexpected={incompatible.unexpected_keys}')
+            elif self.bafr_enabled or self.hcbr_enabled:
+                incompatible = self.load_state_dict(state, strict=False)
+                bafr_prefix = 'res_layers.1.blocks.1.branch2a.conv.'
+                allowed_missing = ('hcbr_p3.', 'hcbr_p4.')
+                invalid_missing = [key for key in incompatible.missing_keys
+                                   if not key.startswith(allowed_missing)
+                                   and not (self.bafr_enabled and key.startswith(bafr_prefix))]
+                allowed_unexpected = {bafr_prefix + 'weight'} if self.bafr_enabled else set()
+                invalid_unexpected = [key for key in incompatible.unexpected_keys
+                                      if key not in allowed_unexpected]
+                if invalid_missing or invalid_unexpected:
+                    raise RuntimeError('BAFR/HCBR pretrained backbone keys mismatch: '
+                                       f'missing={invalid_missing}, '
+                                       f'unexpected={invalid_unexpected}')
             elif (self.secd_34 is None and self.secd_45 is None and self.plugins is None
                     and self.cced_34 is None and self.grer_34 is None):
                 self.load_state_dict(state)
@@ -379,8 +452,12 @@ class PResNet(nn.Module):
                 'missing_keys': missing_keys,
                 'unexpected_keys': unexpected_keys,
             }
-            if self.backbone_variant_type != 'baseline':
-                print(f'{self.backbone_variant_type.upper()} pretrained: '
+            if self.backbone_variant_type != 'baseline' or self.bafr_enabled or self.hcbr_enabled:
+                enhancement_name = '+'.join(name for name, enabled in
+                                            (('BAFR', self.bafr_enabled),
+                                             ('HCBR', self.hcbr_enabled)) if enabled)
+                method_name = enhancement_name or self.backbone_variant_type.upper()
+                print(f'{method_name} pretrained: '
                       f'loaded={len(loaded_keys)}, missing={missing_keys}, '
                       f'unexpected={unexpected_keys}')
             print(f'Load PResNet{depth} state_dict')
@@ -411,6 +488,8 @@ class PResNet(nn.Module):
             return self._forward_phsb(x)
         if self.secd_34 is not None or self.secd_45 is not None:
             return self._forward_secd(x)
+        if self.hcbr_p3 is not None or self.hcbr_p4 is not None:
+            return self._forward_hcbr(x)
         outs = []
         for idx, stage in enumerate(self.res_layers):
             x = stage(x)
@@ -418,6 +497,24 @@ class PResNet(nn.Module):
                 outs.append(x)
         if self.backbone_variant_debug:
             self._debug_variant_features(outs)
+        return outs
+
+    def _forward_hcbr(self, x):
+        outs = []
+        for idx, stage in enumerate(self.res_layers):
+            if idx == 2 and self.hcbr_p4 is not None:
+                # The stride-16 first block runs before HCBR-P4; remaining
+                # S4 blocks consume its output. This is not an output-only hook.
+                x = stage.blocks[0](x)
+                x = self.hcbr_p4(x)
+                for block in stage.blocks[1:]:
+                    x = block(x)
+            else:
+                x = stage(x)
+            if idx == 1 and self.hcbr_p3 is not None:
+                x = self.hcbr_p3(x)
+            if idx in self.return_idx:
+                outs.append(x)
         return outs
 
     def _forward_cced_grer(self, x):

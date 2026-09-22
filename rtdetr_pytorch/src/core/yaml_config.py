@@ -22,6 +22,12 @@ class YAMLConfig(BaseConfig):
         # in the same process. Default-off does not instantiate any module.
         cfg.setdefault('SECD', {'enabled': False})
         merge_dict(cfg, kwargs)
+        # The registry is process-global: an earlier BAFR/HCBR config must
+        # never turn on a later official Baseline config by inheritance.
+        enhancement = cfg.get('BackboneEnhancement', {})
+        if not isinstance(enhancement, dict):
+            raise ValueError('BackboneEnhancement must be a mapping')
+        cfg['BackboneEnhancement'] = {'bafr': False, 'hcbr': False, **enhancement}
         # Complete default-off point switches for official/legacy YAMLs, without
         # altering a file or constructing plugins. Reject invalid values in the
         # backbone rather than silently dropping misspelled point names.
@@ -59,6 +65,8 @@ class YAMLConfig(BaseConfig):
             # shared mapping atomically so previous point options cannot leak
             # across candidate -> candidate -> Baseline construction.
             GLOBAL_CONFIG['BackbonePlugins'] = copy.deepcopy(self.yaml_cfg['BackbonePlugins'])
+            GLOBAL_CONFIG['BackboneEnhancement'] = copy.deepcopy(
+                self.yaml_cfg['BackboneEnhancement'])
             self._model = create(self.yaml_cfg['model'])
         return self._model 
 
