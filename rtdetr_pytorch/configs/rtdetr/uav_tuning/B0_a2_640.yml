@@ -1,0 +1,3 @@
+__include__: ['./A2_no_zoom_crop04.yml']
+
+output_dir: ./output/uav_tuning/B0_a2_640

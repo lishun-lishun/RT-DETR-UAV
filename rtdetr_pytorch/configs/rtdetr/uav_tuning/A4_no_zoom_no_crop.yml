@@ -1,0 +1,17 @@
+__include__: ['../rtdetr_r18vd_dut_anti_uav.yml']
+
+output_dir: ./output/uav_tuning/A4_no_zoom_no_crop
+
+# IoUCrop is absent rather than p=0, so it cannot sample a crop at all.
+train_dataloader:
+  dataset:
+    transforms:
+      ops:
+        - {type: RandomPhotometricDistort, p: 0.5}
+        - {type: SanitizeBoundingBox, min_size: 1}
+        - {type: RandomHorizontalFlip}
+        - {type: Resize, size: [640, 640]}
+        - {type: ToImageTensor}
+        - {type: ConvertDtype}
+        - {type: SanitizeBoundingBox, min_size: 1}
+        - {type: ConvertBox, out_fmt: 'cxcywh', normalize: true}

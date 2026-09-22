@@ -1,0 +1,18 @@
+__include__: ['../rtdetr_r18vd_dut_anti_uav.yml']
+
+output_dir: ./output/uav_tuning/A3_no_zoom_crop02
+
+# Same as A2 except RandomIoUCrop probability 0.4 -> 0.2.
+train_dataloader:
+  dataset:
+    transforms:
+      ops:
+        - {type: RandomPhotometricDistort, p: 0.5}
+        - {type: RandomIoUCrop, p: 0.2}
+        - {type: SanitizeBoundingBox, min_size: 1}
+        - {type: RandomHorizontalFlip}
+        - {type: Resize, size: [640, 640]}
+        - {type: ToImageTensor}
+        - {type: ConvertDtype}
+        - {type: SanitizeBoundingBox, min_size: 1}
+        - {type: ConvertBox, out_fmt: 'cxcywh', normalize: true}
