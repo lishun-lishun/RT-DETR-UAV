@@ -1,3 +1,0 @@
-__include__: ['./uav_baseline_v1.yml']
-
-output_dir: ./output/uav_tuning/C0_a2_640_backbone1e5

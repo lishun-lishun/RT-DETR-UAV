@@ -13,15 +13,29 @@ from src.data import get_coco_api_from_dataset
 
 from .solver import BaseSolver
 from .det_engine import train_one_epoch, evaluate
+from .training_plot import plot_training_curves, require_plot_backend
 
 
 class DetSolver(BaseSolver):
     
     def fit(self, ):
         print("Start training")
-        self.train()
-
         args = self.cfg 
+
+        expected_world_size = args.yaml_cfg.get('expected_world_size')
+        if expected_world_size is not None:
+            world_size = dist.get_world_size()
+            if world_size != expected_world_size:
+                raise RuntimeError(
+                    f'This config requires {expected_world_size} distributed processes, '
+                    f'but got {world_size}. Launch it with torchrun '
+                    f'--nproc_per_node={expected_world_size}.')
+
+        plot_curves = bool(args.yaml_cfg.get('plot_training_curves', False))
+        if plot_curves:
+            require_plot_backend()
+
+        self.train()
 
         if not isinstance(args.checkpoint_step, int) or args.checkpoint_step < 1:
             raise ValueError('checkpoint_step must be a positive integer')
@@ -72,11 +86,20 @@ class DetSolver(BaseSolver):
                         **{f'test_{k}': v for k, v in test_stats.items()},
                         'epoch': epoch,
                         'best_stat': dict(self.best_stat),
+                        'world_size': dist.get_world_size(),
+                        'batch_size_per_rank': self.train_dataloader.batch_size,
+                        'global_batch_size': (dist.get_world_size() *
+                                              self.train_dataloader.batch_size),
                         'n_parameters': n_parameters}
 
             if self.output_dir and dist.is_main_process():
                 with (self.output_dir / "log.txt").open("a") as f:
                     f.write(json.dumps(log_stats) + "\n")
+
+                if plot_curves:
+                    plot_training_curves(
+                        self.output_dir / 'log.txt',
+                        self.output_dir / 'training_curves.png')
 
                 # for evaluation logs
                 if coco_evaluator is not None:

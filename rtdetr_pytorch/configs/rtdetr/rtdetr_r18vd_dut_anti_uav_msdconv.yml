@@ -1,0 +1,16 @@
+__include__: ['./rtdetr_r18vd_dut_anti_uav.yml']
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_msdconv
+
+BackboneModification:
+  bpdp: false
+  msdconv: true
+
+MSDConv:
+  position: p3
+  groups: 8
+  eps: 1.0e-6
+  beta_init: 0.1
+  beta_max: 0.5
+  debug: false
+

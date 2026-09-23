@@ -142,7 +142,8 @@ class Blocks(nn.Module):
 @register
 class PResNet(nn.Module):
     __share__ = ['SECD', 'BackbonePlugins', 'CCED', 'GRER',
-                 'BackboneVariant', 'PHSB', 'BackboneEnhancement', 'BAFR', 'HCBR']
+                 'BackboneVariant', 'PHSB', 'BackboneEnhancement', 'BAFR', 'HCBR',
+                 'BackboneModification', 'BDPD', 'MSDConv']
 
     def __init__(
         self, 
@@ -162,10 +163,24 @@ class PResNet(nn.Module):
         PHSB=None,
         BackboneEnhancement=None,
         BAFR=None,
-        HCBR=None):
+        HCBR=None,
+        BackboneModification=None,
+        BDPD=None,
+        MSDConv=None):
         super().__init__()
 
         block_nums = ResNet_cfg[depth]
+        modification = ({} if BackboneModification is None
+                        else dict(BackboneModification))
+        unknown_modification = set(modification) - {'bpdp', 'msdconv'}
+        if unknown_modification:
+            raise ValueError('Unknown BackboneModification options: '
+                             f'{sorted(unknown_modification)}')
+        self.bpdp_enabled = modification.get('bpdp', False)
+        self.msdconv_enabled = modification.get('msdconv', False)
+        if (not isinstance(self.bpdp_enabled, bool)
+                or not isinstance(self.msdconv_enabled, bool)):
+            raise ValueError('BackboneModification.bpdp/msdconv must be YAML booleans')
         variant_cfg = {} if BackboneVariant is None else dict(BackboneVariant)
         self.backbone_variant_type = variant_cfg.get('type', 'baseline')
         if self.backbone_variant_type not in ('baseline', 'hsdr', 'phsb'):
@@ -244,6 +259,53 @@ class PResNet(nn.Module):
                 Blocks(block, ch_in, ch_out_list[i], block_nums[i], stage_num, act=act, variant=variant)
             )
             ch_in = _out_channels[i]
+
+        # BDPD v1 replaces exactly the main-path stride-2 ConvNormLayer in the
+        # first S3 BasicBlock (effective stride 4 -> 8). The original VD
+        # AvgPool+1x1 shortcut and the rest of the BasicBlock remain untouched.
+        # MSDConv v1 refines the complete S3 output before it is returned as P3
+        # and before S4 consumes it. Forked RNG keeps later model initialization
+        # identical to Baseline for a fixed seed.
+        self.msdconv_p3 = None
+        if self.bpdp_enabled or self.msdconv_enabled:
+            if depth != 18 or variant != 'd' or num_stages != 4:
+                raise ValueError('BDPD/MSDConv v1 requires PResNet18-d with four stages')
+            enabled_legacy = (
+                self.backbone_variant_type != 'baseline',
+                self.bafr_enabled,
+                self.hcbr_enabled,
+                (SECD or {}).get('enabled', False),
+                (CCED or {}).get('enabled', False),
+                (GRER or {}).get('enabled', False),
+                any(isinstance(options, dict) and options.get('enabled', False)
+                    for options in (BackbonePlugins or {}).values()),
+            )
+            if any(enabled_legacy):
+                raise ValueError('BDPD/MSDConv first round cannot mix existing backbone methods')
+            with torch.random.fork_rng(devices=[]):
+                if self.bpdp_enabled:
+                    from .backbone_modules.bdpd import BDPDDownsample
+                    transition = self.res_layers[1].blocks[0]
+                    old = transition.branch2a
+                    if (not isinstance(transition, BasicBlock)
+                            or old.conv.in_channels != 64
+                            or old.conv.out_channels != 128
+                            or old.conv.kernel_size != (3, 3)
+                            or old.conv.stride != (2, 2)):
+                        raise RuntimeError('BDPD expected the audited S3 block-0 64->128 '
+                                           '3x3 stride-2 main-path convolution')
+                    options = {} if BDPD is None else dict(BDPD)
+                    position = options.pop('position', 'stride4_to_8')
+                    if position != 'stride4_to_8':
+                        raise ValueError('BDPD v1 position must be stride4_to_8')
+                    transition.branch2a = BDPDDownsample(64, 128, act=act, **options)
+                if self.msdconv_enabled:
+                    from .backbone_modules.msdconv import MSDConv as MSDConvModule
+                    options = {} if MSDConv is None else dict(MSDConv)
+                    position = options.pop('position', 'p3')
+                    if position != 'p3':
+                        raise ValueError('MSDConv v1 position must be p3')
+                    self.msdconv_p3 = MSDConvModule(_out_channels[1], **options)
 
         if self.backbone_variant_type == 'hsdr':
             # Build the original eight blocks first, then alter only counts in
@@ -380,6 +442,8 @@ class PResNet(nn.Module):
                 self._freeze_parameters(self.hcbr_p3)
             if self.hcbr_p4 is not None and freeze_at > 2:
                 self._freeze_parameters(self.hcbr_p4)
+            if self.msdconv_p3 is not None and freeze_at > 1:
+                self._freeze_parameters(self.msdconv_p3)
             if self.plugins is not None:
                 for point, plugin in self.plugins.items():
                     stage_idx = {'p0': -1, 'p1': 0, 'p2': 1, 'p3': 2, 'p4': 2}[point]
@@ -417,6 +481,26 @@ class PResNet(nn.Module):
                     raise RuntimeError('PHSB pretrained backbone keys mismatch: '
                                        f'missing={invalid_missing}, '
                                        f'unexpected={incompatible.unexpected_keys}')
+            elif self.bpdp_enabled or self.msdconv_enabled:
+                incompatible = self.load_state_dict(state, strict=False)
+                replaced_prefix = 'res_layers.1.blocks.0.branch2a.'
+                allowed_missing = []
+                if self.bpdp_enabled:
+                    allowed_missing.append(replaced_prefix)
+                if self.msdconv_enabled:
+                    allowed_missing.append('msdconv_p3.')
+                invalid_missing = [key for key in incompatible.missing_keys
+                                   if not key.startswith(tuple(allowed_missing))]
+                invalid_unexpected = [key for key in incompatible.unexpected_keys
+                                      if not (self.bpdp_enabled
+                                              and key.startswith(replaced_prefix))]
+                if invalid_missing or invalid_unexpected:
+                    raise RuntimeError('BDPD/MSDConv pretrained backbone keys mismatch: '
+                                       f'missing={invalid_missing}, '
+                                       f'unexpected={invalid_unexpected}')
+                self.replaced_pretrained_keys = sorted(
+                    key for key in state if self.bpdp_enabled
+                    and key.startswith(replaced_prefix))
             elif self.bafr_enabled or self.hcbr_enabled:
                 incompatible = self.load_state_dict(state, strict=False)
                 bafr_prefix = 'res_layers.1.blocks.1.branch2a.conv.'
@@ -452,10 +536,13 @@ class PResNet(nn.Module):
                 'missing_keys': missing_keys,
                 'unexpected_keys': unexpected_keys,
             }
-            if self.backbone_variant_type != 'baseline' or self.bafr_enabled or self.hcbr_enabled:
+            if (self.backbone_variant_type != 'baseline' or self.bafr_enabled
+                    or self.hcbr_enabled or self.bpdp_enabled or self.msdconv_enabled):
                 enhancement_name = '+'.join(name for name, enabled in
-                                            (('BAFR', self.bafr_enabled),
-                                             ('HCBR', self.hcbr_enabled)) if enabled)
+                                             (('BAFR', self.bafr_enabled),
+                                              ('HCBR', self.hcbr_enabled),
+                                              ('BDPD', self.bpdp_enabled),
+                                              ('MSDConv', self.msdconv_enabled)) if enabled)
                 method_name = enhancement_name or self.backbone_variant_type.upper()
                 print(f'{method_name} pretrained: '
                       f'loaded={len(loaded_keys)}, missing={missing_keys}, '
@@ -493,6 +580,8 @@ class PResNet(nn.Module):
         outs = []
         for idx, stage in enumerate(self.res_layers):
             x = stage(x)
+            if idx == 1 and self.msdconv_p3 is not None:
+                x = self.msdconv_p3(x)
             if idx in self.return_idx:
                 outs.append(x)
         if self.backbone_variant_debug:

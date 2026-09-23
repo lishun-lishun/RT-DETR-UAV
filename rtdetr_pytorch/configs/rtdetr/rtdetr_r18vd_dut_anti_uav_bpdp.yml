@@ -1,0 +1,17 @@
+__include__: ['./rtdetr_r18vd_dut_anti_uav.yml']
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_bpdp
+
+BackboneModification:
+  bpdp: true
+  msdconv: false
+
+BDPD:
+  position: stride4_to_8
+  local_kernel: 3
+  detail_floor: 0.25
+  eps: 1.0e-6
+  alpha_init: 0.5
+  alpha_max: 1.0
+  debug: false
+

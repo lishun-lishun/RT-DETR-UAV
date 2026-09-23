@@ -1,6 +1,0 @@
-__include__: ['./A2_no_zoom_crop04.yml']
-
-# Provisional 640x640 A2 augmentation candidate, NOT a measured winner.
-# Train/validation Resize and eval caches remain 640. The inherited official
-# training multi_scale remains 480..800; validation/test input is exactly 640.
-output_dir: ./output/uav_tuning/uav_baseline_v1

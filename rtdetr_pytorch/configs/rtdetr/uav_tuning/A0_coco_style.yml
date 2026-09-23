@@ -1,4 +1,0 @@
-__include__: ['../rtdetr_r18vd_dut_anti_uav.yml']
-
-# Exact current DUT R18 training protocol, saved to a separate directory.
-output_dir: ./output/uav_tuning/A0_coco_style

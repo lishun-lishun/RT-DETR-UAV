@@ -1,14 +1,16 @@
-__include__: ['./uav_baseline_v1.yml']
+__include__: ['./three_gpu_base.yml']
 
-# Fixed-640 learning-rate follow-up; run after selecting augmentation A2.
-output_dir: ./output/uav_tuning/C1_a2_640_backbone2e5
+# Control: same learning rates as the successful one-GPU batch-16 baseline.
+output_dir: ./output/uav_tuning/G48_lr1x
 
 optimizer:
   params:
     - params: '^(?=.*backbone)(?=.*norm).*$'
-      lr: 0.00002
+      lr: 0.00001
       weight_decay: 0.
     - params: '^(?=.*backbone)(?!.*norm).*$'
-      lr: 0.00002
+      lr: 0.00001
     - params: '^(?=.*(?:encoder|decoder))(?=.*(?:norm|bias)).*$'
       weight_decay: 0.
+  lr: 0.0001
+

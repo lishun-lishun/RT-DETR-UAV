@@ -1,0 +1,24 @@
+__include__: ['../rtdetr_r18vd_dut_anti_uav.yml']
+
+# Training-only base for exactly three DDP ranks. batch_size is per rank:
+# 16 x 3 = 48 original images globally (MERT may add shifted views internally).
+expected_world_size: 3
+plot_training_curves: true
+
+epoches: 200
+checkpoint_step: 10
+
+train_dataloader:
+  batch_size: 16
+
+val_dataloader:
+  batch_size: 16
+  num_workers: 2
+
+# The original 2000-update EMA ramp corresponds to the one-GPU run. Three
+# GPUs make about one third as many optimizer/EMA updates per epoch, so 667
+# preserves approximately the same warmup in images and epochs.
+ema:
+  decay: 0.9999
+  warmups: 667
+

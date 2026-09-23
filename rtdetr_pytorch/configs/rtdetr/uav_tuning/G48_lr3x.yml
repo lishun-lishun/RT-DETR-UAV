@@ -1,0 +1,15 @@
+__include__: ['./three_gpu_base.yml']
+
+# Linear learning-rate scaling from global batch 16 to global batch 48.
+output_dir: ./output/uav_tuning/G48_lr3x
+
+optimizer:
+  params:
+    - params: '^(?=.*backbone)(?=.*norm).*$'
+      lr: 0.00003
+      weight_decay: 0.
+    - params: '^(?=.*backbone)(?!.*norm).*$'
+      lr: 0.00003
+    - params: '^(?=.*(?:encoder|decoder))(?=.*(?:norm|bias)).*$'
+      weight_decay: 0.
+  lr: 0.0003

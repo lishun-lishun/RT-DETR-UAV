@@ -9,6 +9,7 @@ output_dir: ./output/rtdetr_r18vd_dut_anti_uav
 # Validate every epoch; keep a numbered checkpoint every 10 completed epochs.
 epoches: 200
 checkpoint_step: 10
+plot_training_curves: true
 
 # User-requested override: all DUT methods inherit 16 original images per GPU.
 # MERT concat adds 16 shifted images; val and true-test use batch_size=16.
@@ -42,3 +43,9 @@ BackboneVariant:
 BackboneEnhancement:
   bafr: false
   hcbr: false
+
+# Default-off structural research switches. Disabled mode constructs no new
+# module and is numerically identical to the original PResNet18 forward.
+BackboneModification:
+  bpdp: false
+  msdconv: false

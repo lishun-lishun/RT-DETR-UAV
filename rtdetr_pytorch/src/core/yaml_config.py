@@ -28,6 +28,16 @@ class YAMLConfig(BaseConfig):
         if not isinstance(enhancement, dict):
             raise ValueError('BackboneEnhancement must be a mapping')
         cfg['BackboneEnhancement'] = {'bafr': False, 'hcbr': False, **enhancement}
+        modification = cfg.get('BackboneModification', {})
+        if not isinstance(modification, dict):
+            raise ValueError('BackboneModification must be a mapping')
+        cfg['BackboneModification'] = {
+            'bpdp': False, 'msdconv': False, **copy.deepcopy(modification)}
+        for name in ('BDPD', 'MSDConv'):
+            options = cfg.get(name, {})
+            if not isinstance(options, dict):
+                raise ValueError(f'{name} must be a mapping')
+            cfg[name] = copy.deepcopy(options)
         # Complete default-off point switches for official/legacy YAMLs, without
         # altering a file or constructing plugins. Reject invalid values in the
         # backbone rather than silently dropping misspelled point names.
@@ -67,6 +77,8 @@ class YAMLConfig(BaseConfig):
             GLOBAL_CONFIG['BackbonePlugins'] = copy.deepcopy(self.yaml_cfg['BackbonePlugins'])
             GLOBAL_CONFIG['BackboneEnhancement'] = copy.deepcopy(
                 self.yaml_cfg['BackboneEnhancement'])
+            for name in ('BackboneModification', 'BDPD', 'MSDConv'):
+                GLOBAL_CONFIG[name] = copy.deepcopy(self.yaml_cfg[name])
             self._model = create(self.yaml_cfg['model'])
         return self._model 
 
