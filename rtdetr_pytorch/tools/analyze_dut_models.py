@@ -96,9 +96,13 @@ def permitted_difference(key, original=False):
         return True
     if original:
         return (key in ("num_classes", "remap_mscoco_category")
+                or key == "expected_world_size"
                 or key in ("BackboneVariant", "BackboneVariant.type")
                 or key in ("epoches", "checkpoint_step")
                 or key == "plot_training_curves"
+                or key == "optimizer" or key.startswith("optimizer.")
+                or key == "lr_scheduler" or key.startswith("lr_scheduler.")
+                or key == "ema" or key.startswith("ema.")
                 or key in ("train_dataloader.batch_size", "val_dataloader.batch_size",
                            "val_dataloader.num_workers")
                 or key == "BackboneModification"

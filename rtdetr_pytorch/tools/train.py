@@ -21,12 +21,10 @@ def main(args, ) -> None:
     assert not all([args.tuning, args.resume]), \
         'Only support from_scrach or resume or tuning at one time'
 
-    cfg = YAMLConfig(
-        args.config,
-        resume=args.resume, 
-        use_amp=args.amp,
-        tuning=args.tuning
-    )
+    overrides = dict(resume=args.resume, use_amp=args.amp, tuning=args.tuning)
+    if args.output_dir:
+        overrides['output_dir'] = args.output_dir
+    cfg = YAMLConfig(args.config, **overrides)
 
     solver = TASKS[cfg.yaml_cfg['task']](cfg)
     
@@ -45,6 +43,8 @@ if __name__ == '__main__':
     parser.add_argument('--test-only', action='store_true', default=False,)
     parser.add_argument('--amp', action='store_true', default=False,)
     parser.add_argument('--seed', type=int, help='seed',)
+    parser.add_argument('--output-dir', type=str,
+                        help='override YAML output_dir without changing training settings')
     args = parser.parse_args()
 
     main(args)

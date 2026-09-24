@@ -6,6 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from PIL import Image
+
 from tools.analyze_dut_models import fresh_config
 from tools.analyze_training_log import analyze as analyze_log
 from tools.analyze_uav_dataset import analyze as analyze_dataset
@@ -43,6 +45,19 @@ class UAVTuningTests(unittest.TestCase):
 
     def test_three_gpu_learning_rate_configs(self):
         baseline = fresh_config(CONFIG_ROOT / 'rtdetr_r18vd_dut_anti_uav.yml')
+        self.assertEqual(baseline['expected_world_size'], 3)
+        self.assertEqual(baseline['train_dataloader']['batch_size'], 16)
+        self.assertEqual(baseline['optimizer']['lr'], 3e-4)
+        self.assertEqual([group['lr'] for group in baseline['optimizer']['params'][:2]],
+                         [3e-5, 3e-5])
+        self.assertEqual(baseline['lr_scheduler'], {
+            'type': 'WarmupCosineLR',
+            'total_epochs': 200,
+            'warmup_epochs': 5,
+            'warmup_start_factor': 0.1,
+            'min_lr_ratio': 0.01,
+        })
+        self.assertEqual(baseline['ema']['warmups'], 667)
         candidates = {
             'G48_lr1x': (1e-4, 1e-5),
             'G48_lr2x': (2e-4, 2e-5),
@@ -88,6 +103,9 @@ class UAVTuningTests(unittest.TestCase):
             self.assertTrue(plotter['plot_training_curves'](log_path, output_path))
             self.assertTrue(output_path.is_file())
             self.assertGreater(output_path.stat().st_size, 1000)
+            with Image.open(output_path) as image:
+                self.assertGreaterEqual(image.width, 2000)
+                self.assertGreater(image.width, image.height)
 
     def test_log_parser_best_epochs_and_trend(self):
         with tempfile.TemporaryDirectory() as folder:

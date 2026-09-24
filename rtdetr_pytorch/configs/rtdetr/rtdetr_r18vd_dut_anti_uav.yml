@@ -5,7 +5,10 @@ __include__: [
 
 output_dir: ./output/rtdetr_r18vd_dut_anti_uav
 
-# Shared by Baseline, MERT, SECD and all five Backbone plugin experiments.
+# Shared by Baseline and every DUT module. This protocol intentionally requires
+# three DDP ranks: batch_size remains 16 PER GPU, hence global batch is 48.
+expected_world_size: 3
+
 # Validate every epoch; keep a numbered checkpoint every 10 completed epochs.
 epoches: 200
 checkpoint_step: 10
@@ -20,6 +23,38 @@ val_dataloader:
   batch_size: 16
   # Half of the inherited training workers (4); also used by --test-only.
   num_workers: 2
+
+# Global batch 48 uses linear LR scaling from the successful one-GPU batch-16
+# reference. Five warmup epochs protect the pretrained backbone/new branches;
+# cosine decay then converges smoothly instead of keeping LR constant for all
+# 200 epochs. Parameter-group ratios and weight-decay policy stay unchanged.
+optimizer:
+  type: AdamW
+  params:
+    - params: '^(?=.*backbone)(?=.*norm).*$'
+      lr: 0.00003
+      weight_decay: 0.
+    - params: '^(?=.*backbone)(?!.*norm).*$'
+      lr: 0.00003
+    - params: '^(?=.*(?:encoder|decoder))(?=.*(?:norm|bias)).*$'
+      weight_decay: 0.
+  lr: 0.0003
+  betas: [0.9, 0.999]
+  weight_decay: 0.0001
+
+lr_scheduler:
+  type: WarmupCosineLR
+  total_epochs: 200
+  warmup_epochs: 5
+  warmup_start_factor: 0.1
+  min_lr_ratio: 0.01
+
+# Three GPUs make roughly one third as many optimizer updates per epoch as the
+# old one-GPU run. This preserves approximately the same EMA ramp in images.
+ema:
+  type: ModelEMA
+  decay: 0.9999
+  warmups: 667
 
 # Default-off switches: no extra inference structure or training views.
 MERT:

@@ -16,6 +16,7 @@ SEED="${SEED:-0}"
 DRY_RUN="${DRY_RUN:-0}"
 RUN_TAG="$(date '+%Y%m%d_%H%M%S')"
 LOG_DIR="${LOG_DIR:-output/three_gpu_queue_logs/$RUN_TAG}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-output/three_gpu_b16_warmup_cosine}"
 
 IFS=',' read -r -a GPU_ARRAY <<< "$GPU_IDS"
 if [[ ${#GPU_ARRAY[@]} -ne $NPROC_PER_NODE ]]; then
@@ -65,6 +66,7 @@ echo "world_size=$NPROC_PER_NODE"
 echo "seed=$SEED"
 echo "runs=$TOTAL"
 echo "logs=$LOG_DIR"
+echo "experiment_outputs=$OUTPUT_ROOT"
 echo
 
 PASSED=0
@@ -75,12 +77,14 @@ for index in "${!CONFIGS[@]}"; do
     run_number=$((index + 1))
     port=$((BASE_PORT + index))
     name="$(basename "$config" .yml)"
+    output_dir="$OUTPUT_ROOT/$name"
     log_file="$LOG_DIR/$(printf '%02d' "$run_number")_${name}.log"
     command=(torchrun --nproc_per_node="$NPROC_PER_NODE" --master_port="$port"
-             tools/train.py -c "$config" --amp --seed "$SEED")
+             tools/train.py -c "$config" --output-dir "$output_dir"
+             --amp --seed "$SEED")
 
     echo "[$run_number/$TOTAL] START $config"
-    echo "  port=$port log=$log_file"
+    echo "  port=$port output=$output_dir log=$log_file"
     printf '  command: CUDA_VISIBLE_DEVICES=%q' "$CUDA_VISIBLE_DEVICES"
     printf ' %q' "${command[@]}"
     echo

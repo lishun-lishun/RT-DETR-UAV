@@ -93,14 +93,14 @@ manually curated JSON list with `image`, `category`, and optional COCO-format
 
 ## Stage-one commands
 
-Use one GPU per experiment because the reported 64.6 AP Baseline was obtained
-with one GPU and batch size 16. Changing only the candidate to three GPUs would
-change its global batch from 16 to 48 and would not be a controlled comparison.
+All current DUT configs use the shared three-GPU protocol: batch size 16 per
+rank (global 48), linearly scaled peak LR, five warmup epochs, and cosine
+decay. Baseline and candidates must all use the same protocol.
 
 ```bash
-CUDA_VISIBLE_DEVICES=1 python tools/train.py -c configs/rtdetr/rtdetr_r18vd_dut_anti_uav_bpdp.yml --amp --seed 0
+CUDA_VISIBLE_DEVICES=1,2,3 torchrun --nproc_per_node=3 --master_port=9909 tools/train.py -c configs/rtdetr/rtdetr_r18vd_dut_anti_uav_bpdp.yml --amp --seed 0
 CUDA_VISIBLE_DEVICES=1 python tools/train.py -c configs/rtdetr/rtdetr_r18vd_dut_anti_uav_bpdp.yml -r output/rtdetr_r18vd_dut_anti_uav_bpdp/best.pth --test-only --amp --seed 0
-CUDA_VISIBLE_DEVICES=2 python tools/train.py -c configs/rtdetr/rtdetr_r18vd_dut_anti_uav_msdconv.yml --amp --seed 0
+CUDA_VISIBLE_DEVICES=1,2,3 torchrun --nproc_per_node=3 --master_port=9910 tools/train.py -c configs/rtdetr/rtdetr_r18vd_dut_anti_uav_msdconv.yml --amp --seed 0
 CUDA_VISIBLE_DEVICES=2 python tools/train.py -c configs/rtdetr/rtdetr_r18vd_dut_anti_uav_msdconv.yml -r output/rtdetr_r18vd_dut_anti_uav_msdconv/best.pth --test-only --amp --seed 0
 ```
 

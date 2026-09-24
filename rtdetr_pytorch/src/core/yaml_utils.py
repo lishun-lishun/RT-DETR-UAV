@@ -182,7 +182,15 @@ def merge_dict(dct, another_dct):
     '''
     for k in another_dct:
         if (k in dct and isinstance(dct[k], dict) and isinstance(another_dct[k], dict)):
-            merge_dict(dct[k], another_dct[k])
+            # A typed component changing implementation is a replacement, not
+            # a partial override. Otherwise constructor-only keys from the old
+            # type (for example MultiStepLR milestones) leak into the new type.
+            old_type = dct[k].get('type')
+            new_type = another_dct[k].get('type')
+            if old_type is not None and new_type is not None and old_type != new_type:
+                dct[k] = another_dct[k]
+            else:
+                merge_dict(dct[k], another_dct[k])
         else:
             dct[k] = another_dct[k]
 

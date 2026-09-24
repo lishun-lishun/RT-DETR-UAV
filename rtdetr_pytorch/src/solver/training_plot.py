@@ -13,6 +13,11 @@ def _finite(value):
     return value if math.isfinite(value) else math.nan
 
 
+def _score(scores, index):
+    value = _finite(scores[index]) if len(scores) > index else math.nan
+    return value if math.isfinite(value) and value >= 0 else math.nan
+
+
 def _read_rows(log_path):
     latest = {}
     with Path(log_path).open('r', encoding='utf-8') as stream:
@@ -30,10 +35,12 @@ def _read_rows(log_path):
                 continue
             latest[epoch] = {
                 'epoch': epoch + 1,
+                'lr': _finite(entry.get('train_lr')),
                 'loss': _finite(entry.get('train_loss')),
-                'map_50_95': _finite(scores[0]) if len(scores) > 0 else math.nan,
-                'map50': _finite(scores[1]) if len(scores) > 1 else math.nan,
-                'map75': _finite(scores[2]) if len(scores) > 2 else math.nan,
+                'map_50_95': _score(scores, 0),
+                'map50': _score(scores, 1),
+                'map75': _score(scores, 2),
+                'ap_small': _score(scores, 3),
             }
     return [latest[index] for index in sorted(latest)]
 
@@ -49,7 +56,7 @@ def require_plot_backend():
 
 
 def plot_training_curves(log_path, output_path):
-    """Plot loss and COCO bbox AP metrics in one atomically replaced PNG."""
+    """Plot six separate convergence panels in one atomically replaced PNG."""
     require_plot_backend()
     import matplotlib
     matplotlib.use('Agg')
@@ -60,42 +67,41 @@ def plot_training_curves(log_path, output_path):
         return False
 
     epochs = [row['epoch'] for row in rows]
-    fig, loss_axis = plt.subplots(figsize=(11, 6.5), dpi=140)
-    metric_axis = loss_axis.twinx()
-
-    loss_line, = loss_axis.plot(
-        epochs, [row['loss'] for row in rows], color='#d62728', linewidth=1.8,
-        label='Train loss')
-    map_line, = metric_axis.plot(
-        epochs, [100 * row['map_50_95'] for row in rows], color='#1f77b4',
-        linewidth=2.2, label='mAP50-95')
-    map50_line, = metric_axis.plot(
-        epochs, [100 * row['map50'] for row in rows], color='#2ca02c',
-        linewidth=1.7, label='mAP50')
-    map75_line, = metric_axis.plot(
-        epochs, [100 * row['map75'] for row in rows], color='#9467bd',
-        linewidth=1.7, label='mAP75')
-
-    valid_ap = [(row['map_50_95'], row['epoch']) for row in rows
-                if math.isfinite(row['map_50_95'])]
-    if valid_ap:
-        best_ap, best_epoch = max(valid_ap)
-        metric_axis.scatter([best_epoch], [100 * best_ap], color='#1f77b4',
-                            edgecolors='white', linewidths=0.8, s=55, zorder=5)
-        metric_axis.annotate(
-            f'best {best_ap * 100:.2f} @ {best_epoch}',
-            xy=(best_epoch, best_ap * 100), xytext=(7, 8),
-            textcoords='offset points', color='#1f77b4', fontsize=9)
-
-    loss_axis.set_xlabel('Completed epoch')
-    loss_axis.set_ylabel('Train loss', color='#d62728')
-    metric_axis.set_ylabel('Validation AP (%)')
-    metric_axis.set_ylim(0, 100)
-    loss_axis.grid(True, linestyle='--', linewidth=0.6, alpha=0.35)
-    loss_axis.set_title('RT-DETR training convergence')
-    loss_axis.legend(handles=[loss_line, map_line, map50_line, map75_line],
-                     loc='best', frameon=True)
-    fig.tight_layout()
+    fig, axes = plt.subplots(2, 3, figsize=(16, 9), dpi=140, sharex=True)
+    panels = (
+        ('loss', 'Train loss', '#d62728', False),
+        ('lr', 'Backbone learning rate (logged group 0)', '#ff7f0e', False),
+        ('map_50_95', 'Validation mAP50-95', '#1f77b4', True),
+        ('map50', 'Validation mAP50', '#2ca02c', True),
+        ('map75', 'Validation mAP75', '#9467bd', True),
+        ('ap_small', 'Validation AP small', '#17becf', True),
+    )
+    for axis, (key, title, color, percentage) in zip(axes.flat, panels):
+        multiplier = 100.0 if percentage else 1.0
+        values = [multiplier * row[key] for row in rows]
+        axis.plot(epochs, values, color=color, linewidth=1.9)
+        axis.set_title(title)
+        axis.set_xlabel('Completed epoch')
+        axis.grid(True, linestyle='--', linewidth=0.6, alpha=0.35)
+        if percentage:
+            axis.set_ylabel('AP (%)')
+            axis.set_ylim(0, 100)
+            valid = [(multiplier * row[key], row['epoch']) for row in rows
+                     if math.isfinite(row[key])]
+            if valid:
+                best_value, best_epoch = max(valid)
+                axis.scatter([best_epoch], [best_value], color=color,
+                             edgecolors='white', linewidths=0.8, s=45, zorder=5)
+                axis.annotate(
+                    f'best {best_value:.2f} @ {best_epoch}',
+                    xy=(best_epoch, best_value), xytext=(6, 7),
+                    textcoords='offset points', color=color, fontsize=8)
+        elif key == 'lr':
+            axis.ticklabel_format(axis='y', style='scientific', scilimits=(0, 0))
+        else:
+            axis.set_ylabel('Loss')
+    fig.suptitle('RT-DETR training convergence', fontsize=15)
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -104,4 +110,3 @@ def plot_training_curves(log_path, output_path):
     plt.close(fig)
     temporary.replace(output_path)
     return True
-
