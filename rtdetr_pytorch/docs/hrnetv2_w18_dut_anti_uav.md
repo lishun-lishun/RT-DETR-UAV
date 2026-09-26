@@ -21,8 +21,10 @@
 
 离线服务器可把权重放到
 `rtdetr_pytorch/weights/hrnetv2_w18-8cb57bb9.pth`，并将 include YAML 的
-`pretrained_path` 设置为该相对路径；文件不存在时会明确报错，不会静默
-退回随机初始化。
+`pretrained_path` 设置为该相对路径。即使保持 `pretrained_path: null`，
+加载器也会优先自动检查这个项目内路径；仍不存在时才由 DDP 全局 rank 0
+下载一次，其余 rank 等待共享缓存。失败时会打印底层异常和两个预期路径，
+不会静默退回随机初始化。
 
 ## B. Feature 输出
 

@@ -31,6 +31,7 @@ Only the backbone is retained: no timm dependency and no classification head.
 from pathlib import Path
 
 import torch
+import torch.distributed as torch_dist
 from torch import nn
 from torch.nn import functional as F
 
@@ -44,6 +45,8 @@ _PRETRAINED_URL = (
     'https://github.com/rwightman/pytorch-image-models/releases/'
     'download/v0.1-hrnet/hrnetv2_w18-8cb57bb9.pth')
 _EXPECTED_FILENAME = 'hrnetv2_w18-8cb57bb9.pth'
+_PROJECT_WEIGHT_PATH = (
+    Path(__file__).resolve().parents[3] / 'weights' / _EXPECTED_FILENAME)
 _CLASSIFICATION_PREFIXES = (
     'incre_modules.', 'downsamp_modules.', 'final_layer.',
     'global_pool.', 'classifier.', 'head.',
@@ -372,16 +375,11 @@ class HRNetV2W18(nn.Module):
                     f'a compatible {_EXPECTED_FILENAME} checkpoint.')
             checkpoint = torch.load(str(path), map_location='cpu')
             source = str(path.resolve())
+        elif _PROJECT_WEIGHT_PATH.is_file():
+            checkpoint = torch.load(str(_PROJECT_WEIGHT_PATH), map_location='cpu')
+            source = str(_PROJECT_WEIGHT_PATH)
         else:
-            try:
-                checkpoint = torch.hub.load_state_dict_from_url(
-                    _PRETRAINED_URL, map_location='cpu', check_hash=True,
-                    file_name=_EXPECTED_FILENAME)
-            except Exception as error:
-                raise RuntimeError(
-                    'Unable to load HRNetV2-W18 ImageNet weights. Download '
-                    f'{_EXPECTED_FILENAME} into the Torch Hub checkpoint cache '
-                    'or set HRNetV2W18.pretrained_path to a local file.') from error
+            checkpoint = self._download_pretrained_ddp_safe()
             source = _PRETRAINED_URL
 
         state = self._unwrap_checkpoint(checkpoint)
@@ -417,6 +415,62 @@ class HRNetV2W18(nn.Module):
         print('HRNetV2-W18 pretrained: '
               f'matched={len(matched)}, missing={missing}, '
               f'unexpected={unexpected}, ignored_classifier={len(ignored)}')
+
+    @staticmethod
+    def _download_pretrained_ddp_safe():
+        """Let only global rank 0 download, then load the shared node cache.
+
+        Model construction happens after process-group initialization in this
+        project. Without this synchronization, all three ranks can download to
+        the same Torch Hub destination concurrently and corrupt/fight over the
+        temporary file.
+        """
+        distributed = (torch_dist.is_available()
+                       and torch_dist.is_initialized()
+                       and torch_dist.get_world_size() > 1)
+        rank = torch_dist.get_rank() if distributed else 0
+        checkpoint = None
+        failure = None
+        caught_error = None
+
+        if rank == 0:
+            try:
+                checkpoint = torch.hub.load_state_dict_from_url(
+                    _PRETRAINED_URL, map_location='cpu', check_hash=True,
+                    file_name=_EXPECTED_FILENAME)
+            except Exception as error:  # broadcast the cause before raising
+                caught_error = error
+                failure = f'{type(error).__name__}: {error}'
+
+        if distributed:
+            status = [failure]
+            torch_dist.broadcast_object_list(status, src=0)
+            failure = status[0]
+
+        cache_path = (Path(torch.hub.get_dir()) / 'checkpoints'
+                      / _EXPECTED_FILENAME)
+        if failure is not None:
+            message = (
+                'Unable to load HRNetV2-W18 ImageNet weights. '
+                f'Underlying error: {failure}. Expected project-local file: '
+                f'{_PROJECT_WEIGHT_PATH}; Torch Hub cache: {cache_path}. '
+                'Download the checkpoint once on rank 0 or set '
+                'HRNetV2W18.pretrained_path to a readable local file.')
+            if caught_error is not None:
+                raise RuntimeError(message) from caught_error
+            raise RuntimeError(message)
+
+        if rank != 0:
+            if not cache_path.is_file():
+                raise RuntimeError(
+                    'Rank 0 reported a successful HRNet download, but the '
+                    f'shared checkpoint is not visible to rank {rank}: '
+                    f'{cache_path}. Put {_EXPECTED_FILENAME} under the project '
+                    'weights directory or set pretrained_path to storage shared '
+                    'by every rank.')
+            checkpoint = torch.load(str(cache_path), map_location='cpu')
+
+        return checkpoint
 
     def forward(self, x):
         x = self.act1(self.bn1(self.conv1(x)))

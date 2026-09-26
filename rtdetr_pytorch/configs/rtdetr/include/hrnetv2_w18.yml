@@ -6,7 +6,9 @@ RTDETR:
 HRNetV2W18:
   pretrained: true
   # Optional offline override. When set, this local checkpoint takes priority
-  # over the standard ImageNet URL used by pretrained: true.
+  # over the standard ImageNet URL used by pretrained: true. With null, the
+  # loader first checks ./weights/hrnetv2_w18-8cb57bb9.pth, then lets DDP rank
+  # 0 download once into the shared Torch Hub cache.
   pretrained_path: null
 
 HybridEncoder:

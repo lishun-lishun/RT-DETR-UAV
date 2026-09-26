@@ -2,6 +2,7 @@
 
 import copy
 from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -11,6 +12,7 @@ from tests._support import PROJECT_DIR, prepare_imports
 prepare_imports()
 
 from src.core import YAMLConfig  # noqa: E402
+import src.nn.backbone.hrnet as hrnet_module  # noqa: E402
 from src.nn.backbone.hrnet import HRNetV2W18  # noqa: E402
 from src.nn.backbone.presnet import PResNet  # noqa: E402
 from tools.analyze_dut_models import differences, fresh_config  # noqa: E402
@@ -143,6 +145,46 @@ class HRNetV2W18Tests(unittest.TestCase):
         state.pop('conv1.weight')
         with patch('torch.hub.load_state_dict_from_url', return_value=state):
             with self.assertRaisesRegex(RuntimeError, 'missing=.*conv1.weight'):
+                HRNetV2W18(pretrained=True)
+
+    def test_project_local_weight_is_preferred_without_network(self):
+        state = copy.deepcopy(HRNetV2W18(pretrained=False).state_dict())
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'hrnetv2_w18-8cb57bb9.pth'
+            torch.save(state, path)
+            with patch.object(hrnet_module, '_PROJECT_WEIGHT_PATH', path), \
+                    patch('torch.hub.load_state_dict_from_url') as download:
+                loaded = HRNetV2W18(pretrained=True)
+        download.assert_not_called()
+        self.assertEqual(loaded.pretrained_load_report['source'], str(path))
+
+    def test_ddp_rank_zero_is_the_only_downloader(self):
+        state = copy.deepcopy(HRNetV2W18(pretrained=False).state_dict())
+        with patch.object(hrnet_module, '_PROJECT_WEIGHT_PATH',
+                          Path('does-not-exist.pth')), \
+                patch.object(hrnet_module.torch_dist, 'is_available',
+                             return_value=True), \
+                patch.object(hrnet_module.torch_dist, 'is_initialized',
+                             return_value=True), \
+                patch.object(hrnet_module.torch_dist, 'get_world_size',
+                             return_value=3), \
+                patch.object(hrnet_module.torch_dist, 'get_rank',
+                             return_value=0), \
+                patch.object(hrnet_module.torch_dist, 'broadcast_object_list') \
+                as broadcast, \
+                patch('torch.hub.load_state_dict_from_url', return_value=state) \
+                as download:
+            HRNetV2W18(pretrained=True)
+        download.assert_called_once()
+        broadcast.assert_called_once()
+
+    def test_download_error_exposes_root_cause_and_expected_paths(self):
+        with patch.object(hrnet_module, '_PROJECT_WEIGHT_PATH',
+                          Path('does-not-exist.pth')), \
+                patch('torch.hub.load_state_dict_from_url',
+                      side_effect=OSError('network unreachable')):
+            with self.assertRaisesRegex(
+                    RuntimeError, 'Underlying error: OSError: network unreachable'):
                 HRNetV2W18(pretrained=True)
 
     def test_building_hrnet_does_not_pollute_baseline(self):
