@@ -1,0 +1,14 @@
+# Standard HRNetV2-W18 backbone provider. The stride-4 branch remains inside
+# HRNet for cross-resolution fusion; RT-DETR receives only strides 8/16/32.
+RTDETR:
+  backbone: HRNetV2W18
+
+HRNetV2W18:
+  pretrained: true
+  # Optional offline override. When set, this local checkpoint takes priority
+  # over the standard ImageNet URL used by pretrained: true.
+  pretrained_path: null
+
+HybridEncoder:
+  in_channels: [36, 72, 144]
+  feat_strides: [8, 16, 32]

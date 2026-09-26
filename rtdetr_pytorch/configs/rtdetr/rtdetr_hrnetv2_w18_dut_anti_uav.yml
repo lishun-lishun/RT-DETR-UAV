@@ -1,0 +1,8 @@
+__include__: [
+  './rtdetr_r18vd_dut_anti_uav.yml',
+  './include/hrnetv2_w18.yml',
+]
+
+# Pure backbone substitution: optimization, data, detector, MERT/SECD/PDR,
+# plugin and three-rank settings all come from the DUT PResNet18 baseline.
+output_dir: ./output/rtdetr_hrnetv2_w18_dut_anti_uav
