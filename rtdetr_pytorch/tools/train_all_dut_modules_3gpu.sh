@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 # Sequentially train every DUT-Anti-UAV RT-DETR-R18 module configuration on
-# exactly three GPUs. The first three runs are fixed; all remaining module
-# configs are shuffled. A failed run is logged and never stops the queue.
+# exactly three GPUs. PDR3/PDR34/PDR34-NoGate are always the first three runs;
+# the established Baseline/BDPD/MSDConv trio follows, then all remaining
+# module configs are shuffled. A failed run is logged and never stops the queue.
 
 set -uo pipefail
 
@@ -25,6 +26,9 @@ if [[ ${#GPU_ARRAY[@]} -ne $NPROC_PER_NODE ]]; then
 fi
 
 FIXED_CONFIGS=(
+    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_pdr3.yml"
+    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_pdr34.yml"
+    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_pdr34_nogate.yml"
     "configs/rtdetr/rtdetr_r18vd_dut_anti_uav.yml"
     "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_bpdp.yml"
     "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_msdconv.yml"
@@ -42,6 +46,9 @@ done
 mapfile -t REMAINING_CONFIGS < <(
     find configs/rtdetr -maxdepth 1 -type f \
         -name 'rtdetr_r18vd_dut_anti_uav_*.yml' \
+        ! -name 'rtdetr_r18vd_dut_anti_uav_pdr3.yml' \
+        ! -name 'rtdetr_r18vd_dut_anti_uav_pdr34.yml' \
+        ! -name 'rtdetr_r18vd_dut_anti_uav_pdr34_nogate.yml' \
         ! -name 'rtdetr_r18vd_dut_anti_uav_bpdp.yml' \
         ! -name 'rtdetr_r18vd_dut_anti_uav_msdconv.yml' \
         -print | sort | shuf

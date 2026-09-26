@@ -94,6 +94,8 @@ def permitted_difference(key, original=False):
         return True
     if key == "GRER" or key.startswith("GRER."):
         return True
+    if key == "PDR" or key.startswith("PDR."):
+        return True
     if original:
         return (key in ("num_classes", "remap_mscoco_category")
                 or key == "expected_world_size"

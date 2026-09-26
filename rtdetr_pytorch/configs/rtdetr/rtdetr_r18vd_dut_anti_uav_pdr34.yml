@@ -1,0 +1,12 @@
+__include__: [
+  './rtdetr_r18vd_dut_anti_uav.yml',
+  './include/pdr.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_pdr34
+
+PDR:
+  enabled: true
+  use_relay3: true
+  use_relay4: true
+  use_semantic_gate: true

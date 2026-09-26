@@ -143,7 +143,7 @@ class Blocks(nn.Module):
 class PResNet(nn.Module):
     __share__ = ['SECD', 'BackbonePlugins', 'CCED', 'GRER',
                  'BackboneVariant', 'PHSB', 'BackboneEnhancement', 'BAFR', 'HCBR',
-                 'BackboneModification', 'BDPD', 'MSDConv']
+                 'BackboneModification', 'BDPD', 'MSDConv', 'PDR']
 
     def __init__(
         self, 
@@ -166,10 +166,22 @@ class PResNet(nn.Module):
         HCBR=None,
         BackboneModification=None,
         BDPD=None,
-        MSDConv=None):
+        MSDConv=None,
+        PDR=None):
         super().__init__()
 
         block_nums = ResNet_cfg[depth]
+        pdr_cfg = {} if PDR is None else dict(PDR)
+        allowed_pdr = {
+            'enabled', 'use_relay3', 'use_relay4', 'use_semantic_gate',
+            'detail_channels', 'gate', 'fusion', 'debug',
+        }
+        unknown_pdr = set(pdr_cfg) - allowed_pdr
+        if unknown_pdr:
+            raise ValueError(f'Unknown PDR options: {sorted(unknown_pdr)}')
+        self.pdr_enabled = pdr_cfg.get('enabled', False)
+        if not isinstance(self.pdr_enabled, bool):
+            raise ValueError('PDR.enabled must be a YAML boolean')
         modification = ({} if BackboneModification is None
                         else dict(BackboneModification))
         unknown_modification = set(modification) - {'bpdp', 'msdconv'}
@@ -324,6 +336,38 @@ class PResNet(nn.Module):
         self.return_idx = return_idx
         self.out_channels = [_out_channels[_i] for _i in return_idx]
         self.out_strides = [_out_strides[_i] for _i in return_idx]
+
+        # Persistent Detail Relay is an optional side branch. It reads the
+        # audited C2 channels/stride, keeps D2->D3->D4 independent from the
+        # main stages, and injects only into the original C3/C4 tensors.
+        self.pdr = None
+        if self.pdr_enabled:
+            if depth != 18 or variant != 'd' or num_stages != 4:
+                raise ValueError('PDR first implementation requires PResNet18-d with four stages')
+            existing_backbone_methods = (
+                self.bpdp_enabled,
+                self.msdconv_enabled,
+                self.backbone_variant_type != 'baseline',
+                self.bafr_enabled,
+                self.hcbr_enabled,
+                (SECD or {}).get('enabled', False),
+                (CCED or {}).get('enabled', False),
+                (GRER or {}).get('enabled', False),
+                any(isinstance(options, dict) and options.get('enabled', False)
+                    for options in (BackbonePlugins or {}).values()),
+            )
+            if any(existing_backbone_methods):
+                raise ValueError(
+                    'First-round PDR configs cannot mix other backbone methods; '
+                    'MERT remains an independent training-time switch')
+            from .backbone_modules.pdr import PersistentDetailRelay
+            options = dict(pdr_cfg)
+            options.pop('enabled', None)
+            # Isolate candidate-only initialization so the later RT-DETR
+            # encoder/decoder retain their Baseline seeded initialization.
+            with torch.random.fork_rng(devices=[]):
+                self.pdr = PersistentDetailRelay(
+                    _out_channels[:3], act=act, **options)
 
         # S3 has two original BasicBlocks. Replace only its last spatial
         # modelling block; the shortcut, later convolution and key hierarchy
@@ -501,6 +545,14 @@ class PResNet(nn.Module):
                 self.replaced_pretrained_keys = sorted(
                     key for key in state if self.bpdp_enabled
                     and key.startswith(replaced_prefix))
+            elif self.pdr is not None:
+                incompatible = self.load_state_dict(state, strict=False)
+                invalid_missing = [key for key in incompatible.missing_keys
+                                   if not key.startswith('pdr.')]
+                if invalid_missing or incompatible.unexpected_keys:
+                    raise RuntimeError('PDR pretrained backbone keys mismatch: '
+                                       f'missing={invalid_missing}, '
+                                       f'unexpected={incompatible.unexpected_keys}')
             elif self.bafr_enabled or self.hcbr_enabled:
                 incompatible = self.load_state_dict(state, strict=False)
                 bafr_prefix = 'res_layers.1.blocks.1.branch2a.conv.'
@@ -515,7 +567,8 @@ class PResNet(nn.Module):
                     raise RuntimeError('BAFR/HCBR pretrained backbone keys mismatch: '
                                        f'missing={invalid_missing}, '
                                        f'unexpected={invalid_unexpected}')
-            elif (self.secd_34 is None and self.secd_45 is None and self.plugins is None
+            elif (self.pdr is None and self.secd_34 is None and self.secd_45 is None
+                    and self.plugins is None
                     and self.cced_34 is None and self.grer_34 is None):
                 self.load_state_dict(state)
                 incompatible = None
@@ -537,12 +590,14 @@ class PResNet(nn.Module):
                 'unexpected_keys': unexpected_keys,
             }
             if (self.backbone_variant_type != 'baseline' or self.bafr_enabled
-                    or self.hcbr_enabled or self.bpdp_enabled or self.msdconv_enabled):
+                    or self.hcbr_enabled or self.bpdp_enabled or self.msdconv_enabled
+                    or self.pdr is not None):
                 enhancement_name = '+'.join(name for name, enabled in
                                              (('BAFR', self.bafr_enabled),
                                               ('HCBR', self.hcbr_enabled),
                                               ('BDPD', self.bpdp_enabled),
-                                              ('MSDConv', self.msdconv_enabled)) if enabled)
+                                              ('MSDConv', self.msdconv_enabled),
+                                              ('PDR', self.pdr is not None)) if enabled)
                 method_name = enhancement_name or self.backbone_variant_type.upper()
                 print(f'{method_name} pretrained: '
                       f'loaded={len(loaded_keys)}, missing={missing_keys}, '
@@ -567,6 +622,8 @@ class PResNet(nn.Module):
         image = x
         conv1 = self.conv1(x)
         x = F.max_pool2d(conv1, kernel_size=3, stride=2, padding=1)
+        if self.pdr is not None:
+            return self._forward_pdr(x)
         if self.plugins is not None:
             return self._forward_plugins(x, image)
         if self.cced_34 is not None or self.grer_34 is not None:
@@ -587,6 +644,24 @@ class PResNet(nn.Module):
         if self.backbone_variant_debug:
             self._debug_variant_features(outs)
         return outs
+
+    def _forward_pdr(self, x):
+        """Run original stages with persistent C2 detail relay injections."""
+        c2 = self.res_layers[0](x)       # stride 4, original S2
+        _, detail3, detail4 = self.pdr.make_details(c2)
+
+        main3 = self.res_layers[1](c2)   # stride 8, original S3
+        c3 = self.pdr.inject3(main3, detail3)
+
+        # Original S4 consumes enhanced C3; PDR-34 then verifies/injects D4.
+        main4 = self.res_layers[2](c3)   # stride 16, original S4
+        c4 = self.pdr.inject4(main4, detail4) if self.pdr.use_relay4 else main4
+
+        # Stage5 explicitly consumes enhanced C4, never the unmodified M4.
+        c5 = self.res_layers[3](c4)      # stride 32, original S5
+        levels = (c2, c3, c4, c5)
+        return [feature for idx, feature in enumerate(levels)
+                if idx in self.return_idx]
 
     def _forward_hcbr(self, x):
         outs = []

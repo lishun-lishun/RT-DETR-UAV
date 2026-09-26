@@ -1,0 +1,21 @@
+# Persistent Detail Relay defaults.  This include is used only by dedicated
+# PDR experiments; the public DUT Baseline YAML remains untouched.
+PDR:
+  enabled: false
+  use_relay3: true
+  use_relay4: true
+  use_semantic_gate: true
+  detail_channels:
+    c2: 32
+    c3: 64
+    c4: 96
+  gate:
+    rho: 0.25
+    tau: 0.20
+    learnable_theta: true
+    theta_init: 0.0
+    eps: 1.0e-6
+  fusion:
+    alpha_max: 0.50
+    alpha_init: 0.10
+  debug: false
