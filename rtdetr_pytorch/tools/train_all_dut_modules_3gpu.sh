@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
 # Sequentially train every DUT-Anti-UAV RT-DETR module configuration on exactly
-# three GPUs. HRNetV2-W18 is first; the previous fixed order and randomized
-# remainder policy are retained. An existing final experiment output path is
-# skipped exactly as requested. Any ordinary training failure stops the queue.
+# three GPUs. The two ACR experiments are first; the previous HRNet-first fixed
+# order and randomized remainder policy follow unchanged. An existing final
+# experiment output path is skipped exactly as requested. Any ordinary
+# training failure stops the queue.
 
 set -uo pipefail
 
@@ -38,6 +39,10 @@ if [[ ${#GPU_ARRAY[@]} -ne $NPROC_PER_NODE ]]; then
     exit 2
 fi
 
+ACR_CONFIGS=(
+    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_acr.yml"
+    "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_acr.yml"
+)
 HRNET_CONFIG="configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav.yml"
 FIXED_CONFIGS=(
     "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_pdr3.yml"
@@ -48,7 +53,7 @@ FIXED_CONFIGS=(
     "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_msdconv.yml"
 )
 
-for config in "$HRNET_CONFIG" "${FIXED_CONFIGS[@]}"; do
+for config in "${ACR_CONFIGS[@]}" "$HRNET_CONFIG" "${FIXED_CONFIGS[@]}"; do
     if [[ ! -f "$config" ]]; then
         echo "ERROR: required config not found: $config" >&2
         exit 3
@@ -66,10 +71,11 @@ mapfile -t REMAINING_CONFIGS < <(
         ! -name 'rtdetr_r18vd_dut_anti_uav_pdr34_nogate.yml' \
         ! -name 'rtdetr_r18vd_dut_anti_uav_bpdp.yml' \
         ! -name 'rtdetr_r18vd_dut_anti_uav_msdconv.yml' \
+        ! -name 'rtdetr_r18vd_dut_anti_uav_acr.yml' \
         -print | sort | shuf
 )
 
-CONFIGS=("$HRNET_CONFIG" "${FIXED_CONFIGS[@]}" "${REMAINING_CONFIGS[@]}")
+CONFIGS=("${ACR_CONFIGS[@]}" "$HRNET_CONFIG" "${FIXED_CONFIGS[@]}" "${REMAINING_CONFIGS[@]}")
 TOTAL=${#CONFIGS[@]}
 declare -a OUTPUT_DIRS PLAN_STATUS
 RUN_COUNT=0

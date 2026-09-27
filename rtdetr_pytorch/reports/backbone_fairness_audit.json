@@ -1,0 +1,1190 @@
+{
+  "scope": "read-only; no training, YAML edits, checkpoint writes or output writes",
+  "config_audit": {
+    "baseline_path": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav.yml",
+    "hrnet_path": "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav.yml",
+    "all_resolved_differences": {
+      "HRNetV2W18.pretrained": {
+        "baseline": "<absent>",
+        "hrnet": true
+      },
+      "HRNetV2W18.pretrained_path": {
+        "baseline": "<absent>",
+        "hrnet": null
+      },
+      "HybridEncoder.in_channels": {
+        "baseline": [
+          128,
+          256,
+          512
+        ],
+        "hrnet": [
+          36,
+          72,
+          144
+        ]
+      },
+      "RTDETR.backbone": {
+        "baseline": "PResNet",
+        "hrnet": "HRNetV2W18"
+      },
+      "__include__": {
+        "baseline": [
+          "./rtdetr_r18vd_6x_coco.yml",
+          "../dataset/dut_anti_uav_detection.yml"
+        ],
+        "hrnet": [
+          "./rtdetr_r18vd_dut_anti_uav.yml",
+          "./include/hrnetv2_w18.yml"
+        ]
+      },
+      "output_dir": {
+        "baseline": "./output/rtdetr_r18vd_dut_anti_uav",
+        "hrnet": "./output/rtdetr_hrnetv2_w18_dut_anti_uav"
+      }
+    },
+    "unexpected_fairness_differences": {},
+    "only_permitted_differences": true,
+    "shared_protocol": {
+      "train_dataloader": {
+        "type": "DataLoader",
+        "dataset": {
+          "type": "CocoDetection",
+          "img_folder": "../DUT-Anti-UAV/DUT-Anti-UAV/images/train/",
+          "ann_file": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/train.json",
+          "transforms": {
+            "type": "Compose",
+            "ops": [
+              {
+                "type": "RandomPhotometricDistort",
+                "p": 0.5
+              },
+              {
+                "type": "RandomZoomOut",
+                "fill": 0
+              },
+              {
+                "type": "RandomIoUCrop",
+                "p": 0.8
+              },
+              {
+                "type": "SanitizeBoundingBox",
+                "min_size": 1
+              },
+              {
+                "type": "RandomHorizontalFlip"
+              },
+              {
+                "type": "Resize",
+                "size": [
+                  640,
+                  640
+                ]
+              },
+              {
+                "type": "ToImageTensor"
+              },
+              {
+                "type": "ConvertDtype"
+              },
+              {
+                "type": "SanitizeBoundingBox",
+                "min_size": 1
+              },
+              {
+                "type": "ConvertBox",
+                "out_fmt": "cxcywh",
+                "normalize": true
+              }
+            ]
+          },
+          "return_masks": false
+        },
+        "shuffle": true,
+        "batch_size": 16,
+        "num_workers": 4,
+        "drop_last": true,
+        "collate_fn": "default_collate_fn",
+        "prefetch_factor": 1,
+        "persistent_workers": false
+      },
+      "val_dataloader": {
+        "type": "DataLoader",
+        "dataset": {
+          "type": "CocoDetection",
+          "img_folder": "../DUT-Anti-UAV/DUT-Anti-UAV/images/val/",
+          "ann_file": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/val.json",
+          "transforms": {
+            "type": "Compose",
+            "ops": [
+              {
+                "type": "Resize",
+                "size": [
+                  640,
+                  640
+                ]
+              },
+              {
+                "type": "ToImageTensor"
+              },
+              {
+                "type": "ConvertDtype"
+              }
+            ]
+          }
+        },
+        "shuffle": false,
+        "batch_size": 16,
+        "num_workers": 2,
+        "drop_last": false,
+        "collate_fn": "default_collate_fn",
+        "prefetch_factor": 1,
+        "persistent_workers": false
+      },
+      "test_dataset": {
+        "img_folder": "../DUT-Anti-UAV/DUT-Anti-UAV/images/test/",
+        "ann_file": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/test.json"
+      },
+      "epoches": 200,
+      "optimizer": {
+        "type": "AdamW",
+        "params": [
+          {
+            "params": "^(?=.*backbone)(?=.*norm).*$",
+            "lr": 3e-05,
+            "weight_decay": 0.0
+          },
+          {
+            "params": "^(?=.*backbone)(?!.*norm).*$",
+            "lr": 3e-05
+          },
+          {
+            "params": "^(?=.*(?:encoder|decoder))(?=.*(?:norm|bias)).*$",
+            "weight_decay": 0.0
+          }
+        ],
+        "lr": 0.0003,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "weight_decay": 0.0001
+      },
+      "lr_scheduler": {
+        "type": "WarmupCosineLR",
+        "total_epochs": 200,
+        "warmup_epochs": 5,
+        "warmup_start_factor": 0.1,
+        "min_lr_ratio": 0.01
+      },
+      "ema": {
+        "type": "ModelEMA",
+        "decay": 0.9999,
+        "warmups": 667
+      },
+      "use_ema": true,
+      "use_amp": false,
+      "HybridEncoder": {
+        "in_channels": [
+          128,
+          256,
+          512
+        ],
+        "feat_strides": [
+          8,
+          16,
+          32
+        ],
+        "hidden_dim": 256,
+        "use_encoder_idx": [
+          2
+        ],
+        "num_encoder_layers": 1,
+        "nhead": 8,
+        "dim_feedforward": 1024,
+        "dropout": 0.0,
+        "enc_act": "gelu",
+        "pe_temperature": 10000,
+        "expansion": 0.5,
+        "depth_mult": 1,
+        "act": "silu",
+        "eval_spatial_size": [
+          640,
+          640
+        ]
+      },
+      "RTDETRTransformer": {
+        "feat_channels": [
+          256,
+          256,
+          256
+        ],
+        "feat_strides": [
+          8,
+          16,
+          32
+        ],
+        "hidden_dim": 256,
+        "num_levels": 3,
+        "num_queries": 300,
+        "num_decoder_layers": 3,
+        "num_denoising": 100,
+        "eval_idx": -1,
+        "eval_spatial_size": [
+          640,
+          640
+        ]
+      },
+      "SetCriterion": {
+        "weight_dict": {
+          "loss_vfl": 1,
+          "loss_bbox": 5,
+          "loss_giou": 2
+        },
+        "losses": [
+          "vfl",
+          "boxes"
+        ],
+        "alpha": 0.75,
+        "gamma": 2.0,
+        "matcher": {
+          "type": "HungarianMatcher",
+          "weight_dict": {
+            "cost_class": 2,
+            "cost_bbox": 5,
+            "cost_giou": 2
+          },
+          "alpha": 0.25,
+          "gamma": 2.0
+        }
+      }
+    },
+    "baseline_backbone": "PResNet",
+    "hrnet_backbone": "HRNetV2W18",
+    "baseline_pretrained": true,
+    "hrnet_pretrained": true,
+    "baseline_pretrained_source": "ImageNet PResNet18-vd: ResNet18_vd_pretrained_from_paddle.pth",
+    "hrnet_pretrained_source": "ImageNet HRNetV2-W18: hrnetv2_w18-8cb57bb9.pth",
+    "multi_scale": [
+      480,
+      512,
+      544,
+      576,
+      608,
+      640,
+      640,
+      640,
+      672,
+      704,
+      736,
+      768,
+      800
+    ],
+    "encoder_eval_spatial_size": [
+      640,
+      640
+    ],
+    "decoder_eval_spatial_size": [
+      640,
+      640
+    ],
+    "input_resolution_conclusion": {
+      "train_dataloader_output": [
+        640,
+        640
+      ],
+      "train_model_internal_multi_scale": [
+        480,
+        512,
+        544,
+        576,
+        608,
+        640,
+        640,
+        640,
+        672,
+        704,
+        736,
+        768,
+        800
+      ],
+      "validation_fixed": [
+        640,
+        640
+      ],
+      "test_fixed": [
+        640,
+        640
+      ],
+      "old_fixed_800_or_960_affects_baseline": false,
+      "old_fixed_800_or_960_affects_hrnet": false,
+      "old_fixed_800_or_960_affects_test": false,
+      "note": "800 is an intentional training multi-scale candidate inherited from RT-DETR, not a fixed evaluation resolution. 960 is absent from the resolved Baseline/HRNet training and evaluation configs."
+    },
+    "evaluation_chain": {
+      "training_best_stat": {
+        "loader": "val_dataloader",
+        "img_folder": "../DUT-Anti-UAV/DUT-Anti-UAV/images/val/",
+        "ann_file": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/val.json",
+        "weights": "ema.module because use_ema=True",
+        "selector": "COCO bbox AP@[0.50:0.95] (stats[0])"
+      },
+      "tools_train_test_only": {
+        "loader": "val_dataloader",
+        "split": "val",
+        "weights": "ema.module because use_ema=True",
+        "upstream_behavior": "same: upstream tools/train.py also calls solver.val()"
+      },
+      "tools_test_dut_split_test": {
+        "loader": "val_dataloader with only dataset paths replaced",
+        "img_folder": "../DUT-Anti-UAV/DUT-Anti-UAV/images/test/",
+        "ann_file": "../DUT-Anti-UAV/DUT-Anti-UAV/labels/test.json",
+        "weights": "ema.module because use_ema=True"
+      },
+      "postprocessor": "normalized cxcywh -> xyxy -> multiply by each target's orig_size; identical for Val and Test"
+    }
+  },
+  "dataset_audit": {
+    "data_root": "E:\\code\\RT-DETR\\DUT-Anti-UAV\\DUT-Anti-UAV",
+    "splits": {
+      "train": {
+        "annotation_file": "E:\\code\\RT-DETR\\DUT-Anti-UAV\\DUT-Anti-UAV\\labels\\train.json",
+        "image_folder": "E:\\code\\RT-DETR\\DUT-Anti-UAV\\DUT-Anti-UAV\\images\\train",
+        "images": 5200,
+        "annotations_raw": 5246,
+        "annotations_valid_noncrowd": 5246,
+        "objects_per_image": {
+          "min": 1.0,
+          "max": 6.0,
+          "mean": 1.008846153846154,
+          "std": 0.1411444138537908,
+          "median": 1.0,
+          "p10": 1.0,
+          "p25": 1.0,
+          "p50": 1.0,
+          "p75": 1.0,
+          "p90": 1.0
+        },
+        "bbox_width": {
+          "min": 8.0,
+          "max": 3570.0,
+          "mean": 79.69691181852839,
+          "std": 130.83085038458705,
+          "median": 43.0,
+          "p10": 24.0,
+          "p25": 31.0,
+          "p50": 43.0,
+          "p75": 69.0,
+          "p90": 169.0
+        },
+        "bbox_height": {
+          "min": 4.0,
+          "max": 2144.0,
+          "mean": 43.35284020205871,
+          "std": 76.77134294300582,
+          "median": 23.0,
+          "p10": 12.0,
+          "p25": 17.0,
+          "p50": 23.0,
+          "p75": 36.0,
+          "p90": 87.0
+        },
+        "bbox_area": {
+          "min": 40.0,
+          "max": 7216704.0,
+          "mean": 12963.77944105982,
+          "std": 149022.9324794984,
+          "median": 969.0,
+          "p10": 315.0,
+          "p25": 527.0,
+          "p50": 969.0,
+          "p75": 2408.75,
+          "p90": 15015.5
+        },
+        "relative_bbox_area": {
+          "min": 1.9290123456790123e-05,
+          "max": 0.7019876933041859,
+          "mean": 0.012524543904849724,
+          "std": 0.05305147683407587,
+          "median": 0.000472608024691358,
+          "p10": 0.00015287422839506173,
+          "p25": 0.0002541473765432099,
+          "p50": 0.000472608024691358,
+          "p75": 0.0012263997395833334,
+          "p90": 0.015278862847222222
+        },
+        "coco_size_by_bbox_area": {
+          "small": {
+            "count": 2723,
+            "fraction": 0.5190621425848265
+          },
+          "medium": {
+            "count": 1860,
+            "fraction": 0.3545558520777735
+          },
+          "large": {
+            "count": 663,
+            "fraction": 0.12638200533739993
+          }
+        },
+        "image_width": {
+          "min": 240.0,
+          "max": 5616.0,
+          "mean": 1808.2457692307692,
+          "std": 292.36653164863867,
+          "median": 1920.0,
+          "p10": 1280.0,
+          "p25": 1920.0,
+          "p50": 1920.0,
+          "p75": 1920.0,
+          "p90": 1920.0
+        },
+        "image_height": {
+          "min": 160.0,
+          "max": 3744.0,
+          "mean": 1019.4203846153846,
+          "std": 164.27218796349433,
+          "median": 1080.0,
+          "p10": 720.0,
+          "p25": 1080.0,
+          "p50": 1080.0,
+          "p75": 1080.0,
+          "p90": 1080.0
+        }
+      },
+      "val": {
+        "annotation_file": "E:\\code\\RT-DETR\\DUT-Anti-UAV\\DUT-Anti-UAV\\labels\\val.json",
+        "image_folder": "E:\\code\\RT-DETR\\DUT-Anti-UAV\\DUT-Anti-UAV\\images\\val",
+        "images": 2600,
+        "annotations_raw": 2620,
+        "annotations_valid_noncrowd": 2620,
+        "objects_per_image": {
+          "min": 1.0,
+          "max": 6.0,
+          "mean": 1.0076923076923077,
+          "std": 0.1356553237580646,
+          "median": 1.0,
+          "p10": 1.0,
+          "p25": 1.0,
+          "p50": 1.0,
+          "p75": 1.0,
+          "p90": 1.0
+        },
+        "bbox_width": {
+          "min": 10.0,
+          "max": 2298.0,
+          "mean": 82.7145038167939,
+          "std": 137.70960214329182,
+          "median": 42.0,
+          "p10": 24.0,
+          "p25": 31.0,
+          "p50": 42.0,
+          "p75": 70.0,
+          "p90": 169.0999999999999
+        },
+        "bbox_height": {
+          "min": 4.0,
+          "max": 1447.0,
+          "mean": 45.68740458015267,
+          "std": 83.59309612173719,
+          "median": 23.0,
+          "p10": 12.0,
+          "p25": 16.0,
+          "p50": 23.0,
+          "p75": 37.0,
+          "p90": 88.0
+        },
+        "bbox_area": {
+          "min": 66.0,
+          "max": 3325206.0,
+          "mean": 14683.238167938931,
+          "std": 102951.33313170074,
+          "median": 946.0,
+          "p10": 299.0,
+          "p25": 511.5,
+          "p50": 946.0,
+          "p75": 2461.5,
+          "p90": 14682.999999999989
+        },
+        "relative_bbox_area": {
+          "min": 3.18287037037037e-05,
+          "max": 0.6838944444444445,
+          "mean": 0.013283695152244254,
+          "std": 0.056400675757076905,
+          "median": 0.0004603105709876543,
+          "p10": 0.00014419367283950618,
+          "p25": 0.0002469135802469136,
+          "p50": 0.0004603105709876543,
+          "p75": 0.0012847222222222223,
+          "p90": 0.014918836805555535
+        },
+        "coco_size_by_bbox_area": {
+          "small": {
+            "count": 1401,
+            "fraction": 0.5347328244274809
+          },
+          "medium": {
+            "count": 892,
+            "fraction": 0.34045801526717556
+          },
+          "large": {
+            "count": 327,
+            "fraction": 0.12480916030534352
+          }
+        },
+        "image_width": {
+          "min": 320.0,
+          "max": 4288.0,
+          "mean": 1812.5873076923076,
+          "std": 284.75140182079053,
+          "median": 1920.0,
+          "p10": 1280.0,
+          "p25": 1920.0,
+          "p50": 1920.0,
+          "p75": 1920.0,
+          "p90": 1920.0
+        },
+        "image_height": {
+          "min": 206.0,
+          "max": 2848.0,
+          "mean": 1022.9376923076923,
+          "std": 159.84272306786906,
+          "median": 1080.0,
+          "p10": 720.0,
+          "p25": 1080.0,
+          "p50": 1080.0,
+          "p75": 1080.0,
+          "p90": 1080.0
+        }
+      },
+      "test": {
+        "annotation_file": "E:\\code\\RT-DETR\\DUT-Anti-UAV\\DUT-Anti-UAV\\labels\\test.json",
+        "image_folder": "E:\\code\\RT-DETR\\DUT-Anti-UAV\\DUT-Anti-UAV\\images\\test",
+        "images": 2200,
+        "annotations_raw": 2245,
+        "annotations_valid_noncrowd": 2245,
+        "objects_per_image": {
+          "min": 1.0,
+          "max": 3.0,
+          "mean": 1.0204545454545455,
+          "std": 0.17591261448197595,
+          "median": 1.0,
+          "p10": 1.0,
+          "p25": 1.0,
+          "p50": 1.0,
+          "p75": 1.0,
+          "p90": 1.0
+        },
+        "bbox_width": {
+          "min": 12.0,
+          "max": 865.0,
+          "mean": 108.471714922049,
+          "std": 121.66203774031511,
+          "median": 55.0,
+          "p10": 26.0,
+          "p25": 36.0,
+          "p50": 55.0,
+          "p75": 134.0,
+          "p90": 259.5999999999999
+        },
+        "bbox_height": {
+          "min": 5.0,
+          "max": 503.0,
+          "mean": 57.2173719376392,
+          "std": 62.256763829615295,
+          "median": 30.0,
+          "p10": 14.0,
+          "p25": 19.0,
+          "p50": 30.0,
+          "p75": 73.0,
+          "p90": 134.0
+        },
+        "bbox_area": {
+          "min": 65.0,
+          "max": 435095.0,
+          "mean": 13017.924276169266,
+          "std": 32116.47397220979,
+          "median": 1674.0,
+          "p10": 393.6,
+          "p25": 702.0,
+          "p50": 1674.0,
+          "p75": 9167.0,
+          "p90": 33873.59999999998
+        },
+        "relative_bbox_area": {
+          "min": 3.134645061728395e-05,
+          "max": 0.47210828993055554,
+          "mean": 0.013634353470014078,
+          "std": 0.035232626113492815,
+          "median": 0.0009114583333333333,
+          "p10": 0.0001953125,
+          "p25": 0.00034722222222222224,
+          "p50": 0.0009114583333333333,
+          "p75": 0.009305555555555555,
+          "p90": 0.036578125
+        },
+        "coco_size_by_bbox_area": {
+          "small": {
+            "count": 848,
+            "fraction": 0.377728285077951
+          },
+          "medium": {
+            "count": 836,
+            "fraction": 0.3723830734966592
+          },
+          "large": {
+            "count": 561,
+            "fraction": 0.24988864142538975
+          }
+        },
+        "image_width": {
+          "min": 640.0,
+          "max": 1920.0,
+          "mean": 1669.0436363636363,
+          "std": 318.2361643146265,
+          "median": 1920.0,
+          "p10": 1280.0,
+          "p25": 1280.0,
+          "p50": 1920.0,
+          "p75": 1920.0,
+          "p90": 1920.0
+        },
+        "image_height": {
+          "min": 360.0,
+          "max": 1080.0,
+          "mean": 939.7286363636364,
+          "std": 177.60585447443742,
+          "median": 1080.0,
+          "p10": 720.0,
+          "p25": 720.0,
+          "p50": 1080.0,
+          "p75": 1080.0,
+          "p90": 1080.0
+        }
+      }
+    },
+    "filename_overlap": {
+      "train_x_val": 2600,
+      "train_x_test": 2200,
+      "val_x_test": 2200
+    },
+    "sha256_content_overlap": {
+      "train_x_val": 0,
+      "train_x_test": 1,
+      "val_x_test": 0
+    },
+    "sha256_content_overlap_details": {
+      "train_x_val": [],
+      "train_x_test": [
+        {
+          "sha256": "29b76668151334817e45f5b52a9da89dadd52a3d91a2fbee01b40311b5559c51",
+          "train_files": [
+            "00259.jpg"
+          ],
+          "test_files": [
+            "01374.jpg"
+          ]
+        }
+      ],
+      "val_x_test": []
+    },
+    "hash_images_enabled": true
+  },
+  "model_audit": {
+    "PResNet18": {
+      "model": "PResNet18",
+      "config": "configs/rtdetr/rtdetr_r18vd_dut_anti_uav.yml",
+      "dataloader_batches": null,
+      "real_pycocotools_available": false,
+      "training_backbone_input_samples": [
+        [
+          1,
+          3,
+          800,
+          800
+        ],
+        [
+          1,
+          3,
+          640,
+          640
+        ],
+        [
+          1,
+          3,
+          672,
+          672
+        ],
+        [
+          1,
+          3,
+          736,
+          736
+        ],
+        [
+          1,
+          3,
+          736,
+          736
+        ],
+        [
+          1,
+          3,
+          576,
+          576
+        ],
+        [
+          1,
+          3,
+          736,
+          736
+        ],
+        [
+          1,
+          3,
+          608,
+          608
+        ]
+      ],
+      "configured_multi_scale": [
+        480,
+        512,
+        544,
+        576,
+        608,
+        640,
+        640,
+        640,
+        672,
+        704,
+        736,
+        768,
+        800
+      ],
+      "eval_forward": {
+        "model_input": [
+          1,
+          3,
+          640,
+          640
+        ],
+        "backbone_outputs": [
+          [
+            1,
+            128,
+            80,
+            80
+          ],
+          [
+            1,
+            256,
+            40,
+            40
+          ],
+          [
+            1,
+            512,
+            20,
+            20
+          ]
+        ],
+        "encoder_outputs": [
+          [
+            1,
+            256,
+            80,
+            80
+          ],
+          [
+            1,
+            256,
+            40,
+            40
+          ],
+          [
+            1,
+            256,
+            20,
+            20
+          ]
+        ],
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ],
+        "finite": true
+      },
+      "optimizer_groups": [
+        {
+          "index": 0,
+          "lr": 3e-05,
+          "weight_decay": 0.0,
+          "parameter_tensors": 46,
+          "parameter_numel": 9856,
+          "representative_names": [
+            "backbone.conv1.conv1_1.norm.weight",
+            "backbone.conv1.conv1_1.norm.bias",
+            "backbone.conv1.conv1_2.norm.weight",
+            "backbone.conv1.conv1_2.norm.bias",
+            "backbone.conv1.conv1_3.norm.weight",
+            "backbone.conv1.conv1_3.norm.bias",
+            "backbone.res_layers.0.blocks.0.short.norm.weight",
+            "backbone.res_layers.0.blocks.0.short.norm.bias"
+          ],
+          "all_backbone": true,
+          "backbone_normalization_parameter_tensors": 46,
+          "backbone_normalization_parameter_numel": 9856,
+          "representative_backbone_normalization_names": [
+            "backbone.conv1.conv1_1.norm.weight",
+            "backbone.conv1.conv1_1.norm.bias",
+            "backbone.conv1.conv1_2.norm.weight",
+            "backbone.conv1.conv1_2.norm.bias",
+            "backbone.conv1.conv1_3.norm.weight",
+            "backbone.conv1.conv1_3.norm.bias",
+            "backbone.res_layers.0.blocks.0.short.norm.weight",
+            "backbone.res_layers.0.blocks.0.short.norm.bias"
+          ]
+        },
+        {
+          "index": 1,
+          "lr": 3e-05,
+          "weight_decay": 0.0001,
+          "parameter_tensors": 23,
+          "parameter_numel": 11190112,
+          "representative_names": [
+            "backbone.conv1.conv1_1.conv.weight",
+            "backbone.conv1.conv1_2.conv.weight",
+            "backbone.conv1.conv1_3.conv.weight",
+            "backbone.res_layers.0.blocks.0.short.conv.weight",
+            "backbone.res_layers.0.blocks.0.branch2a.conv.weight",
+            "backbone.res_layers.0.blocks.0.branch2b.conv.weight",
+            "backbone.res_layers.0.blocks.1.branch2a.conv.weight",
+            "backbone.res_layers.0.blocks.1.branch2b.conv.weight"
+          ],
+          "all_backbone": true,
+          "backbone_normalization_parameter_tensors": 0,
+          "backbone_normalization_parameter_numel": 0,
+          "representative_backbone_normalization_names": []
+        },
+        {
+          "index": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "parameter_tensors": 159,
+          "parameter_numel": 35188,
+          "representative_names": [
+            "decoder.input_proj.0.norm.weight",
+            "decoder.input_proj.0.norm.bias",
+            "decoder.input_proj.1.norm.weight",
+            "decoder.input_proj.1.norm.bias",
+            "decoder.input_proj.2.norm.weight",
+            "decoder.input_proj.2.norm.bias",
+            "decoder.decoder.layers.0.self_attn.in_proj_bias",
+            "decoder.decoder.layers.0.self_attn.out_proj.bias"
+          ],
+          "all_backbone": false,
+          "backbone_normalization_parameter_tensors": 0,
+          "backbone_normalization_parameter_numel": 0,
+          "representative_backbone_normalization_names": []
+        },
+        {
+          "index": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "parameter_tensors": 98,
+          "parameter_numel": 8847872,
+          "representative_names": [
+            "decoder.input_proj.0.conv.weight",
+            "decoder.input_proj.1.conv.weight",
+            "decoder.input_proj.2.conv.weight",
+            "decoder.decoder.layers.0.self_attn.in_proj_weight",
+            "decoder.decoder.layers.0.self_attn.out_proj.weight",
+            "decoder.decoder.layers.0.cross_attn.sampling_offsets.weight",
+            "decoder.decoder.layers.0.cross_attn.attention_weights.weight",
+            "decoder.decoder.layers.0.cross_attn.value_proj.weight"
+          ],
+          "all_backbone": false,
+          "backbone_normalization_parameter_tensors": 0,
+          "backbone_normalization_parameter_numel": 0,
+          "representative_backbone_normalization_names": []
+        }
+      ],
+      "backbone_lr_expected": 3e-05,
+      "backbone_lr_errors": [],
+      "backbone_normalization_weight_decay_expected": 0.0,
+      "backbone_normalization_weight_decay_errors": []
+    },
+    "HRNetV2-W18": {
+      "model": "HRNetV2-W18",
+      "config": "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav.yml",
+      "dataloader_batches": null,
+      "real_pycocotools_available": false,
+      "training_backbone_input_samples": [
+        [
+          1,
+          3,
+          800,
+          800
+        ],
+        [
+          1,
+          3,
+          640,
+          640
+        ],
+        [
+          1,
+          3,
+          672,
+          672
+        ],
+        [
+          1,
+          3,
+          736,
+          736
+        ],
+        [
+          1,
+          3,
+          736,
+          736
+        ],
+        [
+          1,
+          3,
+          576,
+          576
+        ],
+        [
+          1,
+          3,
+          736,
+          736
+        ],
+        [
+          1,
+          3,
+          608,
+          608
+        ]
+      ],
+      "configured_multi_scale": [
+        480,
+        512,
+        544,
+        576,
+        608,
+        640,
+        640,
+        640,
+        672,
+        704,
+        736,
+        768,
+        800
+      ],
+      "eval_forward": {
+        "model_input": [
+          1,
+          3,
+          640,
+          640
+        ],
+        "backbone_outputs": [
+          [
+            1,
+            36,
+            80,
+            80
+          ],
+          [
+            1,
+            72,
+            40,
+            40
+          ],
+          [
+            1,
+            144,
+            20,
+            20
+          ]
+        ],
+        "encoder_outputs": [
+          [
+            1,
+            256,
+            80,
+            80
+          ],
+          [
+            1,
+            256,
+            40,
+            40
+          ],
+          [
+            1,
+            256,
+            20,
+            20
+          ]
+        ],
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ],
+        "finite": true
+      },
+      "optimizer_groups": [
+        {
+          "index": 0,
+          "lr": 3e-05,
+          "weight_decay": 0.0,
+          "parameter_tensors": 0,
+          "parameter_numel": 0,
+          "representative_names": [],
+          "all_backbone": false,
+          "backbone_normalization_parameter_tensors": 0,
+          "backbone_normalization_parameter_numel": 0,
+          "representative_backbone_normalization_names": []
+        },
+        {
+          "index": 1,
+          "lr": 3e-05,
+          "weight_decay": 0.0001,
+          "parameter_tensors": 915,
+          "parameter_numel": 9562260,
+          "representative_names": [
+            "backbone.conv1.weight",
+            "backbone.bn1.weight",
+            "backbone.bn1.bias",
+            "backbone.conv2.weight",
+            "backbone.bn2.weight",
+            "backbone.bn2.bias",
+            "backbone.layer1.0.conv1.weight",
+            "backbone.layer1.0.bn1.weight"
+          ],
+          "all_backbone": true,
+          "backbone_normalization_parameter_tensors": 610,
+          "backbone_normalization_parameter_numel": 33936,
+          "representative_backbone_normalization_names": [
+            "backbone.bn1.weight",
+            "backbone.bn1.bias",
+            "backbone.bn2.weight",
+            "backbone.bn2.bias",
+            "backbone.layer1.0.bn1.weight",
+            "backbone.layer1.0.bn1.bias",
+            "backbone.layer1.0.bn2.weight",
+            "backbone.layer1.0.bn2.bias"
+          ]
+        },
+        {
+          "index": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "parameter_tensors": 159,
+          "parameter_numel": 35188,
+          "representative_names": [
+            "decoder.input_proj.0.norm.weight",
+            "decoder.input_proj.0.norm.bias",
+            "decoder.input_proj.1.norm.weight",
+            "decoder.input_proj.1.norm.bias",
+            "decoder.input_proj.2.norm.weight",
+            "decoder.input_proj.2.norm.bias",
+            "decoder.decoder.layers.0.self_attn.in_proj_bias",
+            "decoder.decoder.layers.0.self_attn.out_proj.bias"
+          ],
+          "all_backbone": false,
+          "backbone_normalization_parameter_tensors": 0,
+          "backbone_normalization_parameter_numel": 0,
+          "representative_backbone_normalization_names": []
+        },
+        {
+          "index": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "parameter_tensors": 98,
+          "parameter_numel": 8683008,
+          "representative_names": [
+            "decoder.input_proj.0.conv.weight",
+            "decoder.input_proj.1.conv.weight",
+            "decoder.input_proj.2.conv.weight",
+            "decoder.decoder.layers.0.self_attn.in_proj_weight",
+            "decoder.decoder.layers.0.self_attn.out_proj.weight",
+            "decoder.decoder.layers.0.cross_attn.sampling_offsets.weight",
+            "decoder.decoder.layers.0.cross_attn.attention_weights.weight",
+            "decoder.decoder.layers.0.cross_attn.value_proj.weight"
+          ],
+          "all_backbone": false,
+          "backbone_normalization_parameter_tensors": 0,
+          "backbone_normalization_parameter_numel": 0,
+          "representative_backbone_normalization_names": []
+        }
+      ],
+      "backbone_lr_expected": 3e-05,
+      "backbone_lr_errors": [],
+      "backbone_normalization_weight_decay_expected": 0.0,
+      "backbone_normalization_weight_decay_errors": [
+        {
+          "group": 1,
+          "weight_decay": 0.0001,
+          "parameter_tensors": 610,
+          "parameter_numel": 33936,
+          "representative_names": [
+            "backbone.bn1.weight",
+            "backbone.bn1.bias",
+            "backbone.bn2.weight",
+            "backbone.bn2.bias",
+            "backbone.layer1.0.bn1.weight",
+            "backbone.layer1.0.bn1.bias",
+            "backbone.layer1.0.bn2.weight",
+            "backbone.layer1.0.bn2.bias"
+          ]
+        }
+      ]
+    }
+  },
+  "evaluations": {},
+  "fairness_assessment": {
+    "grade": "MOSTLY FAIR",
+    "resolved_config_fair": true,
+    "optimizer_parameter_semantics_fair": false,
+    "pretraining_level_fair": true,
+    "paper_strict_claim_allowed": false,
+    "required_fix_for_strict_claim": "Group all normalization parameters semantically (including HRNet bn*) with weight_decay=0, then retrain the affected comparison under the same protocol. Do not edit existing checkpoints."
+  },
+  "checkpoints": {
+    "PResNet18": null,
+    "HRNetV2-W18": null
+  },
+  "result_table": [
+    {
+      "model": "PResNet18",
+      "best_stat": null,
+      "rerun_val_ap": null,
+      "test_ap": null,
+      "test_minus_val": null
+    },
+    {
+      "model": "HRNetV2-W18",
+      "best_stat": null,
+      "rerun_val_ap": null,
+      "test_ap": null,
+      "test_minus_val": null
+    }
+  ]
+}

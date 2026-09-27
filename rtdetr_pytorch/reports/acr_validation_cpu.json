@@ -1,0 +1,256 @@
+{
+  "smoke": {
+    "baseline_equivalence": true,
+    "models": {
+      "PResNet18 + ACR": {
+        "forward": "PASS",
+        "backward": "PASS",
+        "encoder_shapes": [
+          [
+            1,
+            256,
+            80,
+            80
+          ],
+          [
+            1,
+            256,
+            40,
+            40
+          ],
+          [
+            1,
+            256,
+            20,
+            20
+          ]
+        ],
+        "prediction_shapes": {
+          "pred_logits": [
+            1,
+            300,
+            1
+          ],
+          "pred_boxes": [
+            1,
+            300,
+            4
+          ]
+        }
+      },
+      "HRNetV2-W18 + ACR": {
+        "forward": "PASS",
+        "backward": "PASS",
+        "encoder_shapes": [
+          [
+            1,
+            256,
+            80,
+            80
+          ],
+          [
+            1,
+            256,
+            40,
+            40
+          ],
+          [
+            1,
+            256,
+            20,
+            20
+          ]
+        ],
+        "prediction_shapes": {
+          "pred_logits": [
+            1,
+            300,
+            1
+          ],
+          "pred_boxes": [
+            1,
+            300,
+            4
+          ]
+        }
+      }
+    },
+    "optimizer": {
+      "PResNet18 + ACR": [
+        {
+          "name": "encoder.acr_54.detail_router.raw_beta45",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.acr_54.detail_router.detail_downsample.conv.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.acr_54.detail_router.detail_downsample.norm.weight",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.acr_54.detail_router.detail_downsample.norm.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.acr_43.detail_router.raw_beta34",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.acr_43.detail_router.detail_downsample.conv.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.acr_43.detail_router.detail_downsample.norm.weight",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.acr_43.detail_router.detail_downsample.norm.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        }
+      ],
+      "HRNetV2-W18 + ACR": [
+        {
+          "name": "encoder.acr_54.detail_router.raw_beta45",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.acr_54.detail_router.detail_downsample.conv.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.acr_54.detail_router.detail_downsample.norm.weight",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.acr_54.detail_router.detail_downsample.norm.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.acr_43.detail_router.raw_beta34",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.acr_43.detail_router.detail_downsample.conv.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.acr_43.detail_router.detail_downsample.norm.weight",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.acr_43.detail_router.detail_downsample.norm.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        }
+      ]
+    },
+    "amp": "NOT RUN (CUDA unavailable)"
+  },
+  "complexity": {
+    "PResNet18 + Original": {
+      "whole_params": 20083028,
+      "whole_conv_linear_macs": 30006963200,
+      "whole_conv_linear_flops_2_per_mac": 60013926400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      }
+    },
+    "PResNet18 + ACR": {
+      "whole_params": 21263702,
+      "whole_conv_linear_macs": 31186611200,
+      "whole_conv_linear_flops_2_per_mac": 62373222400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "added_params_vs_original": 1180674,
+      "added_conv_linear_macs_vs_original": 1179648000
+    },
+    "HRNetV2-W18 + Original": {
+      "whole_params": 18280456,
+      "whole_conv_linear_macs": 39669190400,
+      "whole_conv_linear_flops_2_per_mac": 79338380800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      }
+    },
+    "HRNetV2-W18 + ACR": {
+      "whole_params": 19461130,
+      "whole_conv_linear_macs": 40848838400,
+      "whole_conv_linear_flops_2_per_mac": 81697676800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "added_params_vs_original": 1180674,
+      "added_conv_linear_macs_vs_original": 1179648000
+    }
+  }
+}

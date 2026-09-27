@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F 
 
 from .utils import get_activation
+from .acr_neck import ACRFusion
 
 from src.core import register
 
@@ -181,6 +182,8 @@ class TransformerEncoder(nn.Module):
 
 @register
 class HybridEncoder(nn.Module):
+    __share__ = ['ACR']
+
     def __init__(self,
                  in_channels=[512, 1024, 2048],
                  feat_strides=[8, 16, 32],
@@ -195,7 +198,8 @@ class HybridEncoder(nn.Module):
                  expansion=1.0,
                  depth_mult=1.0,
                  act='silu',
-                 eval_spatial_size=None):
+                 eval_spatial_size=None,
+                 ACR=None):
         super().__init__()
         self.in_channels = in_channels
         self.feat_strides = feat_strides
@@ -204,6 +208,21 @@ class HybridEncoder(nn.Module):
         self.num_encoder_layers = num_encoder_layers
         self.pe_temperature = pe_temperature
         self.eval_spatial_size = eval_spatial_size
+
+        acr_cfg = {} if ACR is None else copy.deepcopy(ACR)
+        if not isinstance(acr_cfg, dict):
+            raise ValueError('ACR must be a mapping')
+        allowed_acr = {
+            'enabled', 'energy_calibration', 'semantic_routing',
+            'detail_routing', 'scale_min', 'scale_max', 'detach_scale',
+            'semantic', 'detail', 'eps', 'debug', 'debug_interval',
+        }
+        unknown_acr = set(acr_cfg) - allowed_acr
+        if unknown_acr:
+            raise ValueError(f'Unknown ACR options: {sorted(unknown_acr)}')
+        self.acr_enabled = acr_cfg.pop('enabled', False)
+        if not isinstance(self.acr_enabled, bool):
+            raise ValueError('ACR.enabled must be boolean')
 
         self.out_channels = [hidden_dim for _ in range(len(in_channels))]
         self.out_strides = feat_strides
@@ -249,6 +268,34 @@ class HybridEncoder(nn.Module):
             self.pan_blocks.append(
                 CSPRepLayer(hidden_dim * 2, hidden_dim, round(3 * depth_mult), act=act, expansion=expansion)
             )
+
+        # ACR is a pure optional route around the existing CCFF fusion.  When
+        # disabled, no ACR module or parameter is constructed and the forward
+        # below executes the original statements unchanged.
+        if self.acr_enabled:
+            if len(in_channels) != 3:
+                raise ValueError('ACR first implementation requires exactly P3/P4/P5')
+            defaults = {
+                'energy_calibration': True,
+                'semantic_routing': True,
+                'detail_routing': True,
+                'scale_min': 0.5,
+                'scale_max': 2.0,
+                'detach_scale': True,
+                'semantic': {'rho': 0.20, 'theta': 0.0, 'tau': 0.20},
+                'detail': {'theta': 1.0, 'tau': 0.50,
+                           'beta_max': 0.5, 'beta_init': 0.1},
+                'eps': 1e-6,
+                'debug': False,
+                'debug_interval': 100,
+            }
+            for key, value in acr_cfg.items():
+                if (key in ('semantic', 'detail') and isinstance(value, dict)):
+                    defaults[key].update(value)
+                else:
+                    defaults[key] = value
+            self.acr_54 = ACRFusion(hidden_dim, '45', **copy.deepcopy(defaults))
+            self.acr_43 = ACRFusion(hidden_dim, '34', **copy.deepcopy(defaults))
 
         self._reset_parameters()
 
@@ -303,12 +350,17 @@ class HybridEncoder(nn.Module):
 
         # broadcasting and fusion
         inner_outs = [proj_feats[-1]]
+        detail_residuals = {}
         for idx in range(len(self.in_channels) - 1, 0, -1):
             feat_high = inner_outs[0]
             feat_low = proj_feats[idx - 1]
             feat_high = self.lateral_convs[len(self.in_channels) - 1 - idx](feat_high)
             inner_outs[0] = feat_high
             upsample_feat = F.interpolate(feat_high, scale_factor=2., mode='nearest')
+            if self.acr_enabled:
+                acr_fusion = self.acr_54 if idx == 2 else self.acr_43
+                upsample_feat, detail_residuals[idx - 1] = acr_fusion(
+                    feat_low, upsample_feat)
             inner_out = self.fpn_blocks[len(self.in_channels)-1-idx](torch.concat([upsample_feat, feat_low], dim=1))
             inner_outs.insert(0, inner_out)
 
@@ -317,6 +369,10 @@ class HybridEncoder(nn.Module):
             feat_low = outs[-1]
             feat_high = inner_outs[idx + 1]
             downsample_feat = self.downsample_convs[idx](feat_low)
+            if self.acr_enabled:
+                acr_fusion = self.acr_43 if idx == 0 else self.acr_54
+                downsample_feat = acr_fusion.inject_detail(
+                    downsample_feat, detail_residuals.get(idx))
             out = self.pan_blocks[idx](torch.concat([downsample_feat, feat_high], dim=1))
             outs.append(out)
 
