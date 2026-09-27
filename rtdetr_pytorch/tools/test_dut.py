@@ -27,9 +27,23 @@ def main(args):
     from src.solver import TASKS
 
     dist.init_distributed()
-    cfg = YAMLConfig(args.config, resume=args.resume, use_amp=False)
+    overrides = dict(resume=args.resume, use_amp=False)
+    if args.output_dir:
+        overrides['output_dir'] = args.output_dir
+    cfg = YAMLConfig(args.config, **overrides)
+    if args.num_workers is not None:
+        loader = cfg.yaml_cfg['val_dataloader']
+        loader['num_workers'] = args.num_workers
+        if args.num_workers > 0:
+            loader['prefetch_factor'] = 1
+            loader['persistent_workers'] = False
+        else:
+            loader.pop('prefetch_factor', None)
+            loader.pop('persistent_workers', None)
     paths = select_split(cfg, args.split)
-    print(f'DUT evaluation split={args.split}; dataset={paths}; original FP32 evaluate (no AMP).')
+    print(f'DUT evaluation split={args.split}; dataset={paths}; '
+          f'num_workers={cfg.yaml_cfg["val_dataloader"]["num_workers"]}; '
+          'original FP32 evaluate (no AMP).')
     TASKS[cfg.yaml_cfg['task']](cfg).val()
 
 
@@ -38,4 +52,8 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--config', required=True)
     parser.add_argument('-r', '--resume', required=True)
     parser.add_argument('--split', choices=('val', 'test'), default='test')
+    parser.add_argument('--output-dir', default=None,
+                        help='write eval.pth away from the training directory')
+    parser.add_argument('--num-workers', type=int, default=None,
+                        help='override evaluation workers; 0 disables workers')
     main(parser.parse_args())

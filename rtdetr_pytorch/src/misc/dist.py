@@ -104,13 +104,25 @@ def warp_model(model, find_unused_parameters=False, sync_bn=False,):
 def warp_loader(loader, shuffle=False):        
     if is_dist_available_and_initialized():
         sampler = DistributedSampler(loader.dataset, shuffle=shuffle)
-        loader = DataLoader(loader.dataset, 
-                            loader.batch_size, 
-                            sampler=sampler, 
-                            drop_last=loader.drop_last, 
-                            collate_fn=loader.collate_fn, 
-                            pin_memory=loader.pin_memory,
-                            num_workers=loader.num_workers, )
+        kwargs = dict(
+            dataset=loader.dataset,
+            batch_size=loader.batch_size,
+            sampler=sampler,
+            drop_last=loader.drop_last,
+            collate_fn=loader.collate_fn,
+            pin_memory=loader.pin_memory,
+            num_workers=loader.num_workers,
+        )
+        # Preserve the memory-control settings selected by the YAML. Losing
+        # prefetch_factor here silently restores PyTorch's default of 2 on
+        # every DDP rank and doubles the shared-memory queue footprint.
+        if loader.num_workers > 0:
+            prefetch_factor = getattr(loader, 'prefetch_factor', None)
+            if prefetch_factor is not None:
+                kwargs['prefetch_factor'] = prefetch_factor
+            kwargs['persistent_workers'] = getattr(
+                loader, 'persistent_workers', False)
+        loader = DataLoader(**kwargs)
     return loader
 
 

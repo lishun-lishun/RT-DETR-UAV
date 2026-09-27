@@ -18,11 +18,17 @@ plot_training_curves: true
 # MERT concat adds 16 shifted images; val and true-test use batch_size=16.
 train_dataloader:
   batch_size: 16
+  # Keep four workers per rank, but prefetch one batch per worker instead of
+  # PyTorch's default two. This halves three-rank /dev/shm queue pressure.
+  prefetch_factor: 1
+  persistent_workers: false
 
 val_dataloader:
   batch_size: 16
   # Half of the inherited training workers (4); also used by --test-only.
   num_workers: 2
+  prefetch_factor: 1
+  persistent_workers: false
 
 # Global batch 48 uses linear LR scaling from the successful one-GPU batch-16
 # reference. Five warmup epochs protect the pretrained backbone/new branches;
