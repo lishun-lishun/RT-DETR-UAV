@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-# Sequentially train only the four formal PAF/BOR DUT-Anti-UAV experiments on
-# exactly three GPUs. An existing final experiment output path is skipped.
+# Sequentially train the four formal PAF/BOR experiments plus the two existing
+# SLR experiments on exactly three GPUs. Existing final output paths are
+# skipped, so completed experiments are never overwritten or retrained.
 # Any ordinary training failure stops the fixed-order queue.
 
 set -uo pipefail
@@ -42,6 +43,8 @@ CONFIGS=(
     "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_paf.yml"
     "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_bor.yml"
     "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_bor.yml"
+    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_slr.yml"
+    "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_slr.yml"
 )
 
 for config in "${CONFIGS[@]}"; do

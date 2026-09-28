@@ -42,27 +42,66 @@ class PAFBORIntegrationTests(unittest.TestCase):
         torch.set_num_threads(2)
 
     def test_both_disabled_is_original_hybrid_encoder(self):
-        kwargs = dict(in_channels=[16, 32, 64], hidden_dim=32,
-                      nhead=8, dim_feedforward=64, expansion=0.5,
-                      num_encoder_layers=1, eval_spatial_size=None)
-        torch.manual_seed(7)
-        original = HybridEncoder(**kwargs, PAF=None, BOR=None).eval()
-        torch.manual_seed(7)
-        disabled = HybridEncoder(
-            **kwargs, PAF={'enabled': False}, BOR={'enabled': False}).eval()
-        self.assertEqual(original.state_dict().keys(), disabled.state_dict().keys())
-        for key in original.state_dict():
-            self.assertTrue(torch.equal(
-                original.state_dict()[key], disabled.state_dict()[key]), key)
-        features = [torch.randn(1, 16, 16, 16),
-                    torch.randn(1, 32, 8, 8),
-                    torch.randn(1, 64, 4, 4)]
-        with torch.inference_mode():
-            expected = original(features)
-            actual = disabled(features)
-        for left, right in zip(expected, actual):
-            self.assertTrue(torch.allclose(
-                left, right, atol=1e-6, rtol=1e-5))
+        for channels in ([128, 256, 512], [36, 72, 144]):
+            kwargs = dict(in_channels=channels, hidden_dim=32,
+                          nhead=8, dim_feedforward=64, expansion=0.5,
+                          num_encoder_layers=1, eval_spatial_size=None)
+            torch.manual_seed(7)
+            original = HybridEncoder(**kwargs, PAF=None, BOR=None).eval()
+            torch.manual_seed(7)
+            disabled = HybridEncoder(
+                **kwargs, PAF={'enabled': False},
+                BOR={'enabled': False}).eval()
+            self.assertEqual(
+                original.state_dict().keys(), disabled.state_dict().keys())
+            for key in original.state_dict():
+                self.assertTrue(torch.equal(
+                    original.state_dict()[key], disabled.state_dict()[key]), key)
+            features = [torch.randn(1, channels[0], 16, 16),
+                        torch.randn(1, channels[1], 8, 8),
+                        torch.randn(1, channels[2], 4, 4)]
+            with torch.inference_mode():
+                expected = original(features)
+                actual = disabled(features)
+            for left, right in zip(expected, actual):
+                self.assertTrue(torch.allclose(
+                    left, right, atol=1e-6, rtol=1e-5))
+
+    def test_disabled_full_models_match_backbone_encoder_and_predictions(self):
+        image = torch.randn(1, 3, 128, 128)
+        for path in (PRES_BASE, HR_BASE):
+            torch.manual_seed(13)
+            reference = build(path).model.eval()
+            overrides = ({'HRNetV2W18': {
+                'pretrained': False, 'pretrained_path': None}}
+                         if is_hrnet(path) else
+                         {'PResNet': {'pretrained': False}})
+            overrides.update({
+                'PAF': {'enabled': False}, 'BOR': {'enabled': False}})
+            torch.manual_seed(13)
+            disabled = YAMLConfig(str(path), **overrides).model.eval()
+            disabled.load_state_dict(reference.state_dict(), strict=True)
+            for model in (reference, disabled):
+                model.multi_scale = None
+                model.encoder.eval_spatial_size = None
+                model.decoder.eval_spatial_size = None
+            with torch.inference_mode():
+                reference_backbone = reference.backbone(image)
+                disabled_backbone = disabled.backbone(image)
+                reference_neck = reference.encoder(reference_backbone)
+                disabled_neck = disabled.encoder(disabled_backbone)
+                reference_prediction = reference(image)
+                disabled_prediction = disabled(image)
+            for left, right in zip(reference_backbone, disabled_backbone):
+                self.assertTrue(torch.allclose(
+                    left, right, atol=1e-6, rtol=1e-5))
+            for left, right in zip(reference_neck, disabled_neck):
+                self.assertTrue(torch.allclose(
+                    left, right, atol=1e-6, rtol=1e-5))
+            for key in ('pred_logits', 'pred_boxes'):
+                self.assertTrue(torch.allclose(
+                    reference_prediction[key], disabled_prediction[key],
+                    atol=1e-6, rtol=1e-5), key)
 
     def test_paf_routes_and_bor_only_n3(self):
         paf = build(PRES_PAF).model.encoder.eval()
