@@ -8,6 +8,7 @@ import torch.nn.functional as F
 
 from .utils import get_activation
 from .acr_neck import ACRFusion
+from .slr_neck import SLRNeck
 
 from src.core import register
 
@@ -182,7 +183,7 @@ class TransformerEncoder(nn.Module):
 
 @register
 class HybridEncoder(nn.Module):
-    __share__ = ['ACR']
+    __share__ = ['ACR', 'SLR']
 
     def __init__(self,
                  in_channels=[512, 1024, 2048],
@@ -199,7 +200,8 @@ class HybridEncoder(nn.Module):
                  depth_mult=1.0,
                  act='silu',
                  eval_spatial_size=None,
-                 ACR=None):
+                 ACR=None,
+                 SLR=None):
         super().__init__()
         self.in_channels = in_channels
         self.feat_strides = feat_strides
@@ -223,6 +225,22 @@ class HybridEncoder(nn.Module):
         self.acr_enabled = acr_cfg.pop('enabled', False)
         if not isinstance(self.acr_enabled, bool):
             raise ValueError('ACR.enabled must be boolean')
+
+        slr_cfg = {} if SLR is None else copy.deepcopy(SLR)
+        if not isinstance(slr_cfg, dict):
+            raise ValueError('SLR must be a mapping')
+        allowed_slr = {
+            'enabled', 'detail_source_channels', 'query_dim',
+            'position_dim', 'alpha_max', 'alpha_init',
+        }
+        unknown_slr = set(slr_cfg) - allowed_slr
+        if unknown_slr:
+            raise ValueError(f'Unknown SLR options: {sorted(unknown_slr)}')
+        self.slr_enabled = slr_cfg.pop('enabled', False)
+        if not isinstance(self.slr_enabled, bool):
+            raise ValueError('SLR.enabled must be boolean')
+        if self.slr_enabled and self.acr_enabled:
+            raise ValueError('SLR and ACR are independent experiments and cannot mix')
 
         self.out_channels = [hidden_dim for _ in range(len(in_channels))]
         self.out_strides = feat_strides
@@ -297,6 +315,21 @@ class HybridEncoder(nn.Module):
             self.acr_54 = ACRFusion(hidden_dim, '45', **copy.deepcopy(defaults))
             self.acr_43 = ACRFusion(hidden_dim, '34', **copy.deepcopy(defaults))
 
+        # SLR is constructed after every original HybridEncoder block and is
+        # called only after CCFF has completed N3/N4/N5. Isolate its random
+        # initialization so a fixed seed preserves the original decoder and
+        # all pre-existing parameter initializations.
+        if self.slr_enabled:
+            detail_channels = slr_cfg.pop('detail_source_channels', None)
+            if detail_channels is None:
+                raise ValueError(
+                    'SLR.detail_source_channels is required when SLR is enabled')
+            with torch.random.fork_rng(devices=[]):
+                self.slr = SLRNeck(
+                    hidden_dim=hidden_dim,
+                    detail_source_channels=detail_channels,
+                    **slr_cfg)
+
         self._reset_parameters()
 
     def _reset_parameters(self):
@@ -329,6 +362,16 @@ class HybridEncoder(nn.Module):
         return torch.concat([out_w.sin(), out_w.cos(), out_h.sin(), out_h.cos()], dim=1)[None, :, :]
 
     def forward(self, feats):
+        detail_source = None
+        if isinstance(feats, dict):
+            if set(feats) != {'features', 'detail'}:
+                raise ValueError(
+                    'SLR backbone output must contain only features and detail')
+            if not self.slr_enabled:
+                raise RuntimeError(
+                    'Backbone returned an SLR detail source while SLR is disabled')
+            detail_source = feats['detail']
+            feats = feats['features']
         assert len(feats) == len(self.in_channels)
         proj_feats = [self.input_proj[i](feat) for i, feat in enumerate(feats)]
         
@@ -376,4 +419,8 @@ class HybridEncoder(nn.Module):
             out = self.pan_blocks[idx](torch.concat([downsample_feat, feat_high], dim=1))
             outs.append(out)
 
+        if self.slr_enabled:
+            if detail_source is None:
+                raise RuntimeError('SLR is enabled but the backbone supplied no detail source')
+            outs[0] = self.slr(outs[0], detail_source)
         return outs

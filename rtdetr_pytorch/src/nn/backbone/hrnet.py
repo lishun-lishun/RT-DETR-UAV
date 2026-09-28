@@ -226,12 +226,29 @@ _HRNET_W18 = {
 class HRNetV2W18(nn.Module):
     """HRNetV2-W18 provider returning RT-DETR P3/P4/P5 only."""
 
-    def __init__(self, pretrained=True, pretrained_path=None):
+    __share__ = ['SLR']
+
+    def __init__(self, pretrained=True, pretrained_path=None, SLR=None):
         super().__init__()
         if not isinstance(pretrained, bool):
             raise ValueError('HRNetV2W18.pretrained must be boolean')
         if pretrained_path is not None and not isinstance(pretrained_path, str):
             raise ValueError('HRNetV2W18.pretrained_path must be a string or null')
+        slr_cfg = {} if SLR is None else dict(SLR)
+        allowed_slr = {
+            'enabled', 'detail_source_channels', 'query_dim',
+            'position_dim', 'alpha_max', 'alpha_init',
+        }
+        unknown_slr = set(slr_cfg) - allowed_slr
+        if unknown_slr:
+            raise ValueError(f'Unknown SLR options: {sorted(unknown_slr)}')
+        self.slr_enabled = slr_cfg.get('enabled', False)
+        if not isinstance(self.slr_enabled, bool):
+            raise ValueError('SLR.enabled must be a YAML boolean')
+        if self.slr_enabled and slr_cfg.get('detail_source_channels') != 18:
+            raise ValueError(
+                'HRNetV2W18 SLR.detail_source_channels must equal the real '
+                'Stage4 stride-4 branch channels (18)')
 
         self.out_channels = [36, 72, 144]
         self.out_strides = [8, 16, 32]
@@ -497,4 +514,6 @@ class HRNetV2W18(nn.Module):
                 raise RuntimeError(
                     f'HRNet output stride {stride} has {output.shape[1]} '
                     f'channels, expected {channels}')
+        if self.slr_enabled:
+            return {'features': outputs, 'detail': features[0]}
         return outputs

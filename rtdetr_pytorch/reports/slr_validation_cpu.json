@@ -1,0 +1,426 @@
+{
+  "smoke": {
+    "models": {
+      "PResNet18 + SLR": {
+        "forward": "PASS",
+        "backward": "PASS",
+        "dynamic_shapes": {
+          "480": {
+            "detail": [
+              1,
+              64,
+              120,
+              120
+            ],
+            "encoder": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ]
+          },
+          "640": {
+            "detail": [
+              1,
+              64,
+              160,
+              160
+            ],
+            "encoder": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ]
+          },
+          "800": {
+            "detail": [
+              1,
+              64,
+              200,
+              200
+            ],
+            "encoder": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ]
+          }
+        },
+        "prediction_shapes": {
+          "pred_logits": [
+            1,
+            300,
+            1
+          ],
+          "pred_boxes": [
+            1,
+            300,
+            4
+          ]
+        },
+        "alpha_eff": 0.05000000447034836
+      },
+      "HRNetV2-W18 + SLR": {
+        "forward": "PASS",
+        "backward": "PASS",
+        "dynamic_shapes": {
+          "480": {
+            "detail": [
+              1,
+              18,
+              120,
+              120
+            ],
+            "encoder": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ]
+          },
+          "640": {
+            "detail": [
+              1,
+              18,
+              160,
+              160
+            ],
+            "encoder": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ]
+          },
+          "800": {
+            "detail": [
+              1,
+              18,
+              200,
+              200
+            ],
+            "encoder": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ]
+          }
+        },
+        "prediction_shapes": {
+          "pred_logits": [
+            1,
+            300,
+            1
+          ],
+          "pred_boxes": [
+            1,
+            300,
+            4
+          ]
+        },
+        "alpha_eff": 0.05000000447034836
+      }
+    },
+    "optimizer": {
+      "PResNet18 + SLR": [
+        {
+          "name": "encoder.slr.raw_alpha",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.slr.query_projection.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.slr.query_projection.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.slr.key_projection.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.slr.key_projection.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.slr.value_projection.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.slr.value_projection.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.slr.position_projection.0.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.slr.position_projection.0.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.slr.output_projection.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.slr.output_projection.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        }
+      ],
+      "HRNetV2-W18 + SLR": [
+        {
+          "name": "encoder.slr.raw_alpha",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.slr.query_projection.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.slr.query_projection.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.slr.key_projection.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.slr.key_projection.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.slr.value_projection.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.slr.value_projection.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.slr.position_projection.0.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.slr.position_projection.0.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "name": "encoder.slr.output_projection.weight",
+          "group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "name": "encoder.slr.output_projection.bias",
+          "group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        }
+      ]
+    }
+  },
+  "complexity": {
+    "PResNet18 + Original": {
+      "whole_params": 20083028,
+      "whole_conv_linear_macs": 30006963200,
+      "whole_conv_linear_flops_2_per_mac": 60013926400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      }
+    },
+    "PResNet18 + SLR": {
+      "whole_params": 20108005,
+      "whole_conv_linear_macs": 30243097600,
+      "whole_conv_linear_flops_2_per_mac": 60486195200,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "slr_functional_attention_macs": 1689600,
+      "added_params_vs_original": 24977,
+      "added_conv_linear_macs_vs_original": 236134400
+    },
+    "HRNetV2-W18 + Original": {
+      "whole_params": 18280456,
+      "whole_conv_linear_macs": 39669190400,
+      "whole_conv_linear_flops_2_per_mac": 79338380800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      }
+    },
+    "HRNetV2-W18 + SLR": {
+      "whole_params": 18302489,
+      "whole_conv_linear_macs": 39829958400,
+      "whole_conv_linear_flops_2_per_mac": 79659916800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "slr_functional_attention_macs": 1689600,
+      "added_params_vs_original": 22033,
+      "added_conv_linear_macs_vs_original": 160768000
+    }
+  }
+}

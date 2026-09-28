@@ -1,0 +1,16 @@
+__include__: [
+  './rtdetr_r18vd_dut_anti_uav.yml',
+]
+
+# Pure Neck experiment. All data, optimization, schedule, EMA, detector and
+# three-GPU settings are inherited unchanged from the formal PResNet18 DUT
+# baseline. C2 is exposed only as SLR's stride-4 detail source.
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_slr
+
+SLR:
+  enabled: true
+  detail_source_channels: 64
+  query_dim: 32
+  position_dim: 16
+  alpha_max: 0.3
+  alpha_init: 0.05

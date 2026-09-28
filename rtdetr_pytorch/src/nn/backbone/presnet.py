@@ -143,7 +143,7 @@ class Blocks(nn.Module):
 class PResNet(nn.Module):
     __share__ = ['SECD', 'BackbonePlugins', 'CCED', 'GRER',
                  'BackboneVariant', 'PHSB', 'BackboneEnhancement', 'BAFR', 'HCBR',
-                 'BackboneModification', 'BDPD', 'MSDConv', 'PDR']
+                 'BackboneModification', 'BDPD', 'MSDConv', 'PDR', 'SLR']
 
     def __init__(
         self, 
@@ -167,10 +167,22 @@ class PResNet(nn.Module):
         BackboneModification=None,
         BDPD=None,
         MSDConv=None,
-        PDR=None):
+        PDR=None,
+        SLR=None):
         super().__init__()
 
         block_nums = ResNet_cfg[depth]
+        slr_cfg = {} if SLR is None else dict(SLR)
+        allowed_slr = {
+            'enabled', 'detail_source_channels', 'query_dim',
+            'position_dim', 'alpha_max', 'alpha_init',
+        }
+        unknown_slr = set(slr_cfg) - allowed_slr
+        if unknown_slr:
+            raise ValueError(f'Unknown SLR options: {sorted(unknown_slr)}')
+        self.slr_enabled = slr_cfg.get('enabled', False)
+        if not isinstance(self.slr_enabled, bool):
+            raise ValueError('SLR.enabled must be a YAML boolean')
         pdr_cfg = {} if PDR is None else dict(PDR)
         allowed_pdr = {
             'enabled', 'use_relay3', 'use_relay4', 'use_semantic_gate',
@@ -468,6 +480,37 @@ class PResNet(nn.Module):
                     self.hcbr_p4 = HCBRModule(_out_channels[2], **hcbr_cfg)
                     self.hcbr_p4.debug_name = 'P4'
 
+        if self.slr_enabled:
+            if (depth != 18 or variant != 'd' or num_stages != 4
+                    or list(return_idx) != [1, 2, 3]):
+                raise ValueError(
+                    'SLR first-round PResNet experiment requires '
+                    'PResNet18-d, four stages and return_idx=[1,2,3]')
+            existing_methods = (
+                self.pdr is not None,
+                self.bpdp_enabled,
+                self.msdconv_enabled,
+                self.backbone_variant_type != 'baseline',
+                self.bafr_enabled,
+                self.hcbr_enabled,
+                self.secd_34 is not None,
+                self.secd_45 is not None,
+                self.plugins is not None,
+                self.cced_34 is not None,
+                self.grer_34 is not None,
+            )
+            if any(existing_methods):
+                raise ValueError(
+                    'SLR first-round experiments cannot mix historical '
+                    'backbone modules')
+            if _out_strides[0] != 4:
+                raise RuntimeError('SLR requires the PResNet C2 stride to be 4')
+            configured_channels = slr_cfg.get('detail_source_channels')
+            if configured_channels != _out_channels[0]:
+                raise ValueError(
+                    'PResNet SLR.detail_source_channels must equal the real '
+                    f'C2 channels ({_out_channels[0]})')
+
         if freeze_at >= 0:
             self._freeze_parameters(self.conv1)
             for i in range(min(freeze_at, num_stages)):
@@ -635,14 +678,19 @@ class PResNet(nn.Module):
         if self.hcbr_p3 is not None or self.hcbr_p4 is not None:
             return self._forward_hcbr(x)
         outs = []
+        detail_source = None
         for idx, stage in enumerate(self.res_layers):
             x = stage(x)
+            if self.slr_enabled and idx == 0:
+                detail_source = x  # original C2, stride 4
             if idx == 1 and self.msdconv_p3 is not None:
                 x = self.msdconv_p3(x)
             if idx in self.return_idx:
                 outs.append(x)
         if self.backbone_variant_debug:
             self._debug_variant_features(outs)
+        if self.slr_enabled:
+            return {'features': outs, 'detail': detail_source}
         return outs
 
     def _forward_pdr(self, x):

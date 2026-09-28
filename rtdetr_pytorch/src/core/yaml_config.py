@@ -46,6 +46,10 @@ class YAMLConfig(BaseConfig):
         if not isinstance(acr, dict):
             raise ValueError('ACR must be a mapping')
         cfg['ACR'] = {'enabled': False, **copy.deepcopy(acr)}
+        slr = cfg.get('SLR', {})
+        if not isinstance(slr, dict):
+            raise ValueError('SLR must be a mapping')
+        cfg['SLR'] = {'enabled': False, **copy.deepcopy(slr)}
         # Complete default-off point switches for official/legacy YAMLs, without
         # altering a file or constructing plugins. Reject invalid values in the
         # backbone rather than silently dropping misspelled point names.
@@ -85,7 +89,8 @@ class YAMLConfig(BaseConfig):
             GLOBAL_CONFIG['BackbonePlugins'] = copy.deepcopy(self.yaml_cfg['BackbonePlugins'])
             GLOBAL_CONFIG['BackboneEnhancement'] = copy.deepcopy(
                 self.yaml_cfg['BackboneEnhancement'])
-            for name in ('BackboneModification', 'BDPD', 'MSDConv', 'PDR', 'ACR'):
+            for name in ('BackboneModification', 'BDPD', 'MSDConv', 'PDR',
+                         'ACR', 'SLR'):
                 GLOBAL_CONFIG[name] = copy.deepcopy(self.yaml_cfg[name])
             self._model = create(self.yaml_cfg['model'])
         return self._model 

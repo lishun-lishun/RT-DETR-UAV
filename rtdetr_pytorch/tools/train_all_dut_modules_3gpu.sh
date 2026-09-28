@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 
-# Sequentially train every DUT-Anti-UAV RT-DETR module configuration on exactly
-# three GPUs. The two ACR experiments are first; the previous HRNet-first fixed
-# order and randomized remainder policy follow unchanged. An existing final
-# experiment output path is skipped exactly as requested. Any ordinary
-# training failure stops the queue.
+# Sequentially train only the two formal SLR-Neck DUT-Anti-UAV experiments on
+# exactly three GPUs. An existing final experiment output path is skipped.
+# Any ordinary training failure stops the fixed-order queue.
 
 set -uo pipefail
 
@@ -39,43 +37,17 @@ if [[ ${#GPU_ARRAY[@]} -ne $NPROC_PER_NODE ]]; then
     exit 2
 fi
 
-ACR_CONFIGS=(
-    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_acr.yml"
-    "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_acr.yml"
-)
-HRNET_CONFIG="configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav.yml"
-FIXED_CONFIGS=(
-    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_pdr3.yml"
-    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_pdr34.yml"
-    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_pdr34_nogate.yml"
-    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav.yml"
-    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_bpdp.yml"
-    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_msdconv.yml"
+CONFIGS=(
+    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_slr.yml"
+    "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_slr.yml"
 )
 
-for config in "${ACR_CONFIGS[@]}" "$HRNET_CONFIG" "${FIXED_CONFIGS[@]}"; do
+for config in "${CONFIGS[@]}"; do
     if [[ ! -f "$config" ]]; then
         echo "ERROR: required config not found: $config" >&2
         exit 3
     fi
 done
-
-# Only direct DUT module YAMLs are included. COCO configs and uav_tuning are
-# intentionally excluded. The previous queue shuffled this tail; keep that
-# behavior so HRNet insertion does not alter the established scheduling policy.
-mapfile -t REMAINING_CONFIGS < <(
-    find configs/rtdetr -maxdepth 1 -type f \
-        -name 'rtdetr_r18vd_dut_anti_uav_*.yml' \
-        ! -name 'rtdetr_r18vd_dut_anti_uav_pdr3.yml' \
-        ! -name 'rtdetr_r18vd_dut_anti_uav_pdr34.yml' \
-        ! -name 'rtdetr_r18vd_dut_anti_uav_pdr34_nogate.yml' \
-        ! -name 'rtdetr_r18vd_dut_anti_uav_bpdp.yml' \
-        ! -name 'rtdetr_r18vd_dut_anti_uav_msdconv.yml' \
-        ! -name 'rtdetr_r18vd_dut_anti_uav_acr.yml' \
-        -print | sort | shuf
-)
-
-CONFIGS=("${ACR_CONFIGS[@]}" "$HRNET_CONFIG" "${FIXED_CONFIGS[@]}" "${REMAINING_CONFIGS[@]}")
 TOTAL=${#CONFIGS[@]}
 declare -a OUTPUT_DIRS PLAN_STATUS
 RUN_COUNT=0
