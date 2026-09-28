@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Sequentially train only the two formal SLR-Neck DUT-Anti-UAV experiments on
+# Sequentially train only the four formal PAF/BOR DUT-Anti-UAV experiments on
 # exactly three GPUs. An existing final experiment output path is skipped.
 # Any ordinary training failure stops the fixed-order queue.
 
@@ -38,8 +38,10 @@ if [[ ${#GPU_ARRAY[@]} -ne $NPROC_PER_NODE ]]; then
 fi
 
 CONFIGS=(
-    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_slr.yml"
-    "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_slr.yml"
+    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_paf.yml"
+    "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_paf.yml"
+    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_bor.yml"
+    "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_bor.yml"
 )
 
 for config in "${CONFIGS[@]}"; do

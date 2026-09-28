@@ -9,6 +9,8 @@ import torch.nn.functional as F
 from .utils import get_activation
 from .acr_neck import ACRFusion
 from .slr_neck import SLRNeck
+from .paf_neck import PhaseAdaptiveFusion
+from .bor_neck import BackgroundOrthogonalResidual
 
 from src.core import register
 
@@ -183,7 +185,7 @@ class TransformerEncoder(nn.Module):
 
 @register
 class HybridEncoder(nn.Module):
-    __share__ = ['ACR', 'SLR']
+    __share__ = ['ACR', 'SLR', 'PAF', 'BOR']
 
     def __init__(self,
                  in_channels=[512, 1024, 2048],
@@ -201,7 +203,9 @@ class HybridEncoder(nn.Module):
                  act='silu',
                  eval_spatial_size=None,
                  ACR=None,
-                 SLR=None):
+                 SLR=None,
+                 PAF=None,
+                 BOR=None):
         super().__init__()
         self.in_channels = in_channels
         self.feat_strides = feat_strides
@@ -241,6 +245,47 @@ class HybridEncoder(nn.Module):
             raise ValueError('SLR.enabled must be boolean')
         if self.slr_enabled and self.acr_enabled:
             raise ValueError('SLR and ACR are independent experiments and cannot mix')
+
+        paf_cfg = {} if PAF is None else copy.deepcopy(PAF)
+        if not isinstance(paf_cfg, dict):
+            raise ValueError('PAF must be a mapping')
+        allowed_paf = {
+            'enabled', 'align_54', 'align_43', 'query_dim',
+            'debug', 'debug_interval',
+        }
+        unknown_paf = set(paf_cfg) - allowed_paf
+        if unknown_paf:
+            raise ValueError(f'Unknown PAF options: {sorted(unknown_paf)}')
+        self.paf_enabled = paf_cfg.pop('enabled', False)
+        if not isinstance(self.paf_enabled, bool):
+            raise ValueError('PAF.enabled must be boolean')
+        self.paf_align_54 = paf_cfg.pop('align_54', True)
+        self.paf_align_43 = paf_cfg.pop('align_43', True)
+        if not isinstance(self.paf_align_54, bool):
+            raise ValueError('PAF.align_54 must be boolean')
+        if not isinstance(self.paf_align_43, bool):
+            raise ValueError('PAF.align_43 must be boolean')
+
+        bor_cfg = {} if BOR is None else copy.deepcopy(BOR)
+        if not isinstance(bor_cfg, dict):
+            raise ValueError('BOR must be a mapping')
+        allowed_bor = {
+            'enabled', 'outer_kernel', 'inner_kernel', 'theta', 'tau',
+            'alpha_max', 'alpha_init', 'eps', 'debug',
+        }
+        unknown_bor = set(bor_cfg) - allowed_bor
+        if unknown_bor:
+            raise ValueError(f'Unknown BOR options: {sorted(unknown_bor)}')
+        self.bor_enabled = bor_cfg.pop('enabled', False)
+        if not isinstance(self.bor_enabled, bool):
+            raise ValueError('BOR.enabled must be boolean')
+        if self.paf_enabled and self.bor_enabled:
+            raise ValueError(
+                'PAF and BOR cannot be enabled simultaneously in current experiments.')
+        if ((self.paf_enabled or self.bor_enabled)
+                and (self.acr_enabled or self.slr_enabled)):
+            raise ValueError(
+                'PAF/BOR first-round experiments cannot mix with ACR or SLR')
 
         self.out_channels = [hidden_dim for _ in range(len(in_channels))]
         self.out_strides = feat_strides
@@ -330,6 +375,33 @@ class HybridEncoder(nn.Module):
                     detail_source_channels=detail_channels,
                     **slr_cfg)
 
+        # PAF keeps the original nearest-neighbour upsampling and CSPRepLayer;
+        # it only aligns the already-upsampled feature immediately before each
+        # top-down concatenation. The two routes intentionally do not share
+        # projection weights. Isolating initialization preserves every common
+        # seeded parameter in the original detector.
+        if self.paf_enabled:
+            if len(in_channels) != 3:
+                raise ValueError(
+                    'PAF first implementation requires exactly P3/P4/P5')
+            with torch.random.fork_rng(devices=[]):
+                if self.paf_align_54:
+                    self.paf54 = PhaseAdaptiveFusion(
+                        hidden_dim=hidden_dim, **copy.deepcopy(paf_cfg))
+                if self.paf_align_43:
+                    self.paf43 = PhaseAdaptiveFusion(
+                        hidden_dim=hidden_dim, **copy.deepcopy(paf_cfg))
+
+        # BOR is a post-CCFF residual on N3 only. N4 and N5 never enter this
+        # module, and the complete original top-down/bottom-up paths run first.
+        if self.bor_enabled:
+            if len(in_channels) != 3:
+                raise ValueError(
+                    'BOR first implementation requires exactly P3/P4/P5')
+            with torch.random.fork_rng(devices=[]):
+                self.bor = BackgroundOrthogonalResidual(
+                    hidden_dim=hidden_dim, **bor_cfg)
+
         self._reset_parameters()
 
     def _reset_parameters(self):
@@ -404,6 +476,11 @@ class HybridEncoder(nn.Module):
                 acr_fusion = self.acr_54 if idx == 2 else self.acr_43
                 upsample_feat, detail_residuals[idx - 1] = acr_fusion(
                     feat_low, upsample_feat)
+            if self.paf_enabled:
+                paf_fusion = (getattr(self, 'paf54', None) if idx == 2
+                              else getattr(self, 'paf43', None))
+                if paf_fusion is not None:
+                    upsample_feat = paf_fusion(feat_low, upsample_feat)
             inner_out = self.fpn_blocks[len(self.in_channels)-1-idx](torch.concat([upsample_feat, feat_low], dim=1))
             inner_outs.insert(0, inner_out)
 
@@ -423,4 +500,6 @@ class HybridEncoder(nn.Module):
             if detail_source is None:
                 raise RuntimeError('SLR is enabled but the backbone supplied no detail source')
             outs[0] = self.slr(outs[0], detail_source)
+        if self.bor_enabled:
+            outs[0] = self.bor(outs[0])
         return outs

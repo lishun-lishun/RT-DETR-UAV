@@ -230,7 +230,11 @@ class SLRNeckTests(unittest.TestCase):
         actual = sorted(path.name for path in
                         (ROOT / 'configs/rtdetr').glob('*dut_anti_uav*.yml'))
         self.assertEqual(actual, sorted([
-            PRES_BASE.name, HR_BASE.name, PRES_SLR.name, HR_SLR.name]))
+            PRES_BASE.name, HR_BASE.name, PRES_SLR.name, HR_SLR.name,
+            'rtdetr_r18vd_dut_anti_uav_paf.yml',
+            'rtdetr_hrnetv2_w18_dut_anti_uav_paf.yml',
+            'rtdetr_r18vd_dut_anti_uav_bor.yml',
+            'rtdetr_hrnetv2_w18_dut_anti_uav_bor.yml']))
 
     def test_enabled_slr_preserves_all_common_seeded_weights(self):
         for baseline_path, candidate_path in (

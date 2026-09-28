@@ -90,3 +90,12 @@ BackboneEnhancement:
 BackboneModification:
   bpdp: false
   msdconv: false
+
+# Optional Neck switches. Both are disabled for the formal original control;
+# disabled mode constructs no module and follows the original HybridEncoder
+# statements exactly.
+PAF:
+  enabled: false
+
+BOR:
+  enabled: false
