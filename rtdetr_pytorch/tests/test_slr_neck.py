@@ -234,7 +234,9 @@ class SLRNeckTests(unittest.TestCase):
             'rtdetr_r18vd_dut_anti_uav_paf.yml',
             'rtdetr_hrnetv2_w18_dut_anti_uav_paf.yml',
             'rtdetr_r18vd_dut_anti_uav_bor.yml',
-            'rtdetr_hrnetv2_w18_dut_anti_uav_bor.yml']))
+            'rtdetr_hrnetv2_w18_dut_anti_uav_bor.yml',
+            'rtdetr_r18vd_dut_anti_uav_dgfr.yml',
+            'rtdetr_hrnetv2_w18_dut_anti_uav_dgfr.yml']))
 
     def test_enabled_slr_preserves_all_common_seeded_weights(self):
         for baseline_path, candidate_path in (

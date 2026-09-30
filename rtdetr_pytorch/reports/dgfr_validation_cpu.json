@@ -1,0 +1,1848 @@
+{
+  "smoke": {
+    "fairness": {
+      "PResNet18 + DGFR": {
+        "reference": "PResNet18 + Original",
+        "allowed_namespace": "DGFR",
+        "resolved_differences": {
+          "DGFR.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "DGFR.fusion_channels": {
+            "reference": "<absent>",
+            "candidate": 64
+          },
+          "DGFR.gamma_init": {
+            "reference": "<absent>",
+            "candidate": 0.05
+          },
+          "DGFR.gamma_max": {
+            "reference": "<absent>",
+            "candidate": 0.25
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_dgfr"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "fusion_channels": 64,
+          "gamma_max": 0.25,
+          "gamma_init": 0.05
+        },
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + DGFR": {
+        "reference": "HRNetV2-W18 + Original",
+        "allowed_namespace": "DGFR",
+        "resolved_differences": {
+          "DGFR.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "DGFR.fusion_channels": {
+            "reference": "<absent>",
+            "candidate": 64
+          },
+          "DGFR.gamma_init": {
+            "reference": "<absent>",
+            "candidate": 0.05
+          },
+          "DGFR.gamma_max": {
+            "reference": "<absent>",
+            "candidate": 0.25
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_dut_anti_uav.yml",
+              "./include/hrnetv2_w18.yml"
+            ],
+            "candidate": [
+              "./rtdetr_hrnetv2_w18_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_hrnetv2_w18_dut_anti_uav",
+            "candidate": "./output/rtdetr_hrnetv2_w18_dut_anti_uav_dgfr"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "fusion_channels": 64,
+          "gamma_max": 0.25,
+          "gamma_init": 0.05
+        },
+        "status": "PASS"
+      }
+    },
+    "disabled_equivalence": {
+      "PResNet18 + DGFR": {
+        "state_dict": "EXACT",
+        "backbone": "PASS",
+        "O3_O4_O5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS"
+      },
+      "HRNetV2-W18 + DGFR": {
+        "state_dict": "EXACT",
+        "backbone": "PASS",
+        "O3_O4_O5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS"
+      }
+    },
+    "models": {
+      "PResNet18 + DGFR": {
+        "dynamic_shapes": {
+          "480": {
+            "backbone": [
+              [
+                1,
+                128,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                512,
+                15,
+                15
+              ]
+            ],
+            "encoder": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ]
+          },
+          "640": {
+            "backbone": [
+              [
+                1,
+                128,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                512,
+                20,
+                20
+              ]
+            ],
+            "encoder": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ]
+          },
+          "800": {
+            "backbone": [
+              [
+                1,
+                128,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                512,
+                25,
+                25
+              ]
+            ],
+            "encoder": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ]
+          }
+        },
+        "prediction_shapes": {
+          "pred_logits": [
+            1,
+            300,
+            1
+          ],
+          "pred_boxes": [
+            1,
+            300,
+            4
+          ]
+        },
+        "synthetic_backward": {
+          "loss": 1.0893791913986206,
+          "new_parameter_gradients": "PASS",
+          "encoder_shapes": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "effective_gamma": [
+            {
+              "mean": 0.04999999701976776,
+              "min": 0.04999999701976776,
+              "max": 0.04999999701976776
+            },
+            {
+              "mean": 0.04999999701976776,
+              "min": 0.04999999701976776,
+              "max": 0.04999999701976776
+            },
+            {
+              "mean": 0.04999999701976776,
+              "min": 0.04999999701976776,
+              "max": 0.04999999701976776
+            }
+          ],
+          "debug_statistics": {
+            "gamma3_mean": 0.04999999701976776,
+            "gamma3_min": 0.04999999701976776,
+            "gamma3_max": 0.04999999701976776,
+            "e3_to_o3_norm_ratio": 0.995086669921875,
+            "y3_norm": 218.37445068359375,
+            "gamma4_mean": 0.04999999701976776,
+            "gamma4_min": 0.04999999701976776,
+            "gamma4_max": 0.04999999701976776,
+            "e4_to_o4_norm_ratio": 0.9959924221038818,
+            "y4_norm": 109.527587890625,
+            "gamma5_mean": 0.04999999701976776,
+            "gamma5_min": 0.04999999701976776,
+            "gamma5_max": 0.04999999701976776,
+            "e5_to_o5_norm_ratio": 0.9960905313491821,
+            "y5_norm": 54.2646484375
+          }
+        }
+      },
+      "HRNetV2-W18 + DGFR": {
+        "dynamic_shapes": {
+          "480": {
+            "backbone": [
+              [
+                1,
+                36,
+                60,
+                60
+              ],
+              [
+                1,
+                72,
+                30,
+                30
+              ],
+              [
+                1,
+                144,
+                15,
+                15
+              ]
+            ],
+            "encoder": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ]
+          },
+          "640": {
+            "backbone": [
+              [
+                1,
+                36,
+                80,
+                80
+              ],
+              [
+                1,
+                72,
+                40,
+                40
+              ],
+              [
+                1,
+                144,
+                20,
+                20
+              ]
+            ],
+            "encoder": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ]
+          },
+          "800": {
+            "backbone": [
+              [
+                1,
+                36,
+                100,
+                100
+              ],
+              [
+                1,
+                72,
+                50,
+                50
+              ],
+              [
+                1,
+                144,
+                25,
+                25
+              ]
+            ],
+            "encoder": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ]
+          }
+        },
+        "prediction_shapes": {
+          "pred_logits": [
+            1,
+            300,
+            1
+          ],
+          "pred_boxes": [
+            1,
+            300,
+            4
+          ]
+        },
+        "synthetic_backward": {
+          "loss": 1.09919273853302,
+          "new_parameter_gradients": "PASS",
+          "encoder_shapes": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "effective_gamma": [
+            {
+              "mean": 0.04999999701976776,
+              "min": 0.04999999701976776,
+              "max": 0.04999999701976776
+            },
+            {
+              "mean": 0.04999999701976776,
+              "min": 0.04999999701976776,
+              "max": 0.04999999701976776
+            },
+            {
+              "mean": 0.04999999701976776,
+              "min": 0.04999999701976776,
+              "max": 0.04999999701976776
+            }
+          ],
+          "debug_statistics": {
+            "gamma3_mean": 0.04999999701976776,
+            "gamma3_min": 0.04999999701976776,
+            "gamma3_max": 0.04999999701976776,
+            "e3_to_o3_norm_ratio": 1.006219744682312,
+            "y3_norm": 217.5424041748047,
+            "gamma4_mean": 0.04999999701976776,
+            "gamma4_min": 0.04999999701976776,
+            "gamma4_max": 0.04999999701976776,
+            "e4_to_o4_norm_ratio": 0.9828149676322937,
+            "y4_norm": 110.13180541992188,
+            "gamma5_mean": 0.04999999701976776,
+            "gamma5_min": 0.04999999701976776,
+            "gamma5_max": 0.04999999701976776,
+            "e5_to_o5_norm_ratio": 0.9886577725410461,
+            "y5_norm": 54.904788970947266
+          }
+        }
+      }
+    },
+    "optimizer": {
+      "PResNet18 + DGFR": [
+        {
+          "parameter": "encoder.dgfr.raw_gamma3",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.raw_gamma4",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.raw_gamma5",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x3.layers.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x3.layers.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x3.layers.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x4.layers.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x4.layers.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x4.layers.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x5.layers.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x5.layers.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x5.layers.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv2.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv2.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv2.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv3.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv3.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv3.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x3.layers.0.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x4.layers.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x4.layers.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x4.layers.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x5.layers.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x5.layers.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x5.layers.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv2.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv2.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv2.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv3.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv3.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv3.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x3.layers.0.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x3.layers.1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x4.layers.0.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x5.layers.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x5.layers.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x5.layers.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv2.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv2.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv2.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv3.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv3.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv3.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        }
+      ],
+      "HRNetV2-W18 + DGFR": [
+        {
+          "parameter": "encoder.dgfr.raw_gamma3",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.raw_gamma4",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.raw_gamma5",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x3.layers.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x3.layers.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x3.layers.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x4.layers.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x4.layers.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x4.layers.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x5.layers.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x5.layers.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.adapters.x5.layers.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv2.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv2.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv2.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv3.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv3.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion3.fusion.conv3.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x3.layers.0.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x4.layers.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x4.layers.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x4.layers.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x5.layers.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x5.layers.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.adapters.x5.layers.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv2.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv2.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv2.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv3.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv3.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion4.fusion.conv3.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x3.layers.0.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x3.layers.1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x4.layers.0.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x5.layers.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x5.layers.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.adapters.x5.layers.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv2.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv2.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv2.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv3.conv.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv3.norm.weight",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.dgfr.fusion5.fusion.conv3.norm.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        }
+      ]
+    },
+    "common_seeded_weights": {
+      "PResNet18 + DGFR": {
+        "status": "PASS",
+        "common_tensors": 533,
+        "added": [
+          "encoder.dgfr.fusion3.adapters.x3.layers.conv.weight",
+          "encoder.dgfr.fusion3.adapters.x3.layers.norm.bias",
+          "encoder.dgfr.fusion3.adapters.x3.layers.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.adapters.x3.layers.norm.running_mean",
+          "encoder.dgfr.fusion3.adapters.x3.layers.norm.running_var",
+          "encoder.dgfr.fusion3.adapters.x3.layers.norm.weight",
+          "encoder.dgfr.fusion3.adapters.x4.layers.conv.weight",
+          "encoder.dgfr.fusion3.adapters.x4.layers.norm.bias",
+          "encoder.dgfr.fusion3.adapters.x4.layers.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.adapters.x4.layers.norm.running_mean",
+          "encoder.dgfr.fusion3.adapters.x4.layers.norm.running_var",
+          "encoder.dgfr.fusion3.adapters.x4.layers.norm.weight",
+          "encoder.dgfr.fusion3.adapters.x5.layers.conv.weight",
+          "encoder.dgfr.fusion3.adapters.x5.layers.norm.bias",
+          "encoder.dgfr.fusion3.adapters.x5.layers.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.adapters.x5.layers.norm.running_mean",
+          "encoder.dgfr.fusion3.adapters.x5.layers.norm.running_var",
+          "encoder.dgfr.fusion3.adapters.x5.layers.norm.weight",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.conv.weight",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.bias",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.running_mean",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.running_var",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.weight",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.conv.weight",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.bias",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.running_mean",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.running_var",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.weight",
+          "encoder.dgfr.fusion3.fusion.conv1.conv.weight",
+          "encoder.dgfr.fusion3.fusion.conv1.norm.bias",
+          "encoder.dgfr.fusion3.fusion.conv1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.fusion.conv1.norm.running_mean",
+          "encoder.dgfr.fusion3.fusion.conv1.norm.running_var",
+          "encoder.dgfr.fusion3.fusion.conv1.norm.weight",
+          "encoder.dgfr.fusion3.fusion.conv2.conv.weight",
+          "encoder.dgfr.fusion3.fusion.conv2.norm.bias",
+          "encoder.dgfr.fusion3.fusion.conv2.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.fusion.conv2.norm.running_mean",
+          "encoder.dgfr.fusion3.fusion.conv2.norm.running_var",
+          "encoder.dgfr.fusion3.fusion.conv2.norm.weight",
+          "encoder.dgfr.fusion3.fusion.conv3.conv.weight",
+          "encoder.dgfr.fusion3.fusion.conv3.norm.bias",
+          "encoder.dgfr.fusion3.fusion.conv3.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.fusion.conv3.norm.running_mean",
+          "encoder.dgfr.fusion3.fusion.conv3.norm.running_var",
+          "encoder.dgfr.fusion3.fusion.conv3.norm.weight",
+          "encoder.dgfr.fusion4.adapters.x3.layers.0.conv.weight",
+          "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.bias",
+          "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.running_mean",
+          "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.running_var",
+          "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.weight",
+          "encoder.dgfr.fusion4.adapters.x4.layers.conv.weight",
+          "encoder.dgfr.fusion4.adapters.x4.layers.norm.bias",
+          "encoder.dgfr.fusion4.adapters.x4.layers.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.adapters.x4.layers.norm.running_mean",
+          "encoder.dgfr.fusion4.adapters.x4.layers.norm.running_var",
+          "encoder.dgfr.fusion4.adapters.x4.layers.norm.weight",
+          "encoder.dgfr.fusion4.adapters.x5.layers.conv.weight",
+          "encoder.dgfr.fusion4.adapters.x5.layers.norm.bias",
+          "encoder.dgfr.fusion4.adapters.x5.layers.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.adapters.x5.layers.norm.running_mean",
+          "encoder.dgfr.fusion4.adapters.x5.layers.norm.running_var",
+          "encoder.dgfr.fusion4.adapters.x5.layers.norm.weight",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.conv.weight",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.bias",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.running_mean",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.running_var",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.weight",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.conv.weight",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.bias",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.running_mean",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.running_var",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.weight",
+          "encoder.dgfr.fusion4.fusion.conv1.conv.weight",
+          "encoder.dgfr.fusion4.fusion.conv1.norm.bias",
+          "encoder.dgfr.fusion4.fusion.conv1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.fusion.conv1.norm.running_mean",
+          "encoder.dgfr.fusion4.fusion.conv1.norm.running_var",
+          "encoder.dgfr.fusion4.fusion.conv1.norm.weight",
+          "encoder.dgfr.fusion4.fusion.conv2.conv.weight",
+          "encoder.dgfr.fusion4.fusion.conv2.norm.bias",
+          "encoder.dgfr.fusion4.fusion.conv2.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.fusion.conv2.norm.running_mean",
+          "encoder.dgfr.fusion4.fusion.conv2.norm.running_var",
+          "encoder.dgfr.fusion4.fusion.conv2.norm.weight",
+          "encoder.dgfr.fusion4.fusion.conv3.conv.weight",
+          "encoder.dgfr.fusion4.fusion.conv3.norm.bias",
+          "encoder.dgfr.fusion4.fusion.conv3.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.fusion.conv3.norm.running_mean",
+          "encoder.dgfr.fusion4.fusion.conv3.norm.running_var",
+          "encoder.dgfr.fusion4.fusion.conv3.norm.weight",
+          "encoder.dgfr.fusion5.adapters.x3.layers.0.conv.weight",
+          "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.bias",
+          "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.running_mean",
+          "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.running_var",
+          "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.weight",
+          "encoder.dgfr.fusion5.adapters.x3.layers.1.conv.weight",
+          "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.bias",
+          "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.running_mean",
+          "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.running_var",
+          "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.weight",
+          "encoder.dgfr.fusion5.adapters.x4.layers.0.conv.weight",
+          "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.bias",
+          "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.running_mean",
+          "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.running_var",
+          "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.weight",
+          "encoder.dgfr.fusion5.adapters.x5.layers.conv.weight",
+          "encoder.dgfr.fusion5.adapters.x5.layers.norm.bias",
+          "encoder.dgfr.fusion5.adapters.x5.layers.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.adapters.x5.layers.norm.running_mean",
+          "encoder.dgfr.fusion5.adapters.x5.layers.norm.running_var",
+          "encoder.dgfr.fusion5.adapters.x5.layers.norm.weight",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.conv.weight",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.bias",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.running_mean",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.running_var",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.weight",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.conv.weight",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.bias",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.running_mean",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.running_var",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.weight",
+          "encoder.dgfr.fusion5.fusion.conv1.conv.weight",
+          "encoder.dgfr.fusion5.fusion.conv1.norm.bias",
+          "encoder.dgfr.fusion5.fusion.conv1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.fusion.conv1.norm.running_mean",
+          "encoder.dgfr.fusion5.fusion.conv1.norm.running_var",
+          "encoder.dgfr.fusion5.fusion.conv1.norm.weight",
+          "encoder.dgfr.fusion5.fusion.conv2.conv.weight",
+          "encoder.dgfr.fusion5.fusion.conv2.norm.bias",
+          "encoder.dgfr.fusion5.fusion.conv2.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.fusion.conv2.norm.running_mean",
+          "encoder.dgfr.fusion5.fusion.conv2.norm.running_var",
+          "encoder.dgfr.fusion5.fusion.conv2.norm.weight",
+          "encoder.dgfr.fusion5.fusion.conv3.conv.weight",
+          "encoder.dgfr.fusion5.fusion.conv3.norm.bias",
+          "encoder.dgfr.fusion5.fusion.conv3.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.fusion.conv3.norm.running_mean",
+          "encoder.dgfr.fusion5.fusion.conv3.norm.running_var",
+          "encoder.dgfr.fusion5.fusion.conv3.norm.weight",
+          "encoder.dgfr.raw_gamma3",
+          "encoder.dgfr.raw_gamma4",
+          "encoder.dgfr.raw_gamma5"
+        ]
+      },
+      "HRNetV2-W18 + DGFR": {
+        "status": "PASS",
+        "common_tensors": 2225,
+        "added": [
+          "encoder.dgfr.fusion3.adapters.x3.layers.conv.weight",
+          "encoder.dgfr.fusion3.adapters.x3.layers.norm.bias",
+          "encoder.dgfr.fusion3.adapters.x3.layers.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.adapters.x3.layers.norm.running_mean",
+          "encoder.dgfr.fusion3.adapters.x3.layers.norm.running_var",
+          "encoder.dgfr.fusion3.adapters.x3.layers.norm.weight",
+          "encoder.dgfr.fusion3.adapters.x4.layers.conv.weight",
+          "encoder.dgfr.fusion3.adapters.x4.layers.norm.bias",
+          "encoder.dgfr.fusion3.adapters.x4.layers.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.adapters.x4.layers.norm.running_mean",
+          "encoder.dgfr.fusion3.adapters.x4.layers.norm.running_var",
+          "encoder.dgfr.fusion3.adapters.x4.layers.norm.weight",
+          "encoder.dgfr.fusion3.adapters.x5.layers.conv.weight",
+          "encoder.dgfr.fusion3.adapters.x5.layers.norm.bias",
+          "encoder.dgfr.fusion3.adapters.x5.layers.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.adapters.x5.layers.norm.running_mean",
+          "encoder.dgfr.fusion3.adapters.x5.layers.norm.running_var",
+          "encoder.dgfr.fusion3.adapters.x5.layers.norm.weight",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.conv.weight",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.bias",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.running_mean",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.running_var",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv1.norm.weight",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.conv.weight",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.bias",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.running_mean",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.running_var",
+          "encoder.dgfr.fusion3.fusion.bottlenecks.0.conv2.norm.weight",
+          "encoder.dgfr.fusion3.fusion.conv1.conv.weight",
+          "encoder.dgfr.fusion3.fusion.conv1.norm.bias",
+          "encoder.dgfr.fusion3.fusion.conv1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.fusion.conv1.norm.running_mean",
+          "encoder.dgfr.fusion3.fusion.conv1.norm.running_var",
+          "encoder.dgfr.fusion3.fusion.conv1.norm.weight",
+          "encoder.dgfr.fusion3.fusion.conv2.conv.weight",
+          "encoder.dgfr.fusion3.fusion.conv2.norm.bias",
+          "encoder.dgfr.fusion3.fusion.conv2.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.fusion.conv2.norm.running_mean",
+          "encoder.dgfr.fusion3.fusion.conv2.norm.running_var",
+          "encoder.dgfr.fusion3.fusion.conv2.norm.weight",
+          "encoder.dgfr.fusion3.fusion.conv3.conv.weight",
+          "encoder.dgfr.fusion3.fusion.conv3.norm.bias",
+          "encoder.dgfr.fusion3.fusion.conv3.norm.num_batches_tracked",
+          "encoder.dgfr.fusion3.fusion.conv3.norm.running_mean",
+          "encoder.dgfr.fusion3.fusion.conv3.norm.running_var",
+          "encoder.dgfr.fusion3.fusion.conv3.norm.weight",
+          "encoder.dgfr.fusion4.adapters.x3.layers.0.conv.weight",
+          "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.bias",
+          "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.running_mean",
+          "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.running_var",
+          "encoder.dgfr.fusion4.adapters.x3.layers.0.norm.weight",
+          "encoder.dgfr.fusion4.adapters.x4.layers.conv.weight",
+          "encoder.dgfr.fusion4.adapters.x4.layers.norm.bias",
+          "encoder.dgfr.fusion4.adapters.x4.layers.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.adapters.x4.layers.norm.running_mean",
+          "encoder.dgfr.fusion4.adapters.x4.layers.norm.running_var",
+          "encoder.dgfr.fusion4.adapters.x4.layers.norm.weight",
+          "encoder.dgfr.fusion4.adapters.x5.layers.conv.weight",
+          "encoder.dgfr.fusion4.adapters.x5.layers.norm.bias",
+          "encoder.dgfr.fusion4.adapters.x5.layers.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.adapters.x5.layers.norm.running_mean",
+          "encoder.dgfr.fusion4.adapters.x5.layers.norm.running_var",
+          "encoder.dgfr.fusion4.adapters.x5.layers.norm.weight",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.conv.weight",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.bias",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.running_mean",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.running_var",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv1.norm.weight",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.conv.weight",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.bias",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.running_mean",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.running_var",
+          "encoder.dgfr.fusion4.fusion.bottlenecks.0.conv2.norm.weight",
+          "encoder.dgfr.fusion4.fusion.conv1.conv.weight",
+          "encoder.dgfr.fusion4.fusion.conv1.norm.bias",
+          "encoder.dgfr.fusion4.fusion.conv1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.fusion.conv1.norm.running_mean",
+          "encoder.dgfr.fusion4.fusion.conv1.norm.running_var",
+          "encoder.dgfr.fusion4.fusion.conv1.norm.weight",
+          "encoder.dgfr.fusion4.fusion.conv2.conv.weight",
+          "encoder.dgfr.fusion4.fusion.conv2.norm.bias",
+          "encoder.dgfr.fusion4.fusion.conv2.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.fusion.conv2.norm.running_mean",
+          "encoder.dgfr.fusion4.fusion.conv2.norm.running_var",
+          "encoder.dgfr.fusion4.fusion.conv2.norm.weight",
+          "encoder.dgfr.fusion4.fusion.conv3.conv.weight",
+          "encoder.dgfr.fusion4.fusion.conv3.norm.bias",
+          "encoder.dgfr.fusion4.fusion.conv3.norm.num_batches_tracked",
+          "encoder.dgfr.fusion4.fusion.conv3.norm.running_mean",
+          "encoder.dgfr.fusion4.fusion.conv3.norm.running_var",
+          "encoder.dgfr.fusion4.fusion.conv3.norm.weight",
+          "encoder.dgfr.fusion5.adapters.x3.layers.0.conv.weight",
+          "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.bias",
+          "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.running_mean",
+          "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.running_var",
+          "encoder.dgfr.fusion5.adapters.x3.layers.0.norm.weight",
+          "encoder.dgfr.fusion5.adapters.x3.layers.1.conv.weight",
+          "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.bias",
+          "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.running_mean",
+          "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.running_var",
+          "encoder.dgfr.fusion5.adapters.x3.layers.1.norm.weight",
+          "encoder.dgfr.fusion5.adapters.x4.layers.0.conv.weight",
+          "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.bias",
+          "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.running_mean",
+          "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.running_var",
+          "encoder.dgfr.fusion5.adapters.x4.layers.0.norm.weight",
+          "encoder.dgfr.fusion5.adapters.x5.layers.conv.weight",
+          "encoder.dgfr.fusion5.adapters.x5.layers.norm.bias",
+          "encoder.dgfr.fusion5.adapters.x5.layers.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.adapters.x5.layers.norm.running_mean",
+          "encoder.dgfr.fusion5.adapters.x5.layers.norm.running_var",
+          "encoder.dgfr.fusion5.adapters.x5.layers.norm.weight",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.conv.weight",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.bias",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.running_mean",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.running_var",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv1.norm.weight",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.conv.weight",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.bias",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.running_mean",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.running_var",
+          "encoder.dgfr.fusion5.fusion.bottlenecks.0.conv2.norm.weight",
+          "encoder.dgfr.fusion5.fusion.conv1.conv.weight",
+          "encoder.dgfr.fusion5.fusion.conv1.norm.bias",
+          "encoder.dgfr.fusion5.fusion.conv1.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.fusion.conv1.norm.running_mean",
+          "encoder.dgfr.fusion5.fusion.conv1.norm.running_var",
+          "encoder.dgfr.fusion5.fusion.conv1.norm.weight",
+          "encoder.dgfr.fusion5.fusion.conv2.conv.weight",
+          "encoder.dgfr.fusion5.fusion.conv2.norm.bias",
+          "encoder.dgfr.fusion5.fusion.conv2.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.fusion.conv2.norm.running_mean",
+          "encoder.dgfr.fusion5.fusion.conv2.norm.running_var",
+          "encoder.dgfr.fusion5.fusion.conv2.norm.weight",
+          "encoder.dgfr.fusion5.fusion.conv3.conv.weight",
+          "encoder.dgfr.fusion5.fusion.conv3.norm.bias",
+          "encoder.dgfr.fusion5.fusion.conv3.norm.num_batches_tracked",
+          "encoder.dgfr.fusion5.fusion.conv3.norm.running_mean",
+          "encoder.dgfr.fusion5.fusion.conv3.norm.running_var",
+          "encoder.dgfr.fusion5.fusion.conv3.norm.weight",
+          "encoder.dgfr.raw_gamma3",
+          "encoder.dgfr.raw_gamma4",
+          "encoder.dgfr.raw_gamma5"
+        ]
+      }
+    }
+  },
+  "complexity": {
+    "PResNet18 + Original": {
+      "whole_params": 20083028,
+      "whole_conv_linear_macs_lower_bound": 30006963200,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 60013926400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_functional_ops": "normalization/interpolation/activation/concat/LayerScale/elementwise and other non-Conv/Linear operators"
+    },
+    "PResNet18 + DGFR": {
+      "whole_params": 21404500,
+      "whole_conv_linear_macs_lower_bound": 32990489600,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 65980979200,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_functional_ops": "normalization/interpolation/activation/concat/LayerScale/elementwise and other non-Conv/Linear operators",
+      "added_params_vs_original": 1321472,
+      "added_conv_linear_macs_vs_original": 2983526400
+    },
+    "HRNetV2-W18 + Original": {
+      "whole_params": 18280456,
+      "whole_conv_linear_macs_lower_bound": 39669190400,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 79338380800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_functional_ops": "normalization/interpolation/activation/concat/LayerScale/elementwise and other non-Conv/Linear operators"
+    },
+    "HRNetV2-W18 + DGFR": {
+      "whole_params": 19601928,
+      "whole_conv_linear_macs_lower_bound": 42652716800,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 85305433600,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_functional_ops": "normalization/interpolation/activation/concat/LayerScale/elementwise and other non-Conv/Linear operators",
+      "added_params_vs_original": 1321472,
+      "added_conv_linear_macs_vs_original": 2983526400
+    }
+  }
+}

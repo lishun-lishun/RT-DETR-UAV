@@ -1,0 +1,13 @@
+__include__: [
+  './rtdetr_r18vd_dut_anti_uav.yml',
+]
+
+# Pure Neck experiment. Every data, optimization, schedule, EMA, detector and
+# three-GPU setting is inherited unchanged from the formal PResNet18 control.
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_dgfr
+
+DGFR:
+  enabled: true
+  fusion_channels: 64
+  gamma_max: 0.25
+  gamma_init: 0.05

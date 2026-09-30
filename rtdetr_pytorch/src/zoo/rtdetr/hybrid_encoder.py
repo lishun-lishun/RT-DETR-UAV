@@ -11,6 +11,7 @@ from .acr_neck import ACRFusion
 from .slr_neck import SLRNeck
 from .paf_neck import PhaseAdaptiveFusion
 from .bor_neck import BackgroundOrthogonalResidual
+from .dgfr_neck import DGFRNeck
 
 from src.core import register
 
@@ -185,7 +186,7 @@ class TransformerEncoder(nn.Module):
 
 @register
 class HybridEncoder(nn.Module):
-    __share__ = ['ACR', 'SLR', 'PAF', 'BOR']
+    __share__ = ['ACR', 'SLR', 'PAF', 'BOR', 'DGFR']
 
     def __init__(self,
                  in_channels=[512, 1024, 2048],
@@ -205,7 +206,8 @@ class HybridEncoder(nn.Module):
                  ACR=None,
                  SLR=None,
                  PAF=None,
-                 BOR=None):
+                 BOR=None,
+                 DGFR=None):
         super().__init__()
         self.in_channels = in_channels
         self.feat_strides = feat_strides
@@ -286,6 +288,26 @@ class HybridEncoder(nn.Module):
                 and (self.acr_enabled or self.slr_enabled)):
             raise ValueError(
                 'PAF/BOR first-round experiments cannot mix with ACR or SLR')
+
+        dgfr_cfg = {} if DGFR is None else copy.deepcopy(DGFR)
+        if not isinstance(dgfr_cfg, dict):
+            raise ValueError('DGFR must be a mapping')
+        allowed_dgfr = {
+            'enabled', 'fusion_channels', 'gamma_max', 'gamma_init',
+            'debug', 'debug_interval',
+        }
+        unknown_dgfr = set(dgfr_cfg) - allowed_dgfr
+        if unknown_dgfr:
+            raise ValueError(f'Unknown DGFR options: {sorted(unknown_dgfr)}')
+        self.dgfr_enabled = dgfr_cfg.pop('enabled', False)
+        if not isinstance(self.dgfr_enabled, bool):
+            raise ValueError('DGFR.enabled must be boolean')
+        if (self.dgfr_enabled and any((
+                self.acr_enabled, self.slr_enabled,
+                self.paf_enabled, self.bor_enabled))):
+            raise ValueError(
+                'DGFR is an independent experiment and cannot mix with '
+                'ACR, SLR, PAF or BOR')
 
         self.out_channels = [hidden_dim for _ in range(len(in_channels))]
         self.out_strides = feat_strides
@@ -402,6 +424,23 @@ class HybridEncoder(nn.Module):
                 self.bor = BackgroundOrthogonalResidual(
                     hidden_dim=hidden_dim, **bor_cfg)
 
+        # DGFR is a parallel post-CCFF branch. It consumes only the unified
+        # input-projection/AIFI features and injects its outputs after the
+        # untouched top-down and bottom-up CCFF have produced O3/O4/O5.
+        # Isolated initialization keeps all common original weights bit-exact
+        # under the same seed.
+        if self.dgfr_enabled:
+            if len(in_channels) != 3:
+                raise ValueError(
+                    'DGFR first implementation requires exactly P3/P4/P5')
+            with torch.random.fork_rng(devices=[]):
+                self.dgfr = DGFRNeck(
+                    hidden_dim=hidden_dim,
+                    conv_norm_factory=ConvNormLayer,
+                    fusion_factory=CSPRepLayer,
+                    act=act,
+                    **dgfr_cfg)
+
         self._reset_parameters()
 
     def _reset_parameters(self):
@@ -496,6 +535,8 @@ class HybridEncoder(nn.Module):
             out = self.pan_blocks[idx](torch.concat([downsample_feat, feat_high], dim=1))
             outs.append(out)
 
+        if self.dgfr_enabled:
+            outs = self.dgfr(proj_feats, outs)
         if self.slr_enabled:
             if detail_source is None:
                 raise RuntimeError('SLR is enabled but the backbone supplied no detail source')

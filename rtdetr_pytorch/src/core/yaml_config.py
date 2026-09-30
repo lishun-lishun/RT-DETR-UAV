@@ -58,6 +58,10 @@ class YAMLConfig(BaseConfig):
         if not isinstance(bor, dict):
             raise ValueError('BOR must be a mapping')
         cfg['BOR'] = {'enabled': False, **copy.deepcopy(bor)}
+        dgfr = cfg.get('DGFR', {})
+        if not isinstance(dgfr, dict):
+            raise ValueError('DGFR must be a mapping')
+        cfg['DGFR'] = {'enabled': False, **copy.deepcopy(dgfr)}
         # Complete default-off point switches for official/legacy YAMLs, without
         # altering a file or constructing plugins. Reject invalid values in the
         # backbone rather than silently dropping misspelled point names.
@@ -98,7 +102,7 @@ class YAMLConfig(BaseConfig):
             GLOBAL_CONFIG['BackboneEnhancement'] = copy.deepcopy(
                 self.yaml_cfg['BackboneEnhancement'])
             for name in ('BackboneModification', 'BDPD', 'MSDConv', 'PDR',
-                         'ACR', 'SLR', 'PAF', 'BOR'):
+                         'ACR', 'SLR', 'PAF', 'BOR', 'DGFR'):
                 GLOBAL_CONFIG[name] = copy.deepcopy(self.yaml_cfg[name])
             self._model = create(self.yaml_cfg['model'])
         return self._model 
