@@ -1,0 +1,1301 @@
+{
+  "protocol": {
+    "candidate_order": [
+      "PResNet18 + LPRU",
+      "HRNetV2-W18 + LPRU",
+      "PResNet18 + SPDR",
+      "HRNetV2-W18 + SPDR"
+    ],
+    "pretrained_disabled_for_smoke_only": true,
+    "formal_training_launched": false
+  },
+  "smoke": {
+    "final_config_set": {
+      "status": "PASS",
+      "files": [
+        "rtdetr_hrnetv2_w18_dut_anti_uav.yml",
+        "rtdetr_hrnetv2_w18_dut_anti_uav_lpru.yml",
+        "rtdetr_hrnetv2_w18_dut_anti_uav_spdr.yml",
+        "rtdetr_r18vd_dut_anti_uav.yml",
+        "rtdetr_r18vd_dut_anti_uav_lpru.yml",
+        "rtdetr_r18vd_dut_anti_uav_spdr.yml"
+      ]
+    },
+    "fairness": {
+      "PResNet18 + LPRU": {
+        "reference": "PResNet18 + Original",
+        "allowed_namespace": "LPRU",
+        "resolved_differences": {
+          "LPRU.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_lpru"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "alpha_max": 0.5,
+          "alpha_init": 0.05
+        },
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + LPRU": {
+        "reference": "HRNetV2-W18 + Original",
+        "allowed_namespace": "LPRU",
+        "resolved_differences": {
+          "LPRU.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_dut_anti_uav.yml",
+              "./include/hrnetv2_w18.yml"
+            ],
+            "candidate": [
+              "./rtdetr_hrnetv2_w18_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_hrnetv2_w18_dut_anti_uav",
+            "candidate": "./output/rtdetr_hrnetv2_w18_dut_anti_uav_lpru"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "alpha_max": 0.5,
+          "alpha_init": 0.05
+        },
+        "status": "PASS"
+      },
+      "PResNet18 + SPDR": {
+        "reference": "PResNet18 + Original",
+        "allowed_namespace": "SPDR",
+        "resolved_differences": {
+          "SPDR.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_spdr"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "beta_max": 0.5,
+          "beta_init": 0.05
+        },
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + SPDR": {
+        "reference": "HRNetV2-W18 + Original",
+        "allowed_namespace": "SPDR",
+        "resolved_differences": {
+          "SPDR.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_dut_anti_uav.yml",
+              "./include/hrnetv2_w18.yml"
+            ],
+            "candidate": [
+              "./rtdetr_hrnetv2_w18_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_hrnetv2_w18_dut_anti_uav",
+            "candidate": "./output/rtdetr_hrnetv2_w18_dut_anti_uav_spdr"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "beta_max": 0.5,
+          "beta_init": 0.05
+        },
+        "status": "PASS"
+      }
+    },
+    "disabled_equivalence": {
+      "PResNet18 + LPRU": {
+        "state_dict": "EXACT",
+        "backbone": "PASS",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS"
+      },
+      "HRNetV2-W18 + LPRU": {
+        "state_dict": "EXACT",
+        "backbone": "PASS",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS"
+      },
+      "PResNet18 + SPDR": {
+        "state_dict": "EXACT",
+        "backbone": "PASS",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS"
+      },
+      "HRNetV2-W18 + SPDR": {
+        "state_dict": "EXACT",
+        "backbone": "PASS",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS"
+      }
+    },
+    "models": {
+      "PResNet18 + LPRU": {
+        "dynamic_detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "backward": {
+          "loss": 1.0752032995224,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        }
+      },
+      "HRNetV2-W18 + LPRU": {
+        "dynamic_detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "backward": {
+          "loss": 1.080876350402832,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        }
+      },
+      "PResNet18 + SPDR": {
+        "dynamic_detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "backward": {
+          "loss": 1.0814716815948486,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        }
+      },
+      "HRNetV2-W18 + SPDR": {
+        "dynamic_detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "backward": {
+          "loss": 1.0783815383911133,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        }
+      }
+    },
+    "optimizer": {
+      "PResNet18 + LPRU": [
+        {
+          "parameter": "encoder.lpru54.raw_alpha",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru54.expand.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru54.expand.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.lpru54.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru54.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.lpru54.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru54.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.lpru43.raw_alpha",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru43.expand.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru43.expand.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.lpru43.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru43.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.lpru43.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru43.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        }
+      ],
+      "HRNetV2-W18 + LPRU": [
+        {
+          "parameter": "encoder.lpru54.raw_alpha",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru54.expand.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru54.expand.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.lpru54.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru54.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.lpru54.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru54.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.lpru43.raw_alpha",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru43.expand.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru43.expand.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.lpru43.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru43.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.lpru43.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.lpru43.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        }
+      ],
+      "PResNet18 + SPDR": [
+        {
+          "parameter": "encoder.spdr34.raw_beta",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr34.compress.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr34.compress.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.spdr34.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr34.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.spdr34.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr34.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.spdr45.raw_beta",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr45.compress.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr45.compress.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.spdr45.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr45.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.spdr45.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr45.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        }
+      ],
+      "HRNetV2-W18 + SPDR": [
+        {
+          "parameter": "encoder.spdr34.raw_beta",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr34.compress.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr34.compress.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.spdr34.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr34.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.spdr34.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr34.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.spdr45.raw_beta",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr45.compress.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr45.compress.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.spdr45.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr45.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.spdr45.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.spdr45.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        }
+      ]
+    },
+    "common_seeded_weights": {
+      "PResNet18 + LPRU": {
+        "status": "PASS",
+        "common_tensors": 533,
+        "added_tensors": [
+          "encoder.lpru43.depthwise.bias",
+          "encoder.lpru43.depthwise.weight",
+          "encoder.lpru43.expand.bias",
+          "encoder.lpru43.expand.weight",
+          "encoder.lpru43.project.bias",
+          "encoder.lpru43.project.weight",
+          "encoder.lpru43.raw_alpha",
+          "encoder.lpru54.depthwise.bias",
+          "encoder.lpru54.depthwise.weight",
+          "encoder.lpru54.expand.bias",
+          "encoder.lpru54.expand.weight",
+          "encoder.lpru54.project.bias",
+          "encoder.lpru54.project.weight",
+          "encoder.lpru54.raw_alpha"
+        ]
+      },
+      "HRNetV2-W18 + LPRU": {
+        "status": "PASS",
+        "common_tensors": 2225,
+        "added_tensors": [
+          "encoder.lpru43.depthwise.bias",
+          "encoder.lpru43.depthwise.weight",
+          "encoder.lpru43.expand.bias",
+          "encoder.lpru43.expand.weight",
+          "encoder.lpru43.project.bias",
+          "encoder.lpru43.project.weight",
+          "encoder.lpru43.raw_alpha",
+          "encoder.lpru54.depthwise.bias",
+          "encoder.lpru54.depthwise.weight",
+          "encoder.lpru54.expand.bias",
+          "encoder.lpru54.expand.weight",
+          "encoder.lpru54.project.bias",
+          "encoder.lpru54.project.weight",
+          "encoder.lpru54.raw_alpha"
+        ]
+      },
+      "PResNet18 + SPDR": {
+        "status": "PASS",
+        "common_tensors": 533,
+        "added_tensors": [
+          "encoder.spdr34.compress.bias",
+          "encoder.spdr34.compress.weight",
+          "encoder.spdr34.depthwise.bias",
+          "encoder.spdr34.depthwise.weight",
+          "encoder.spdr34.project.bias",
+          "encoder.spdr34.project.weight",
+          "encoder.spdr34.raw_beta",
+          "encoder.spdr45.compress.bias",
+          "encoder.spdr45.compress.weight",
+          "encoder.spdr45.depthwise.bias",
+          "encoder.spdr45.depthwise.weight",
+          "encoder.spdr45.project.bias",
+          "encoder.spdr45.project.weight",
+          "encoder.spdr45.raw_beta"
+        ]
+      },
+      "HRNetV2-W18 + SPDR": {
+        "status": "PASS",
+        "common_tensors": 2225,
+        "added_tensors": [
+          "encoder.spdr34.compress.bias",
+          "encoder.spdr34.compress.weight",
+          "encoder.spdr34.depthwise.bias",
+          "encoder.spdr34.depthwise.weight",
+          "encoder.spdr34.project.bias",
+          "encoder.spdr34.project.weight",
+          "encoder.spdr34.raw_beta",
+          "encoder.spdr45.compress.bias",
+          "encoder.spdr45.compress.weight",
+          "encoder.spdr45.depthwise.bias",
+          "encoder.spdr45.depthwise.weight",
+          "encoder.spdr45.project.bias",
+          "encoder.spdr45.project.weight",
+          "encoder.spdr45.raw_beta"
+        ]
+      }
+    }
+  },
+  "complexity": {
+    "PResNet18 + Original": {
+      "whole_params": 20083028,
+      "whole_conv_linear_macs_lower_bound": 30006963200,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 60013926400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "PixelShuffle/PixelUnshuffle/normalization/interpolation/activation/concat/elementwise and other non-Conv/Linear ops"
+    },
+    "HRNetV2-W18 + Original": {
+      "whole_params": 18280456,
+      "whole_conv_linear_macs_lower_bound": 39669190400,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 79338380800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "PixelShuffle/PixelUnshuffle/normalization/interpolation/activation/concat/elementwise and other non-Conv/Linear ops"
+    },
+    "PResNet18 + LPRU": {
+      "whole_params": 20746580,
+      "whole_conv_linear_macs_lower_bound": 31073971200,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 62147942400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "PixelShuffle/PixelUnshuffle/normalization/interpolation/activation/concat/elementwise and other non-Conv/Linear ops",
+      "added_params_vs_original": 663552,
+      "added_conv_linear_macs_vs_original": 1067008000
+    },
+    "HRNetV2-W18 + LPRU": {
+      "whole_params": 18944008,
+      "whole_conv_linear_macs_lower_bound": 40736198400,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 81472396800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "PixelShuffle/PixelUnshuffle/normalization/interpolation/activation/concat/elementwise and other non-Conv/Linear ops",
+      "added_params_vs_original": 663552,
+      "added_conv_linear_macs_vs_original": 1067008000
+    },
+    "PResNet18 + SPDR": {
+      "whole_params": 20745044,
+      "whole_conv_linear_macs_lower_bound": 30666931200,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 61333862400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "PixelShuffle/PixelUnshuffle/normalization/interpolation/activation/concat/elementwise and other non-Conv/Linear ops",
+      "added_params_vs_original": 662016,
+      "added_conv_linear_macs_vs_original": 659968000
+    },
+    "HRNetV2-W18 + SPDR": {
+      "whole_params": 18942472,
+      "whole_conv_linear_macs_lower_bound": 40329158400,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 80658316800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "PixelShuffle/PixelUnshuffle/normalization/interpolation/activation/concat/elementwise and other non-Conv/Linear ops",
+      "added_params_vs_original": 662016,
+      "added_conv_linear_macs_vs_original": 659968000
+    }
+  }
+}

@@ -1,0 +1,59 @@
+Cleanup manifest generated before LPRU/SPDR changes
+===================================================
+
+Initial repository state
+------------------------
+git status --short: CLEAN
+git diff --stat: CLEAN
+
+Scan roots
+----------
+configs/rtdetr/: PRESENT
+output/three_gpu_b16_warmup_cosine/: NOT PRESENT IN THIS LOCAL CHECKOUT
+output/three_gpu_b16_warmup_cosine_test_results/: NOT PRESENT IN THIS LOCAL CHECKOUT
+
+[KEEP CONFIG]
+configs/rtdetr/rtdetr_r18vd_dut_anti_uav.yml
+configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav.yml
+
+[DELETE CONFIG]
+configs/rtdetr/rtdetr_r18vd_dut_anti_uav_bor.yml
+configs/rtdetr/rtdetr_r18vd_dut_anti_uav_dgfr.yml
+configs/rtdetr/rtdetr_r18vd_dut_anti_uav_paf.yml
+configs/rtdetr/rtdetr_r18vd_dut_anti_uav_slr.yml
+configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_bor.yml
+configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_dgfr.yml
+configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_paf.yml
+configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_slr.yml
+configs/rtdetr/uav_tuning/G48_lr1x.yml
+configs/rtdetr/uav_tuning/G48_lr2x.yml
+configs/rtdetr/uav_tuning/G48_lr3x.yml
+configs/rtdetr/uav_tuning/three_gpu_base.yml
+configs/rtdetr/uav_tuning/README.md (historical tuning metadata)
+
+[KEEP OUTPUT]
+output/three_gpu_b16_warmup_cosine/rtdetr_r18vd_dut_anti_uav/ (PROTECTED; not present locally)
+output/three_gpu_b16_warmup_cosine/rtdetr_hrnetv2_w18_dut_anti_uav/ (PROTECTED; not present locally)
+
+[DELETE OUTPUT]
+No output directory is present in this local checkout, so no local result was deleted.
+On the Linux training server: delete every direct child of
+output/three_gpu_b16_warmup_cosine/ except the two protected directories above.
+Delete old aggregate reports under output/three_gpu_b16_warmup_cosine_test_results/.
+The server cleanup utility must rescan and print its own manifest before apply.
+
+[KEEP SHARED CONFIG]
+configs/dataset/coco_detection.yml
+configs/dataset/dut_anti_uav_detection.yml
+configs/runtime.yml
+configs/rtdetr/rtdetr_r18vd_6x_coco.yml
+configs/rtdetr/include/dataloader.yml
+configs/rtdetr/include/optimizer.yml
+configs/rtdetr/include/rtdetr_r50vd.yml
+configs/rtdetr/include/hrnetv2_w18.yml
+All official non-DUT COCO RT-DETR YAML files are also retained.
+
+[UNTOUCHED SOURCE CODE]
+src/ (all historical Python modules retained)
+tools/ (existing tools retained; only targeted queue/validation utilities may be updated or added)
+In particular ACR, SLR, PAF, BOR, DGFR, BAFR, PDR, GRER, MERT and SECD Python sources are not deletion targets.

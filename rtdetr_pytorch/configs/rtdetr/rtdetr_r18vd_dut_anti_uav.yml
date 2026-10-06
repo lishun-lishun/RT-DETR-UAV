@@ -99,3 +99,15 @@ PAF:
 
 BOR:
   enabled: false
+
+# Independent residual resampling candidates. Both remain absent from the
+# formal baseline graph; candidate YAMLs enable exactly one of them.
+LPRU:
+  enabled: false
+  alpha_max: 0.5
+  alpha_init: 0.05
+
+SPDR:
+  enabled: false
+  beta_max: 0.5
+  beta_init: 0.05

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
-# Sequentially train only the two formal DGFR DUT-Anti-UAV experiments on
-# exactly three GPUs. Existing final output paths are skipped, so completed
-# experiments are never overwritten or retrained.
-# Any ordinary training failure stops the fixed-order queue.
+# Sequentially train only the four formal LPRU/SPDR DUT-Anti-UAV experiments
+# on exactly three GPUs. Existing final output paths are skipped, so completed
+# experiments are never overwritten or retrained. LPRU and SPDR are never
+# combined. A failed experiment is recorded and the remaining fixed-order
+# candidates still run; the queue returns non-zero after all candidates finish.
 
 set -uo pipefail
 
@@ -39,8 +40,16 @@ if [[ ${#GPU_ARRAY[@]} -ne $NPROC_PER_NODE ]]; then
 fi
 
 CONFIGS=(
-    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_dgfr.yml"
-    "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_dgfr.yml"
+    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_lpru.yml"
+    "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_lpru.yml"
+    "configs/rtdetr/rtdetr_r18vd_dut_anti_uav_spdr.yml"
+    "configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_spdr.yml"
+)
+LABELS=(
+    "PResNet18+LPRU"
+    "HRNetV2-W18+LPRU"
+    "PResNet18+SPDR"
+    "HRNetV2-W18+SPDR"
 )
 
 for config in "${CONFIGS[@]}"; do
@@ -76,17 +85,18 @@ for index in "${!CONFIGS[@]}"; do
 done
 
 echo "=================================================="
-echo "Three-GPU DUT experiment plan"
+echo "Three-GPU LPRU/SPDR experiment plan"
 echo "Root: $ROOT_DIR"
 echo "CUDA devices: $GPU_IDS"
 echo "nproc_per_node: $NPROC_PER_NODE"
-echo "Total configs: $TOTAL"
+echo "Total experiments = $TOTAL"
 echo "Will run: $RUN_COUNT"
 echo "Will skip: $SKIP_COUNT"
 echo "=================================================="
 for index in "${!CONFIGS[@]}"; do
     number=$((index + 1))
-    printf '%2d. [%s] %s\n' "$number" "${PLAN_STATUS[$index]}" "${CONFIGS[$index]}"
+    printf '%2d. %-24s [%s]\n' "$number" "${LABELS[$index]}" "${PLAN_STATUS[$index]}"
+    printf '    Config: %s\n' "${CONFIGS[$index]}"
     printf '    Output: %s\n' "${OUTPUT_DIRS[$index]}"
 done
 echo "=================================================="
@@ -108,6 +118,7 @@ export CUDA_VISIBLE_DEVICES="$GPU_IDS"
 trap 'echo "Interrupted: queue stopped by user."; exit 130' INT TERM
 
 PASSED=0
+FAILED=0
 for index in "${!CONFIGS[@]}"; do
     config="${CONFIGS[$index]}"
     run_number=$((index + 1))
@@ -122,6 +133,8 @@ for index in "${!CONFIGS[@]}"; do
         echo "Output: $output_dir"
         echo "Reason: output directory already exists"
         echo "=================================================="
+        printf '%s\t%s\t%s\t%s\t%s\n' "$run_number" "SKIP" "0" \
+            "$config" "$output_dir" >> "$SUMMARY_FILE"
         continue
     fi
 
@@ -146,8 +159,9 @@ for index in "${!CONFIGS[@]}"; do
     if [[ $exit_code -ne 0 ]]; then
         printf '%s\t%s\t%s\t%s\t%s\n' "$run_number" "FAIL" \
             "$exit_code" "$config" "$output_dir" >> "$SUMMARY_FILE"
-        echo "[FAIL $run_number/$TOTAL] exit=$exit_code; stopping queue: $config" >&2
-        exit "$exit_code"
+        FAILED=$((FAILED + 1))
+        echo "[FAIL $run_number/$TOTAL] exit=$exit_code; continuing: $config" >&2
+        continue
     fi
 
     PASSED=$((PASSED + 1))
@@ -156,5 +170,8 @@ for index in "${!CONFIGS[@]}"; do
     echo "[PASS $run_number/$TOTAL] $config"
 done
 
-echo "Queue complete: passed=$PASSED skipped=$SKIP_COUNT"
+echo "Queue complete: passed=$PASSED failed=$FAILED skipped=$SKIP_COUNT"
 echo "Summary: $SUMMARY_FILE"
+if [[ $FAILED -gt 0 ]]; then
+    exit 1
+fi

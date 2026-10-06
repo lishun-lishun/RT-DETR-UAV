@@ -1,0 +1,13 @@
+__include__: [
+  './rtdetr_hrnetv2_w18_dut_anti_uav.yml',
+]
+
+# Pure top-down resampling experiment. The verified HRNetV2-W18 backbone and
+# every inherited training setting remain unchanged.
+output_dir: ./output/rtdetr_hrnetv2_w18_dut_anti_uav_lpru
+
+LPRU:
+  enabled: true
+  alpha_max: 0.5
+  alpha_init: 0.05
+

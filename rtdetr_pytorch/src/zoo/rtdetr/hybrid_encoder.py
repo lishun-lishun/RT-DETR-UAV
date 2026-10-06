@@ -12,6 +12,10 @@ from .slr_neck import SLRNeck
 from .paf_neck import PhaseAdaptiveFusion
 from .bor_neck import BackgroundOrthogonalResidual
 from .dgfr_neck import DGFRNeck
+from .resample_neck import (
+    LearnablePixelReassemblyUpsample,
+    SubpixelPreservingDownsample,
+)
 
 from src.core import register
 
@@ -186,7 +190,7 @@ class TransformerEncoder(nn.Module):
 
 @register
 class HybridEncoder(nn.Module):
-    __share__ = ['ACR', 'SLR', 'PAF', 'BOR', 'DGFR']
+    __share__ = ['ACR', 'SLR', 'PAF', 'BOR', 'DGFR', 'LPRU', 'SPDR']
 
     def __init__(self,
                  in_channels=[512, 1024, 2048],
@@ -207,7 +211,9 @@ class HybridEncoder(nn.Module):
                  SLR=None,
                  PAF=None,
                  BOR=None,
-                 DGFR=None):
+                 DGFR=None,
+                 LPRU=None,
+                 SPDR=None):
         super().__init__()
         self.in_channels = in_channels
         self.feat_strides = feat_strides
@@ -308,6 +314,39 @@ class HybridEncoder(nn.Module):
             raise ValueError(
                 'DGFR is an independent experiment and cannot mix with '
                 'ACR, SLR, PAF or BOR')
+
+        lpru_cfg = {} if LPRU is None else copy.deepcopy(LPRU)
+        if not isinstance(lpru_cfg, dict):
+            raise ValueError('LPRU must be a mapping')
+        allowed_lpru = {'enabled', 'alpha_max', 'alpha_init', 'debug'}
+        unknown_lpru = set(lpru_cfg) - allowed_lpru
+        if unknown_lpru:
+            raise ValueError(f'Unknown LPRU options: {sorted(unknown_lpru)}')
+        self.lpru_enabled = lpru_cfg.pop('enabled', False)
+        if not isinstance(self.lpru_enabled, bool):
+            raise ValueError('LPRU.enabled must be boolean')
+
+        spdr_cfg = {} if SPDR is None else copy.deepcopy(SPDR)
+        if not isinstance(spdr_cfg, dict):
+            raise ValueError('SPDR must be a mapping')
+        allowed_spdr = {'enabled', 'beta_max', 'beta_init', 'debug'}
+        unknown_spdr = set(spdr_cfg) - allowed_spdr
+        if unknown_spdr:
+            raise ValueError(f'Unknown SPDR options: {sorted(unknown_spdr)}')
+        self.spdr_enabled = spdr_cfg.pop('enabled', False)
+        if not isinstance(self.spdr_enabled, bool):
+            raise ValueError('SPDR.enabled must be boolean')
+
+        if self.lpru_enabled and self.spdr_enabled:
+            raise ValueError(
+                'LPRU and SPDR must be evaluated independently in the current experiment.')
+        old_neck_enabled = any((
+            self.acr_enabled, self.slr_enabled, self.paf_enabled,
+            self.bor_enabled, self.dgfr_enabled,
+        ))
+        if (self.lpru_enabled or self.spdr_enabled) and old_neck_enabled:
+            raise ValueError(
+                'LPRU/SPDR experiments cannot mix with ACR, SLR, PAF, BOR or DGFR')
 
         self.out_channels = [hidden_dim for _ in range(len(in_channels))]
         self.out_strides = feat_strides
@@ -441,6 +480,28 @@ class HybridEncoder(nn.Module):
                     act=act,
                     **dgfr_cfg)
 
+        # Each resampling location owns an independent block. Construction is
+        # isolated from the global RNG so enabling a candidate leaves every
+        # common detector parameter identically initialized under the same
+        # seed. Disabled candidates construct no module and execute no call.
+        if self.lpru_enabled:
+            if len(in_channels) != 3:
+                raise ValueError('LPRU requires exactly P3/P4/P5')
+            with torch.random.fork_rng(devices=[]):
+                self.lpru54 = LearnablePixelReassemblyUpsample(
+                    channels=hidden_dim, **copy.deepcopy(lpru_cfg))
+                self.lpru43 = LearnablePixelReassemblyUpsample(
+                    channels=hidden_dim, **copy.deepcopy(lpru_cfg))
+
+        if self.spdr_enabled:
+            if len(in_channels) != 3:
+                raise ValueError('SPDR requires exactly P3/P4/P5')
+            with torch.random.fork_rng(devices=[]):
+                self.spdr34 = SubpixelPreservingDownsample(
+                    channels=hidden_dim, **copy.deepcopy(spdr_cfg))
+                self.spdr45 = SubpixelPreservingDownsample(
+                    channels=hidden_dim, **copy.deepcopy(spdr_cfg))
+
         self._reset_parameters()
 
     def _reset_parameters(self):
@@ -511,6 +572,9 @@ class HybridEncoder(nn.Module):
             feat_high = self.lateral_convs[len(self.in_channels) - 1 - idx](feat_high)
             inner_outs[0] = feat_high
             upsample_feat = F.interpolate(feat_high, scale_factor=2., mode='nearest')
+            if self.lpru_enabled:
+                lpru = self.lpru54 if idx == 2 else self.lpru43
+                upsample_feat = lpru(feat_high, upsample_feat)
             if self.acr_enabled:
                 acr_fusion = self.acr_54 if idx == 2 else self.acr_43
                 upsample_feat, detail_residuals[idx - 1] = acr_fusion(
@@ -528,6 +592,9 @@ class HybridEncoder(nn.Module):
             feat_low = outs[-1]
             feat_high = inner_outs[idx + 1]
             downsample_feat = self.downsample_convs[idx](feat_low)
+            if self.spdr_enabled:
+                spdr = self.spdr34 if idx == 0 else self.spdr45
+                downsample_feat = spdr(feat_low, downsample_feat)
             if self.acr_enabled:
                 acr_fusion = self.acr_43 if idx == 0 else self.acr_54
                 downsample_feat = acr_fusion.inject_detail(
