@@ -287,17 +287,19 @@ output/three_gpu_b16_warmup_cosine/rtdetr_hrnetv2_w18_dut_anti_uav_dgfr
 一次性顺序测试两个 DGFR 模型：
 
 ```bash
-for name in rtdetr_r18vd_dut_anti_uav_dgfr rtdetr_hrnetv2_w18_dut_anti_uav_dgfr; do OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=1 python tools/test_dut.py -c "configs/rtdetr/${name}.yml" -r "output/three_gpu_b16_warmup_cosine/${name}/best.pth" --split test --num-workers 2 --output-dir "output/three_gpu_b16_warmup_cosine/${name}/test_eval"; done
+OMP_NUM_THREADS=1 GPU_ID=1 NUM_WORKERS=2 bash tools/test_dgfr_best.sh
 ```
+
+该脚本固定按 PResNet18+DGFR、HRNetV2-W18+DGFR 的顺序测试；缺失权重会记录为 `MISSING_BEST`，单个模型失败不会阻止下一个模型，并自动保存逐模型日志及 CSV、JSON、Markdown 汇总。正式评估前还会强制检查 checkpoint 是否包含可用的 `ema.module`，避免静默测试未加载的 EMA。
 
 分别测试：
 
 ```bash
-OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=1 python tools/test_dut.py -c configs/rtdetr/rtdetr_r18vd_dut_anti_uav_dgfr.yml -r output/three_gpu_b16_warmup_cosine/rtdetr_r18vd_dut_anti_uav_dgfr/best.pth --split test --num-workers 2 --output-dir output/three_gpu_b16_warmup_cosine/rtdetr_r18vd_dut_anti_uav_dgfr/test_eval
+OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=1 python tools/test_dut.py -c configs/rtdetr/rtdetr_r18vd_dut_anti_uav_dgfr.yml -r output/three_gpu_b16_warmup_cosine/rtdetr_r18vd_dut_anti_uav_dgfr/best.pth --split test --num-workers 2 --require-ema --output-dir output/three_gpu_b16_warmup_cosine/rtdetr_r18vd_dut_anti_uav_dgfr/test_eval
 ```
 
 ```bash
-OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=1 python tools/test_dut.py -c configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_dgfr.yml -r output/three_gpu_b16_warmup_cosine/rtdetr_hrnetv2_w18_dut_anti_uav_dgfr/best.pth --split test --num-workers 2 --output-dir output/three_gpu_b16_warmup_cosine/rtdetr_hrnetv2_w18_dut_anti_uav_dgfr/test_eval
+OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=1 python tools/test_dut.py -c configs/rtdetr/rtdetr_hrnetv2_w18_dut_anti_uav_dgfr.yml -r output/three_gpu_b16_warmup_cosine/rtdetr_hrnetv2_w18_dut_anti_uav_dgfr/best.pth --split test --num-workers 2 --require-ema --output-dir output/three_gpu_b16_warmup_cosine/rtdetr_hrnetv2_w18_dut_anti_uav_dgfr/test_eval
 ```
 
 待测试完成后填写：

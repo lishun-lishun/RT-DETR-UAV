@@ -8,6 +8,8 @@ import argparse
 import os
 import sys
 
+import torch
+
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 
@@ -21,11 +23,25 @@ def select_split(cfg, split):
     return {key: dataset[key] for key in ('img_folder', 'ann_file')}
 
 
+def validate_ema_checkpoint(path):
+    """Fail before evaluation when the requested checkpoint has no usable EMA."""
+    state = torch.load(path, map_location='cpu')
+    ema = state.get('ema') if isinstance(state, dict) else None
+    module = ema.get('module') if isinstance(ema, dict) else None
+    if not isinstance(module, dict) or not module:
+        raise ValueError(
+            f'Checkpoint does not contain a usable ema.module state: {path}')
+    print(f'EMA checkpoint preflight PASS: {path} ({len(module)} tensors)')
+    del state
+
+
 def main(args):
     from src.core import YAMLConfig
     from src.misc import dist
     from src.solver import TASKS
 
+    if getattr(args, 'require_ema', False):
+        validate_ema_checkpoint(args.resume)
     dist.init_distributed()
     overrides = dict(resume=args.resume, use_amp=False)
     if args.output_dir:
@@ -56,4 +72,7 @@ if __name__ == '__main__':
                         help='write eval.pth away from the training directory')
     parser.add_argument('--num-workers', type=int, default=None,
                         help='override evaluation workers; 0 disables workers')
+    parser.add_argument(
+        '--require-ema', action='store_true',
+        help='fail instead of silently evaluating an unloaded EMA model')
     main(parser.parse_args())

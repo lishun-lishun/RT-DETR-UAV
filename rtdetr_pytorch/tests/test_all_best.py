@@ -8,7 +8,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import torch
+
 from tools import test_all_best
+from tools import test_dut
 
 
 COCO_OUTPUT = """
@@ -20,11 +23,11 @@ COCO_OUTPUT = """
 """
 
 
-def arguments(root, configs, report=None, dry_run=False):
+def arguments(root, configs, report=None, dry_run=False, experiments=None):
     return SimpleNamespace(
         root=str(root), config_dir=str(configs), split='test', gpu='1',
         num_workers=2, report_dir=str(report) if report else None,
-        dry_run=dry_run)
+        dry_run=dry_run, experiments=experiments, require_ema=False)
 
 
 class TestAllBest(unittest.TestCase):
@@ -35,6 +38,17 @@ class TestAllBest(unittest.TestCase):
         self.assertEqual(metrics['map75'], 0.733)
         self.assertEqual(metrics['ap_small'], 0.545)
         self.assertEqual(metrics['ar_1'], 0.222)
+
+    def test_ema_checkpoint_preflight_accepts_valid_and_rejects_missing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            valid = Path(directory) / 'valid.pth'
+            missing = Path(directory) / 'missing.pth'
+            torch.save({'ema': {'module': {'weight': torch.ones(1)}}}, valid)
+            torch.save({'model': {'weight': torch.ones(1)}}, missing)
+            with redirect_stdout(io.StringIO()):
+                test_dut.validate_ema_checkpoint(valid)
+            with self.assertRaisesRegex(ValueError, 'ema.module'):
+                test_dut.validate_ema_checkpoint(missing)
 
     def test_dry_run_records_plan_without_creating_report(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -51,6 +65,40 @@ class TestAllBest(unittest.TestCase):
                     arguments(root, configs, report, dry_run=True))
             self.assertEqual(code, 0)
             self.assertFalse(report.exists())
+
+    def test_explicit_experiments_preserve_order_and_record_missing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / 'outputs'
+            configs = Path(directory) / 'configs'
+            root.mkdir()
+            configs.mkdir()
+            for name in ('model_a', 'model_b'):
+                (configs / f'{name}.yml').touch()
+            (root / 'model_a').mkdir()
+            (root / 'model_a' / 'best.pth').touch()
+            stream = io.StringIO()
+            with redirect_stdout(stream):
+                code = test_all_best.main(arguments(
+                    root, configs, dry_run=True,
+                    experiments=['model_b', 'model_a']))
+            output = stream.getvalue()
+            self.assertEqual(code, 0)
+            self.assertLess(output.index('model_b'), output.index('model_a'))
+            self.assertIn('[MISSING_BEST] model_b', output)
+            self.assertIn('[RUN] model_a', output)
+
+    def test_fixed_list_dry_run_allows_output_root_not_created_yet(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / 'future_outputs'
+            configs = Path(directory) / 'configs'
+            configs.mkdir()
+            (configs / 'model_a.yml').touch()
+            with redirect_stdout(io.StringIO()):
+                code = test_all_best.main(arguments(
+                    root, configs, dry_run=True,
+                    experiments=['model_a']))
+            self.assertEqual(code, 0)
+            self.assertFalse(root.exists())
 
     def test_success_writes_csv_json_markdown_and_log_record(self):
         with tempfile.TemporaryDirectory() as directory:

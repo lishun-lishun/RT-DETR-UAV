@@ -1,8 +1,10 @@
-"""Evaluate every immediate child experiment's best.pth and record metrics.
+"""Evaluate selected (or all) experiment best.pth files and record metrics.
 
-Each experiment directory is matched to a YAML with the same basename. Tests
-run sequentially on one visible GPU to bound CUDA and shared-memory use. A
-failure is recorded and does not prevent evaluation of the remaining models.
+Each experiment directory is matched to a YAML with the same basename.  With
+``--experiments`` the supplied names and order are used exactly; otherwise all
+immediate child directories are evaluated alphabetically.  Tests run
+sequentially on one visible GPU to bound CUDA and shared-memory use. A failure
+is recorded and does not prevent evaluation of the remaining models.
 """
 
 import argparse
@@ -83,6 +85,7 @@ def write_reports(report_dir, metadata, records):
         '# RT-DETR best.pth evaluation', '',
         f'- Generated: {metadata["generated_at"]}',
         f'- Split: `{metadata["split"]}`',
+        f'- Require checkpoint EMA: `{metadata.get("require_ema", False)}`',
         f'- Output root: `{metadata["output_root"]}`',
         f'- Total folders: {metadata["total"]}',
         f'- PASS: {sum(row["status"] == "PASS" for row in records)}',
@@ -135,16 +138,31 @@ def run_and_tee(command, environment, log_path):
 def main(args):
     output_root = Path(args.root).expanduser().resolve()
     config_dir = Path(args.config_dir).expanduser().resolve()
-    if not output_root.is_dir():
+    requested = getattr(args, 'experiments', None)
+    # A fixed-list dry-run can still show the exact expected checkpoint paths
+    # before the training output root has been created.
+    if (not output_root.is_dir()
+            and not (args.dry_run and requested)):
         raise FileNotFoundError(f'Experiment output root not found: {output_root}')
     if not config_dir.is_dir():
         raise FileNotFoundError(f'Config directory not found: {config_dir}')
     if args.num_workers < 0:
         raise ValueError('--num-workers must be >= 0')
 
-    experiments = sorted(
-        (path for path in output_root.iterdir() if path.is_dir()),
-        key=lambda path: path.name.lower())
+    if requested:
+        if len(requested) != len(set(requested)):
+            raise ValueError('--experiments must not contain duplicate names')
+        invalid = [name for name in requested
+                   if not name or Path(name).name != name or name in ('.', '..')]
+        if invalid:
+            raise ValueError(
+                '--experiments accepts plain directory names only: '
+                f'{invalid}')
+        experiments = [output_root / name for name in requested]
+    else:
+        experiments = sorted(
+            (path for path in output_root.iterdir() if path.is_dir()),
+            key=lambda path: path.name.lower())
     plan = []
     for directory in experiments:
         checkpoint = directory / 'best.pth'
@@ -187,6 +205,8 @@ def main(args):
         'output_root': str(output_root), 'config_dir': str(config_dir),
         'report_dir': str(report_dir), 'split': args.split,
         'gpu': args.gpu, 'num_workers': args.num_workers,
+        'require_ema': bool(getattr(args, 'require_ema', False)),
+        'requested_experiments': list(requested) if requested else None,
         'total': len(plan),
     }
     records = []
@@ -218,6 +238,8 @@ def main(args):
             '--split', args.split, '--num-workers', str(args.num_workers),
             '--output-dir', str(artifact_path),
         ]
+        if getattr(args, 'require_ema', False):
+            command.append('--require-ema')
         print('\n' + '=' * 72)
         print(f'[TEST {index}/{len(plan)}] {directory.name}')
         print('Command:', ' '.join(command))
@@ -264,5 +286,11 @@ if __name__ == '__main__':
                         help='one physical GPU ID, for example 1')
     parser.add_argument('--num-workers', type=int, default=2)
     parser.add_argument('--report-dir', default=None)
+    parser.add_argument(
+        '--experiments', nargs='+', default=None,
+        help='optional experiment directory names in the exact test order')
+    parser.add_argument(
+        '--require-ema', action='store_true',
+        help='require every checkpoint to contain a usable ema.module state')
     parser.add_argument('--dry-run', action='store_true')
     sys.exit(main(parser.parse_args()))
