@@ -12,10 +12,9 @@ from .slr_neck import SLRNeck
 from .paf_neck import PhaseAdaptiveFusion
 from .bor_neck import BackgroundOrthogonalResidual
 from .dgfr_neck import DGFRNeck
-from .resample_neck import (
-    LearnablePixelReassemblyUpsample,
-    SubpixelPreservingDownsample,
-)
+from .resample_neck import SubpixelPreservingDownsample
+from .fdcr_neck import FrequencyDecoupledContextResidual
+from .rdcf_neck import ReparamDirectionalContextBlock
 
 from src.core import register
 
@@ -190,7 +189,9 @@ class TransformerEncoder(nn.Module):
 
 @register
 class HybridEncoder(nn.Module):
-    __share__ = ['ACR', 'SLR', 'PAF', 'BOR', 'DGFR', 'LPRU', 'SPDR']
+    __share__ = [
+        'ACR', 'SLR', 'PAF', 'BOR', 'DGFR', 'SPDR', 'FDCR', 'RDCF'
+    ]
 
     def __init__(self,
                  in_channels=[512, 1024, 2048],
@@ -212,8 +213,9 @@ class HybridEncoder(nn.Module):
                  PAF=None,
                  BOR=None,
                  DGFR=None,
-                 LPRU=None,
-                 SPDR=None):
+                 SPDR=None,
+                 FDCR=None,
+                 RDCF=None):
         super().__init__()
         self.in_channels = in_channels
         self.feat_strides = feat_strides
@@ -315,17 +317,6 @@ class HybridEncoder(nn.Module):
                 'DGFR is an independent experiment and cannot mix with '
                 'ACR, SLR, PAF or BOR')
 
-        lpru_cfg = {} if LPRU is None else copy.deepcopy(LPRU)
-        if not isinstance(lpru_cfg, dict):
-            raise ValueError('LPRU must be a mapping')
-        allowed_lpru = {'enabled', 'alpha_max', 'alpha_init', 'debug'}
-        unknown_lpru = set(lpru_cfg) - allowed_lpru
-        if unknown_lpru:
-            raise ValueError(f'Unknown LPRU options: {sorted(unknown_lpru)}')
-        self.lpru_enabled = lpru_cfg.pop('enabled', False)
-        if not isinstance(self.lpru_enabled, bool):
-            raise ValueError('LPRU.enabled must be boolean')
-
         spdr_cfg = {} if SPDR is None else copy.deepcopy(SPDR)
         if not isinstance(spdr_cfg, dict):
             raise ValueError('SPDR must be a mapping')
@@ -337,16 +328,44 @@ class HybridEncoder(nn.Module):
         if not isinstance(self.spdr_enabled, bool):
             raise ValueError('SPDR.enabled must be boolean')
 
-        if self.lpru_enabled and self.spdr_enabled:
+        fdcr_cfg = {} if FDCR is None else copy.deepcopy(FDCR)
+        if not isinstance(fdcr_cfg, dict):
+            raise ValueError('FDCR must be a mapping')
+        allowed_fdcr = {'enabled', 'gamma_max', 'gamma_init'}
+        unknown_fdcr = set(fdcr_cfg) - allowed_fdcr
+        if unknown_fdcr:
+            raise ValueError(f'Unknown FDCR options: {sorted(unknown_fdcr)}')
+        self.fdcr_enabled = fdcr_cfg.pop('enabled', False)
+        if not isinstance(self.fdcr_enabled, bool):
+            raise ValueError('FDCR.enabled must be boolean')
+
+        rdcf_cfg = {} if RDCF is None else copy.deepcopy(RDCF)
+        if not isinstance(rdcf_cfg, dict):
+            raise ValueError('RDCF must be a mapping')
+        allowed_rdcf = {'enabled', 'eta_max', 'eta_init', 'deploy'}
+        unknown_rdcf = set(rdcf_cfg) - allowed_rdcf
+        if unknown_rdcf:
+            raise ValueError(f'Unknown RDCF options: {sorted(unknown_rdcf)}')
+        self.rdcf_enabled = rdcf_cfg.pop('enabled', False)
+        if not isinstance(self.rdcf_enabled, bool):
+            raise ValueError('RDCF.enabled must be boolean')
+
+        if self.fdcr_enabled and self.rdcf_enabled:
             raise ValueError(
-                'LPRU and SPDR must be evaluated independently in the current experiment.')
+                'FDCR and RDCF must be evaluated independently.')
+
         old_neck_enabled = any((
             self.acr_enabled, self.slr_enabled, self.paf_enabled,
             self.bor_enabled, self.dgfr_enabled,
         ))
-        if (self.lpru_enabled or self.spdr_enabled) and old_neck_enabled:
+        if self.spdr_enabled and old_neck_enabled:
             raise ValueError(
-                'LPRU/SPDR experiments cannot mix with ACR, SLR, PAF, BOR or DGFR')
+                'SPDR experiments cannot mix with ACR, SLR, PAF, BOR or DGFR')
+        if ((self.fdcr_enabled or self.rdcf_enabled)
+                and (self.spdr_enabled or old_neck_enabled)):
+            raise ValueError(
+                'FDCR/RDCF experiments cannot mix with SPDR, ACR, SLR, '
+                'PAF, BOR or DGFR')
 
         self.out_channels = [hidden_dim for _ in range(len(in_channels))]
         self.out_strides = feat_strides
@@ -484,15 +503,6 @@ class HybridEncoder(nn.Module):
         # isolated from the global RNG so enabling a candidate leaves every
         # common detector parameter identically initialized under the same
         # seed. Disabled candidates construct no module and execute no call.
-        if self.lpru_enabled:
-            if len(in_channels) != 3:
-                raise ValueError('LPRU requires exactly P3/P4/P5')
-            with torch.random.fork_rng(devices=[]):
-                self.lpru54 = LearnablePixelReassemblyUpsample(
-                    channels=hidden_dim, **copy.deepcopy(lpru_cfg))
-                self.lpru43 = LearnablePixelReassemblyUpsample(
-                    channels=hidden_dim, **copy.deepcopy(lpru_cfg))
-
         if self.spdr_enabled:
             if len(in_channels) != 3:
                 raise ValueError('SPDR requires exactly P3/P4/P5')
@@ -501,6 +511,28 @@ class HybridEncoder(nn.Module):
                     channels=hidden_dim, **copy.deepcopy(spdr_cfg))
                 self.spdr45 = SubpixelPreservingDownsample(
                     channels=hidden_dim, **copy.deepcopy(spdr_cfg))
+
+        # FDCR and RDCF are mutually exclusive post-CCFF refinements.  They
+        # consume only the completed N3/N4 tensors, never read backbone-
+        # specific features, and leave N5 bit-exact.  Isolating construction
+        # from the global RNG keeps every shared detector parameter identical
+        # to its corresponding baseline under the same seed.
+        if self.fdcr_enabled:
+            if len(in_channels) != 3:
+                raise ValueError('FDCR requires exactly P3/P4/P5')
+            with torch.random.fork_rng(devices=[]):
+                self.fdcr3 = FrequencyDecoupledContextResidual(
+                    hidden_dim=hidden_dim, **copy.deepcopy(fdcr_cfg))
+                self.fdcr4 = FrequencyDecoupledContextResidual(
+                    hidden_dim=hidden_dim, **copy.deepcopy(fdcr_cfg))
+        elif self.rdcf_enabled:
+            if len(in_channels) != 3:
+                raise ValueError('RDCF requires exactly P3/P4/P5')
+            with torch.random.fork_rng(devices=[]):
+                self.rdcf3 = ReparamDirectionalContextBlock(
+                    channels=hidden_dim, **copy.deepcopy(rdcf_cfg))
+                self.rdcf4 = ReparamDirectionalContextBlock(
+                    channels=hidden_dim, **copy.deepcopy(rdcf_cfg))
 
         self._reset_parameters()
 
@@ -572,9 +604,6 @@ class HybridEncoder(nn.Module):
             feat_high = self.lateral_convs[len(self.in_channels) - 1 - idx](feat_high)
             inner_outs[0] = feat_high
             upsample_feat = F.interpolate(feat_high, scale_factor=2., mode='nearest')
-            if self.lpru_enabled:
-                lpru = self.lpru54 if idx == 2 else self.lpru43
-                upsample_feat = lpru(feat_high, upsample_feat)
             if self.acr_enabled:
                 acr_fusion = self.acr_54 if idx == 2 else self.acr_43
                 upsample_feat, detail_residuals[idx - 1] = acr_fusion(
@@ -610,4 +639,10 @@ class HybridEncoder(nn.Module):
             outs[0] = self.slr(outs[0], detail_source)
         if self.bor_enabled:
             outs[0] = self.bor(outs[0])
+        if self.fdcr_enabled:
+            outs[0] = self.fdcr3(outs[0])
+            outs[1] = self.fdcr4(outs[1])
+        elif self.rdcf_enabled:
+            outs[0] = self.rdcf3(outs[0])
+            outs[1] = self.rdcf4(outs[1])
         return outs

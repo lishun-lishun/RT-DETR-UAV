@@ -62,14 +62,18 @@ class YAMLConfig(BaseConfig):
         if not isinstance(dgfr, dict):
             raise ValueError('DGFR must be a mapping')
         cfg['DGFR'] = {'enabled': False, **copy.deepcopy(dgfr)}
-        lpru = cfg.get('LPRU', {})
-        if not isinstance(lpru, dict):
-            raise ValueError('LPRU must be a mapping')
-        cfg['LPRU'] = {'enabled': False, **copy.deepcopy(lpru)}
         spdr = cfg.get('SPDR', {})
         if not isinstance(spdr, dict):
             raise ValueError('SPDR must be a mapping')
         cfg['SPDR'] = {'enabled': False, **copy.deepcopy(spdr)}
+        fdcr = cfg.get('FDCR', {})
+        if not isinstance(fdcr, dict):
+            raise ValueError('FDCR must be a mapping')
+        cfg['FDCR'] = {'enabled': False, **copy.deepcopy(fdcr)}
+        rdcf = cfg.get('RDCF', {})
+        if not isinstance(rdcf, dict):
+            raise ValueError('RDCF must be a mapping')
+        cfg['RDCF'] = {'enabled': False, **copy.deepcopy(rdcf)}
         # Complete default-off point switches for official/legacy YAMLs, without
         # altering a file or constructing plugins. Reject invalid values in the
         # backbone rather than silently dropping misspelled point names.
@@ -110,7 +114,8 @@ class YAMLConfig(BaseConfig):
             GLOBAL_CONFIG['BackboneEnhancement'] = copy.deepcopy(
                 self.yaml_cfg['BackboneEnhancement'])
             for name in ('BackboneModification', 'BDPD', 'MSDConv', 'PDR',
-                         'ACR', 'SLR', 'PAF', 'BOR', 'DGFR', 'LPRU', 'SPDR'):
+                         'ACR', 'SLR', 'PAF', 'BOR', 'DGFR', 'SPDR',
+                         'FDCR', 'RDCF'):
                 GLOBAL_CONFIG[name] = copy.deepcopy(self.yaml_cfg[name])
             self._model = create(self.yaml_cfg['model'])
         return self._model 

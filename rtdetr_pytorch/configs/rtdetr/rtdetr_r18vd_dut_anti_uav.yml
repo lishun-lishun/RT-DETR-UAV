@@ -100,14 +100,22 @@ PAF:
 BOR:
   enabled: false
 
-# Independent residual resampling candidates. Both remain absent from the
-# formal baseline graph; candidate YAMLs enable exactly one of them.
-LPRU:
-  enabled: false
-  alpha_max: 0.5
-  alpha_init: 0.05
-
+# Optional SPDR downsampling residual. Disabled mode constructs no additional
+# module and follows the original HybridEncoder path exactly.
 SPDR:
   enabled: false
   beta_max: 0.5
   beta_init: 0.05
+
+# Independent post-CCFF Neck candidates. Disabled mode constructs no module
+# and returns the original N3/N4/N5 tensors unchanged.
+FDCR:
+  enabled: false
+  gamma_max: 0.30
+  gamma_init: 0.05
+
+RDCF:
+  enabled: false
+  eta_max: 0.30
+  eta_init: 0.05
+  deploy: false

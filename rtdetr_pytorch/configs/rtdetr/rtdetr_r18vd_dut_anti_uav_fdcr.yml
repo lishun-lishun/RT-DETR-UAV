@@ -1,0 +1,13 @@
+__include__: [
+  './rtdetr_r18vd_dut_anti_uav.yml',
+]
+
+# Pure post-CCFF FDCR experiment. All training, data and detector settings are
+# inherited unchanged from the formal PResNet18 DUT baseline.
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_fdcr
+
+FDCR:
+  enabled: true
+  gamma_max: 0.30
+  gamma_init: 0.05
+

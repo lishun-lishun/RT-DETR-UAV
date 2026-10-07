@@ -1,0 +1,14 @@
+__include__: [
+  './rtdetr_r18vd_dut_anti_uav.yml',
+]
+
+# Pure post-CCFF RDCF experiment in training form. All inherited settings stay
+# identical to the formal PResNet18 DUT baseline.
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_rdcf
+
+RDCF:
+  enabled: true
+  eta_max: 0.30
+  eta_init: 0.05
+  deploy: false
+

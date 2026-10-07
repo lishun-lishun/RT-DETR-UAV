@@ -11,7 +11,7 @@ from tools.cleanup_unused_outputs import (
 
 
 class CleanupUnusedOutputsTests(unittest.TestCase):
-    def test_plan_keeps_six_active_names_and_only_deletes_other_directories(self):
+    def test_plan_keeps_active_names_and_only_deletes_other_directories(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             for name in (*ACTIVE_EXPERIMENTS, "old_acr", "old_dgfr"):

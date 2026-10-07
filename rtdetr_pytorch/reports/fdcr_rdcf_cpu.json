@@ -1,0 +1,1849 @@
+{
+  "protocol": {
+    "candidate_order": [
+      "PResNet18 + FDCR",
+      "HRNetV2-W18 + FDCR",
+      "PResNet18 + RDCF",
+      "HRNetV2-W18 + RDCF"
+    ],
+    "pretrained_disabled_for_synthetic_audit_only": true,
+    "dataset_loaded": false,
+    "formal_training_launched": false,
+    "conv_linear_MAC_definition": "executed Conv2d/Linear multiply-accumulates only"
+  },
+  "smoke": {
+    "final_config_set": {
+      "status": "PASS",
+      "files": [
+        "rtdetr_hrnetv2_w18_dut_anti_uav.yml",
+        "rtdetr_hrnetv2_w18_dut_anti_uav_fdcr.yml",
+        "rtdetr_hrnetv2_w18_dut_anti_uav_rdcf.yml",
+        "rtdetr_hrnetv2_w18_dut_anti_uav_spdr.yml",
+        "rtdetr_r18vd_dut_anti_uav.yml",
+        "rtdetr_r18vd_dut_anti_uav_fdcr.yml",
+        "rtdetr_r18vd_dut_anti_uav_rdcf.yml",
+        "rtdetr_r18vd_dut_anti_uav_spdr.yml"
+      ]
+    },
+    "retained_SPDR_regression": {
+      "PResNet18 + SPDR": {
+        "config": "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_spdr.yml",
+        "input": [
+          1,
+          3,
+          128,
+          128
+        ],
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ],
+        "spdr_enabled": true,
+        "fdcr_enabled": false,
+        "rdcf_enabled": false,
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + SPDR": {
+        "config": "configs\\rtdetr\\rtdetr_hrnetv2_w18_dut_anti_uav_spdr.yml",
+        "input": [
+          1,
+          3,
+          128,
+          128
+        ],
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ],
+        "spdr_enabled": true,
+        "fdcr_enabled": false,
+        "rdcf_enabled": false,
+        "status": "PASS"
+      }
+    },
+    "candidate_activation": {
+      "PResNet18 + FDCR": {
+        "method": "FDCR",
+        "fdcr_enabled": true,
+        "rdcf_enabled": false,
+        "spdr_enabled": false,
+        "independent_N3_N4_parameters": true,
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + FDCR": {
+        "method": "FDCR",
+        "fdcr_enabled": true,
+        "rdcf_enabled": false,
+        "spdr_enabled": false,
+        "independent_N3_N4_parameters": true,
+        "status": "PASS"
+      },
+      "PResNet18 + RDCF": {
+        "method": "RDCF",
+        "fdcr_enabled": false,
+        "rdcf_enabled": true,
+        "spdr_enabled": false,
+        "independent_N3_N4_parameters": true,
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + RDCF": {
+        "method": "RDCF",
+        "fdcr_enabled": false,
+        "rdcf_enabled": true,
+        "spdr_enabled": false,
+        "independent_N3_N4_parameters": true,
+        "status": "PASS"
+      }
+    },
+    "fairness": {
+      "PResNet18 + FDCR": {
+        "reference": "PResNet18 + Original",
+        "allowed_namespace": "FDCR",
+        "resolved_differences": {
+          "FDCR.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_fdcr"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "gamma_max": 0.3,
+          "gamma_init": 0.05
+        },
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + FDCR": {
+        "reference": "HRNetV2-W18 + Original",
+        "allowed_namespace": "FDCR",
+        "resolved_differences": {
+          "FDCR.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_dut_anti_uav.yml",
+              "./include/hrnetv2_w18.yml"
+            ],
+            "candidate": [
+              "./rtdetr_hrnetv2_w18_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_hrnetv2_w18_dut_anti_uav",
+            "candidate": "./output/rtdetr_hrnetv2_w18_dut_anti_uav_fdcr"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "gamma_max": 0.3,
+          "gamma_init": 0.05
+        },
+        "status": "PASS"
+      },
+      "PResNet18 + RDCF": {
+        "reference": "PResNet18 + Original",
+        "allowed_namespace": "RDCF",
+        "resolved_differences": {
+          "RDCF.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_rdcf"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "eta_max": 0.3,
+          "eta_init": 0.05,
+          "deploy": false
+        },
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + RDCF": {
+        "reference": "HRNetV2-W18 + Original",
+        "allowed_namespace": "RDCF",
+        "resolved_differences": {
+          "RDCF.enabled": {
+            "reference": false,
+            "candidate": true
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_dut_anti_uav.yml",
+              "./include/hrnetv2_w18.yml"
+            ],
+            "candidate": [
+              "./rtdetr_hrnetv2_w18_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_hrnetv2_w18_dut_anti_uav",
+            "candidate": "./output/rtdetr_hrnetv2_w18_dut_anti_uav_rdcf"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "eta_max": 0.3,
+          "eta_init": 0.05,
+          "deploy": false
+        },
+        "status": "PASS"
+      }
+    },
+    "disabled_equivalence": {
+      "PResNet18 + FDCR": {
+        "input_size": 128,
+        "state_dict": "BIT-EXACT",
+        "backbone": "PASS",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS",
+        "tolerance": {
+          "atol": 1e-06,
+          "rtol": 1e-05
+        }
+      },
+      "HRNetV2-W18 + FDCR": {
+        "input_size": 128,
+        "state_dict": "BIT-EXACT",
+        "backbone": "PASS",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS",
+        "tolerance": {
+          "atol": 1e-06,
+          "rtol": 1e-05
+        }
+      },
+      "PResNet18 + RDCF": {
+        "input_size": 128,
+        "state_dict": "BIT-EXACT",
+        "backbone": "PASS",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS",
+        "tolerance": {
+          "atol": 1e-06,
+          "rtol": 1e-05
+        }
+      },
+      "HRNetV2-W18 + RDCF": {
+        "input_size": 128,
+        "state_dict": "BIT-EXACT",
+        "backbone": "PASS",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS",
+        "tolerance": {
+          "atol": 1e-06,
+          "rtol": 1e-05
+        }
+      }
+    },
+    "models": {
+      "PResNet18 + FDCR": {
+        "dynamic_detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "encoder_backward": {
+          "loss": 1.0755407810211182,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        },
+        "cpu_autocast": {
+          "status": "PASS",
+          "dtype": "torch.bfloat16",
+          "loss": 1.0613266229629517,
+          "gradients": "ALL PRESENT AND FINITE"
+        },
+        "full_detector_backward": {
+          "input": [
+            1,
+            3,
+            128,
+            128
+          ],
+          "loss": 135.8101043701172,
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO",
+          "formal_optimizer_step": false
+        }
+      },
+      "HRNetV2-W18 + FDCR": {
+        "dynamic_detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "encoder_backward": {
+          "loss": 1.0669958591461182,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        },
+        "cpu_autocast": {
+          "status": "PASS",
+          "dtype": "torch.bfloat16",
+          "loss": 1.0582133531570435,
+          "gradients": "ALL PRESENT AND FINITE"
+        },
+        "full_detector_backward": {
+          "input": [
+            1,
+            3,
+            128,
+            128
+          ],
+          "loss": 144.432373046875,
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO",
+          "formal_optimizer_step": false
+        }
+      },
+      "PResNet18 + RDCF": {
+        "dynamic_detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "encoder_backward": {
+          "loss": 1.0656249523162842,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        },
+        "cpu_autocast": {
+          "status": "PASS",
+          "dtype": "torch.bfloat16",
+          "loss": 1.0571922063827515,
+          "gradients": "ALL PRESENT AND FINITE"
+        },
+        "full_detector_backward": {
+          "input": [
+            1,
+            3,
+            128,
+            128
+          ],
+          "loss": 138.3665771484375,
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO",
+          "formal_optimizer_step": false
+        }
+      },
+      "HRNetV2-W18 + RDCF": {
+        "dynamic_detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "encoder_backward": {
+          "loss": 1.066969633102417,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        },
+        "cpu_autocast": {
+          "status": "PASS",
+          "dtype": "torch.bfloat16",
+          "loss": 1.0582304000854492,
+          "gradients": "ALL PRESENT AND FINITE"
+        },
+        "full_detector_backward": {
+          "input": [
+            1,
+            3,
+            128,
+            128
+          ],
+          "loss": 144.3453369140625,
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO",
+          "formal_optimizer_step": false
+        }
+      }
+    },
+    "optimizer": {
+      "PResNet18 + FDCR": [
+        {
+          "parameter": "encoder.fdcr3.raw_gamma",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr3.low_depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr3.low_depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr3.low_project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr3.low_project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr3.high_depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr3.high_depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr3.high_project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr3.high_project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr3.fuse.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr3.fuse.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr4.raw_gamma",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr4.low_depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr4.low_depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr4.low_project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr4.low_project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr4.high_depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr4.high_depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr4.high_project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr4.high_project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr4.fuse.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr4.fuse.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        }
+      ],
+      "HRNetV2-W18 + FDCR": [
+        {
+          "parameter": "encoder.fdcr3.raw_gamma",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr3.low_depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr3.low_depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr3.low_project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr3.low_project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr3.high_depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr3.high_depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr3.high_project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr3.high_project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr3.fuse.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr3.fuse.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr4.raw_gamma",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr4.low_depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr4.low_depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr4.low_project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr4.low_project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr4.high_depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr4.high_depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr4.high_project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr4.high_project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.fdcr4.fuse.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.fdcr4.fuse.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        }
+      ],
+      "PResNet18 + RDCF": [
+        {
+          "parameter": "encoder.rdcf3.raw_eta",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf3.dw_3x3.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf3.dw_3x3.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf3.dw_1x9.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf3.dw_1x9.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf3.dw_9x1.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf3.dw_9x1.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf3.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf3.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf4.raw_eta",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf4.dw_3x3.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf4.dw_3x3.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf4.dw_1x9.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf4.dw_1x9.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf4.dw_9x1.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf4.dw_9x1.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf4.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf4.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        }
+      ],
+      "HRNetV2-W18 + RDCF": [
+        {
+          "parameter": "encoder.rdcf3.raw_eta",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf3.dw_3x3.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf3.dw_3x3.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf3.dw_1x9.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf3.dw_1x9.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf3.dw_9x1.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf3.dw_9x1.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf3.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf3.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf4.raw_eta",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf4.dw_3x3.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf4.dw_3x3.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf4.dw_1x9.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf4.dw_1x9.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf4.dw_9x1.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf4.dw_9x1.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.rdcf4.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.rdcf4.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        }
+      ]
+    },
+    "common_seeded_weights_and_N5": {
+      "PResNet18 + FDCR": {
+        "status": "PASS",
+        "common_tensors": 533,
+        "added_tensors": [
+          "encoder.fdcr3.fuse.bias",
+          "encoder.fdcr3.fuse.weight",
+          "encoder.fdcr3.high_depthwise.bias",
+          "encoder.fdcr3.high_depthwise.weight",
+          "encoder.fdcr3.high_project.bias",
+          "encoder.fdcr3.high_project.weight",
+          "encoder.fdcr3.low_depthwise.bias",
+          "encoder.fdcr3.low_depthwise.weight",
+          "encoder.fdcr3.low_project.bias",
+          "encoder.fdcr3.low_project.weight",
+          "encoder.fdcr3.raw_gamma",
+          "encoder.fdcr4.fuse.bias",
+          "encoder.fdcr4.fuse.weight",
+          "encoder.fdcr4.high_depthwise.bias",
+          "encoder.fdcr4.high_depthwise.weight",
+          "encoder.fdcr4.high_project.bias",
+          "encoder.fdcr4.high_project.weight",
+          "encoder.fdcr4.low_depthwise.bias",
+          "encoder.fdcr4.low_depthwise.weight",
+          "encoder.fdcr4.low_project.bias",
+          "encoder.fdcr4.low_project.weight",
+          "encoder.fdcr4.raw_gamma"
+        ],
+        "common_seeded_weights": "BIT-EXACT",
+        "N5_identity": "BIT-EXACT"
+      },
+      "HRNetV2-W18 + FDCR": {
+        "status": "PASS",
+        "common_tensors": 2225,
+        "added_tensors": [
+          "encoder.fdcr3.fuse.bias",
+          "encoder.fdcr3.fuse.weight",
+          "encoder.fdcr3.high_depthwise.bias",
+          "encoder.fdcr3.high_depthwise.weight",
+          "encoder.fdcr3.high_project.bias",
+          "encoder.fdcr3.high_project.weight",
+          "encoder.fdcr3.low_depthwise.bias",
+          "encoder.fdcr3.low_depthwise.weight",
+          "encoder.fdcr3.low_project.bias",
+          "encoder.fdcr3.low_project.weight",
+          "encoder.fdcr3.raw_gamma",
+          "encoder.fdcr4.fuse.bias",
+          "encoder.fdcr4.fuse.weight",
+          "encoder.fdcr4.high_depthwise.bias",
+          "encoder.fdcr4.high_depthwise.weight",
+          "encoder.fdcr4.high_project.bias",
+          "encoder.fdcr4.high_project.weight",
+          "encoder.fdcr4.low_depthwise.bias",
+          "encoder.fdcr4.low_depthwise.weight",
+          "encoder.fdcr4.low_project.bias",
+          "encoder.fdcr4.low_project.weight",
+          "encoder.fdcr4.raw_gamma"
+        ],
+        "common_seeded_weights": "BIT-EXACT",
+        "N5_identity": "BIT-EXACT"
+      },
+      "PResNet18 + RDCF": {
+        "status": "PASS",
+        "common_tensors": 533,
+        "added_tensors": [
+          "encoder.rdcf3.dw_1x9.bias",
+          "encoder.rdcf3.dw_1x9.weight",
+          "encoder.rdcf3.dw_3x3.bias",
+          "encoder.rdcf3.dw_3x3.weight",
+          "encoder.rdcf3.dw_9x1.bias",
+          "encoder.rdcf3.dw_9x1.weight",
+          "encoder.rdcf3.project.bias",
+          "encoder.rdcf3.project.weight",
+          "encoder.rdcf3.raw_eta",
+          "encoder.rdcf4.dw_1x9.bias",
+          "encoder.rdcf4.dw_1x9.weight",
+          "encoder.rdcf4.dw_3x3.bias",
+          "encoder.rdcf4.dw_3x3.weight",
+          "encoder.rdcf4.dw_9x1.bias",
+          "encoder.rdcf4.dw_9x1.weight",
+          "encoder.rdcf4.project.bias",
+          "encoder.rdcf4.project.weight",
+          "encoder.rdcf4.raw_eta"
+        ],
+        "common_seeded_weights": "BIT-EXACT",
+        "N5_identity": "BIT-EXACT"
+      },
+      "HRNetV2-W18 + RDCF": {
+        "status": "PASS",
+        "common_tensors": 2225,
+        "added_tensors": [
+          "encoder.rdcf3.dw_1x9.bias",
+          "encoder.rdcf3.dw_1x9.weight",
+          "encoder.rdcf3.dw_3x3.bias",
+          "encoder.rdcf3.dw_3x3.weight",
+          "encoder.rdcf3.dw_9x1.bias",
+          "encoder.rdcf3.dw_9x1.weight",
+          "encoder.rdcf3.project.bias",
+          "encoder.rdcf3.project.weight",
+          "encoder.rdcf3.raw_eta",
+          "encoder.rdcf4.dw_1x9.bias",
+          "encoder.rdcf4.dw_1x9.weight",
+          "encoder.rdcf4.dw_3x3.bias",
+          "encoder.rdcf4.dw_3x3.weight",
+          "encoder.rdcf4.dw_9x1.bias",
+          "encoder.rdcf4.dw_9x1.weight",
+          "encoder.rdcf4.project.bias",
+          "encoder.rdcf4.project.weight",
+          "encoder.rdcf4.raw_eta"
+        ],
+        "common_seeded_weights": "BIT-EXACT",
+        "N5_identity": "BIT-EXACT"
+      }
+    },
+    "RDCF_train_deploy": {
+      "PResNet18 + RDCF": {
+        "status": "PASS",
+        "tolerance": {
+          "atol": 1e-05,
+          "rtol": 0.0001
+        },
+        "N5_identity": "BIT-EXACT",
+        "strict_state_load": true,
+        "training_branches_removed": true,
+        "reparam_9x9_present": true
+      },
+      "HRNetV2-W18 + RDCF": {
+        "status": "PASS",
+        "tolerance": {
+          "atol": 1e-05,
+          "rtol": 0.0001
+        },
+        "N5_identity": "BIT-EXACT",
+        "strict_state_load": true,
+        "training_branches_removed": true,
+        "reparam_9x9_present": true
+      }
+    }
+  },
+  "complexity": {
+    "PResNet18 + Original": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 20083028,
+      "whole_conv_linear_macs_lower_bound": 30006963200,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 60013926400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/concat/elementwise and all other non-Conv/Linear operations"
+    },
+    "HRNetV2-W18 + Original": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 18280456,
+      "whole_conv_linear_macs_lower_bound": 39669190400,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 79338380800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/concat/elementwise and all other non-Conv/Linear operations"
+    },
+    "PResNet18 + FDCR": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 20627796,
+      "whole_conv_linear_macs_lower_bound": 32173747200,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 64347494400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/concat/elementwise and all other non-Conv/Linear operations",
+      "added_params_vs_original": 544768,
+      "added_conv_linear_macs_vs_original": 2166784000
+    },
+    "HRNetV2-W18 + FDCR": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 18825224,
+      "whole_conv_linear_macs_lower_bound": 41835974400,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 83671948800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/concat/elementwise and all other non-Conv/Linear operations",
+      "added_params_vs_original": 544768,
+      "added_conv_linear_macs_vs_original": 2166784000
+    },
+    "PResNet18 + RDCF": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 20230484,
+      "whole_conv_linear_macs_lower_bound": 30586547200,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 61173094400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/concat/elementwise and all other non-Conv/Linear operations",
+      "added_params_vs_original": 147456,
+      "added_conv_linear_macs_vs_original": 579584000
+    },
+    "PResNet18 + RDCF (deploy)": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 20257108,
+      "whole_conv_linear_macs_lower_bound": 30697139200,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 61394278400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/concat/elementwise and all other non-Conv/Linear operations",
+      "added_params_vs_original": 174080,
+      "added_conv_linear_macs_vs_original": 690176000,
+      "params_vs_training_form": 26624,
+      "macs_vs_training_form": 110592000
+    },
+    "HRNetV2-W18 + RDCF": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 18427912,
+      "whole_conv_linear_macs_lower_bound": 40248774400,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 80497548800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/concat/elementwise and all other non-Conv/Linear operations",
+      "added_params_vs_original": 147456,
+      "added_conv_linear_macs_vs_original": 579584000
+    },
+    "HRNetV2-W18 + RDCF (deploy)": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 18454536,
+      "whole_conv_linear_macs_lower_bound": 40359366400,
+      "whole_conv_linear_flops_lower_bound_2_per_mac": 80718732800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/concat/elementwise and all other non-Conv/Linear operations",
+      "added_params_vs_original": 174080,
+      "added_conv_linear_macs_vs_original": 690176000,
+      "params_vs_training_form": 26624,
+      "macs_vs_training_form": 110592000
+    }
+  }
+}

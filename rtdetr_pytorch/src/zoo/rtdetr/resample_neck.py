@@ -1,27 +1,17 @@
-"""Learnable residual resampling blocks for RT-DETR's HybridEncoder.
+"""SPDR residual downsampling block for RT-DETR's HybridEncoder.
 
-The two blocks in this module deliberately preserve the original resampling
-result as an explicit ``base`` path:
-
-* :class:`LearnablePixelReassemblyUpsample` augments nearest-neighbour
-  upsampling with a PixelShuffle reconstruction residual.
-* :class:`SubpixelPreservingDownsample` augments the original stride-2
-  convolution with a PixelUnshuffle information-preserving residual.
-
-Neither block contains normalization, attention, a spatial gate, nor a
-backbone-specific assumption.  Setting its effective channel-wise residual
-scale to zero restores the supplied base tensor exactly.
+The block preserves the original stride-2 convolution as an explicit base
+path and adds a bounded PixelUnshuffle information-preserving residual.  It
+contains no normalization, attention, spatial gate or backbone assumption.
 """
 
 import math
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 __all__ = [
-    'LearnablePixelReassemblyUpsample',
     'SubpixelPreservingDownsample',
 ]
 
@@ -72,86 +62,6 @@ def _validate_base(name, base, source, channels, spatial_size):
         raise RuntimeError(f'{name} and source must be on the same device')
     if base.dtype != source.dtype:
         raise RuntimeError(f'{name} and source must use the same dtype')
-
-
-class LearnablePixelReassemblyUpsample(nn.Module):
-    """Nearest baseline plus a bounded PixelShuffle reconstruction residual.
-
-    For ``x`` with shape ``[B, C, H, W]``, the learned path is::
-
-        Conv1x1(C, 4C) -> PixelShuffle(2)
-        -> DepthwiseConv3x3(C) -> Conv1x1(C, C)
-
-    and the final output is ``base + alpha * (learned - base)``, where
-    ``alpha = alpha_max * tanh(raw_alpha)`` has shape ``[1, C, 1, 1]``.
-    Passing HybridEncoder's already-computed nearest tensor as ``base`` keeps
-    the original RT-DETR path explicit.  If it is omitted, this module creates
-    the same ``scale_factor=2, mode='nearest'`` baseline itself.
-    """
-
-    def __init__(self, channels=256, alpha_max=0.5, alpha_init=0.05,
-                 debug=False):
-        super().__init__()
-        self.channels = _positive_int('LPRU.channels', channels)
-        self.alpha_max, raw_init = _bounded_raw_init(
-            'LPRU.alpha', alpha_max, alpha_init)
-        if not isinstance(debug, bool):
-            raise ValueError('LPRU.debug must be a boolean')
-        self.debug = debug
-
-        self.expand = nn.Conv2d(
-            self.channels, 4 * self.channels, kernel_size=1, bias=True)
-        self.pixel_shuffle = nn.PixelShuffle(upscale_factor=2)
-        self.depthwise = nn.Conv2d(
-            self.channels, self.channels, kernel_size=3, stride=1,
-            padding=1, groups=self.channels, bias=True)
-        self.project = nn.Conv2d(
-            self.channels, self.channels, kernel_size=1, bias=True)
-        self.raw_alpha = nn.Parameter(torch.full(
-            (1, self.channels, 1, 1), raw_init))
-        self.last_debug_stats = {}
-
-    def effective_alpha(self):
-        """Return the signed channel-wise scale bounded by ``alpha_max``."""
-        return self.alpha_max * torch.tanh(self.raw_alpha)
-
-    def forward(self, x, base=None, return_aux=False):
-        _validate_feature('LPRU source', x, self.channels)
-        if base is None:
-            base = F.interpolate(x, scale_factor=2.0, mode='nearest')
-
-        rearranged = self.pixel_shuffle(self.expand(x))
-        learned = self.project(self.depthwise(rearranged))
-        _validate_base(
-            'LPRU base', base, x, self.channels, learned.shape[-2:])
-
-        residual = learned - base
-        # Keep autocast features in their compute dtype. The FP32 master raw
-        # parameter still receives gradients through this differentiable cast.
-        alpha = self.effective_alpha().to(dtype=residual.dtype)
-        output = base + alpha * residual
-
-        if self.debug:
-            with torch.no_grad():
-                eps = torch.finfo(output.dtype).eps
-                self.last_debug_stats = {
-                    'alpha_mean': alpha.detach().mean(),
-                    'alpha_min': alpha.detach().amin(),
-                    'alpha_max': alpha.detach().amax(),
-                    'residual_to_base_norm_ratio': (
-                        residual.detach().float().norm()
-                        / base.detach().float().norm().clamp_min(eps)),
-                }
-
-        if not return_aux:
-            return output
-        return output, {
-            'base': base,
-            'rearranged': rearranged,
-            'learned': learned,
-            'residual': residual,
-            'alpha': alpha,
-        }
 
 
 class SubpixelPreservingDownsample(nn.Module):
