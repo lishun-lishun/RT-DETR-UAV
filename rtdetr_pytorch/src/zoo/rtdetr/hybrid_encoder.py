@@ -15,6 +15,9 @@ from .dgfr_neck import DGFRNeck
 from .resample_neck import SubpixelPreservingDownsample
 from .fdcr_neck import FrequencyDecoupledContextResidual
 from .rdcf_neck import ReparamDirectionalContextBlock
+from .pcx_neck import PartialChannelCrossScaleExchange
+from .esdr_neck import ExtremaSensitiveDownsample
+from .psca_neck import PartialSpatialContextAttention
 
 from src.core import register
 
@@ -190,7 +193,8 @@ class TransformerEncoder(nn.Module):
 @register
 class HybridEncoder(nn.Module):
     __share__ = [
-        'ACR', 'SLR', 'PAF', 'BOR', 'DGFR', 'SPDR', 'FDCR', 'RDCF'
+        'ACR', 'SLR', 'PAF', 'BOR', 'DGFR', 'SPDR', 'FDCR', 'RDCF',
+        'PCX', 'ESDR', 'PSCA'
     ]
 
     def __init__(self,
@@ -215,7 +219,10 @@ class HybridEncoder(nn.Module):
                  DGFR=None,
                  SPDR=None,
                  FDCR=None,
-                 RDCF=None):
+                 RDCF=None,
+                 PCX=None,
+                 ESDR=None,
+                 PSCA=None):
         super().__init__()
         self.in_channels = in_channels
         self.feat_strides = feat_strides
@@ -366,6 +373,57 @@ class HybridEncoder(nn.Module):
             raise ValueError(
                 'FDCR/RDCF experiments cannot mix with SPDR, ACR, SLR, '
                 'PAF, BOR or DGFR')
+
+        pcx_cfg = {} if PCX is None else copy.deepcopy(PCX)
+        if not isinstance(pcx_cfg, dict):
+            raise ValueError('PCX must be a mapping')
+        allowed_pcx = {'enabled', 'exchange_ratio', 'channel_shuffle'}
+        unknown_pcx = set(pcx_cfg) - allowed_pcx
+        if unknown_pcx:
+            raise ValueError(f'Unknown PCX options: {sorted(unknown_pcx)}')
+        self.pcx_enabled = pcx_cfg.pop('enabled', False)
+        if not isinstance(self.pcx_enabled, bool):
+            raise ValueError('PCX.enabled must be boolean')
+
+        esdr_cfg = {} if ESDR is None else copy.deepcopy(ESDR)
+        if not isinstance(esdr_cfg, dict):
+            raise ValueError('ESDR must be a mapping')
+        allowed_esdr = {'enabled', 'beta_max', 'beta_init'}
+        unknown_esdr = set(esdr_cfg) - allowed_esdr
+        if unknown_esdr:
+            raise ValueError(f'Unknown ESDR options: {sorted(unknown_esdr)}')
+        self.esdr_enabled = esdr_cfg.pop('enabled', False)
+        if not isinstance(self.esdr_enabled, bool):
+            raise ValueError('ESDR.enabled must be boolean')
+
+        psca_cfg = {} if PSCA is None else copy.deepcopy(PSCA)
+        if not isinstance(psca_cfg, dict):
+            raise ValueError('PSCA must be a mapping')
+        allowed_psca = {
+            'enabled', 'context_ratio', 'attention_dim',
+            'p3_pool_stride', 'p4_pool_stride', 'alpha_max', 'alpha_init',
+            'channel_shuffle',
+        }
+        unknown_psca = set(psca_cfg) - allowed_psca
+        if unknown_psca:
+            raise ValueError(f'Unknown PSCA options: {sorted(unknown_psca)}')
+        self.psca_enabled = psca_cfg.pop('enabled', False)
+        if not isinstance(self.psca_enabled, bool):
+            raise ValueError('PSCA.enabled must be boolean')
+
+        if sum((self.pcx_enabled, self.esdr_enabled,
+                self.psca_enabled)) > 1:
+            raise ValueError(
+                'PCX, ESDR and PSCA must be evaluated independently.')
+        historical_neck_enabled = any((
+            old_neck_enabled, self.spdr_enabled,
+            self.fdcr_enabled, self.rdcf_enabled,
+        ))
+        if (self.pcx_enabled or self.esdr_enabled or self.psca_enabled) \
+                and historical_neck_enabled:
+            raise ValueError(
+                'PCX, ESDR and PSCA are independent experiments and cannot '
+                'mix with ACR, SLR, PAF, BOR, DGFR, SPDR, FDCR or RDCF.')
 
         self.out_channels = [hidden_dim for _ in range(len(in_channels))]
         self.out_strides = feat_strides
@@ -534,6 +592,39 @@ class HybridEncoder(nn.Module):
                 self.rdcf4 = ReparamDirectionalContextBlock(
                     channels=hidden_dim, **copy.deepcopy(rdcf_cfg))
 
+        # New first-round candidates are intentionally independent.  They
+        # consume only unified hidden_dim features and never inspect a
+        # backbone-specific tensor.  RNG isolation guarantees that enabling a
+        # candidate does not change initialization of any shared parameter.
+        if self.pcx_enabled:
+            if len(in_channels) != 3:
+                raise ValueError('PCX requires exactly N3/N4/N5')
+            with torch.random.fork_rng(devices=[]):
+                self.pcx = PartialChannelCrossScaleExchange(
+                    hidden_dim=hidden_dim, **pcx_cfg)
+        elif self.esdr_enabled:
+            if len(in_channels) != 3:
+                raise ValueError('ESDR requires exactly P3/P4/P5')
+            with torch.random.fork_rng(devices=[]):
+                self.esdr34 = ExtremaSensitiveDownsample(
+                    hidden_dim=hidden_dim, **copy.deepcopy(esdr_cfg))
+                self.esdr45 = ExtremaSensitiveDownsample(
+                    hidden_dim=hidden_dim, **copy.deepcopy(esdr_cfg))
+        elif self.psca_enabled:
+            if len(in_channels) != 3:
+                raise ValueError('PSCA requires exactly N3/N4/N5')
+            p3_pool_stride = psca_cfg.pop('p3_pool_stride', 4)
+            p4_pool_stride = psca_cfg.pop('p4_pool_stride', 2)
+            with torch.random.fork_rng(devices=[]):
+                self.psca3 = PartialSpatialContextAttention(
+                    hidden_dim=hidden_dim,
+                    pool_stride=p3_pool_stride,
+                    **copy.deepcopy(psca_cfg))
+                self.psca4 = PartialSpatialContextAttention(
+                    hidden_dim=hidden_dim,
+                    pool_stride=p4_pool_stride,
+                    **copy.deepcopy(psca_cfg))
+
         self._reset_parameters()
 
     def _reset_parameters(self):
@@ -621,6 +712,9 @@ class HybridEncoder(nn.Module):
             feat_low = outs[-1]
             feat_high = inner_outs[idx + 1]
             downsample_feat = self.downsample_convs[idx](feat_low)
+            if self.esdr_enabled:
+                esdr = self.esdr34 if idx == 0 else self.esdr45
+                downsample_feat = esdr(feat_low, downsample_feat)
             if self.spdr_enabled:
                 spdr = self.spdr34 if idx == 0 else self.spdr45
                 downsample_feat = spdr(feat_low, downsample_feat)
@@ -645,4 +739,9 @@ class HybridEncoder(nn.Module):
         elif self.rdcf_enabled:
             outs[0] = self.rdcf3(outs[0])
             outs[1] = self.rdcf4(outs[1])
+        if self.pcx_enabled:
+            outs = self.pcx(outs)
+        elif self.psca_enabled:
+            outs[0] = self.psca3(outs[0])
+            outs[1] = self.psca4(outs[1])
         return outs

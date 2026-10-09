@@ -1,0 +1,10 @@
+__include__: [
+  './rtdetr_r18vd_dut_anti_uav.yml',
+]
+
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_esdr
+
+ESDR:
+  enabled: true
+  beta_max: 0.20
+  beta_init: 0.02

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Preview and remove obsolete DUT experiment directories safely.
 
-The script keeps the eight current formal/reference experiments and considers
+The script keeps the current formal/reference experiments and considers
 every other *direct child directory* of the selected output root obsolete. It never
 recurses outside that root, never deletes ordinary files, and defaults to a
 read-only preview.  Use ``--apply`` only after reviewing the printed manifest.
@@ -27,6 +27,12 @@ ACTIVE_EXPERIMENTS = (
     "rtdetr_hrnetv2_w18_dut_anti_uav_fdcr",
     "rtdetr_r18vd_dut_anti_uav_rdcf",
     "rtdetr_hrnetv2_w18_dut_anti_uav_rdcf",
+    "rtdetr_r18vd_dut_anti_uav_pcx",
+    "rtdetr_hrnetv2_w18_dut_anti_uav_pcx",
+    "rtdetr_r18vd_dut_anti_uav_esdr",
+    "rtdetr_hrnetv2_w18_dut_anti_uav_esdr",
+    "rtdetr_r18vd_dut_anti_uav_psca",
+    "rtdetr_hrnetv2_w18_dut_anti_uav_psca",
 )
 REQUIRED_BASELINES = (
     "rtdetr_r18vd_dut_anti_uav",

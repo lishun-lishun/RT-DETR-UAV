@@ -34,6 +34,12 @@ PRES_FDCR = CONFIG_DIR / 'rtdetr_r18vd_dut_anti_uav_fdcr.yml'
 HR_FDCR = CONFIG_DIR / 'rtdetr_hrnetv2_w18_dut_anti_uav_fdcr.yml'
 PRES_RDCF = CONFIG_DIR / 'rtdetr_r18vd_dut_anti_uav_rdcf.yml'
 HR_RDCF = CONFIG_DIR / 'rtdetr_hrnetv2_w18_dut_anti_uav_rdcf.yml'
+PRES_PCX = CONFIG_DIR / 'rtdetr_r18vd_dut_anti_uav_pcx.yml'
+HR_PCX = CONFIG_DIR / 'rtdetr_hrnetv2_w18_dut_anti_uav_pcx.yml'
+PRES_ESDR = CONFIG_DIR / 'rtdetr_r18vd_dut_anti_uav_esdr.yml'
+HR_ESDR = CONFIG_DIR / 'rtdetr_hrnetv2_w18_dut_anti_uav_esdr.yml'
+PRES_PSCA = CONFIG_DIR / 'rtdetr_r18vd_dut_anti_uav_psca.yml'
+HR_PSCA = CONFIG_DIR / 'rtdetr_hrnetv2_w18_dut_anti_uav_psca.yml'
 
 CANDIDATES = (PRES_FDCR, HR_FDCR, PRES_RDCF, HR_RDCF)
 REFERENCE_FOR = {
@@ -147,12 +153,14 @@ class FDCRRDCFConfigTests(unittest.TestCase):
     def tearDownClass(cls):
         torch.set_num_threads(cls.previous_threads)
 
-    def test_final_top_level_dut_config_set_is_exactly_eight(self):
+    def test_final_top_level_dut_config_set_is_exactly_fourteen(self):
         actual = {path.name for path in CONFIG_DIR.glob(
             'rtdetr*_dut_anti_uav*.yml')}
         expected = {path.name for path in (
             PRES_BASE, HR_BASE, PRES_SPDR, HR_SPDR,
-            PRES_FDCR, HR_FDCR, PRES_RDCF, HR_RDCF)}
+            PRES_FDCR, HR_FDCR, PRES_RDCF, HR_RDCF,
+            PRES_PCX, HR_PCX, PRES_ESDR, HR_ESDR,
+            PRES_PSCA, HR_PSCA)}
         self.assertEqual(actual, expected)
 
     def test_resolved_configs_change_only_method_and_output(self):

@@ -1,0 +1,10 @@
+__include__: [
+  './rtdetr_hrnetv2_w18_dut_anti_uav.yml',
+]
+
+output_dir: ./output/rtdetr_hrnetv2_w18_dut_anti_uav_pcx
+
+PCX:
+  enabled: true
+  exchange_ratio: 0.25
+  channel_shuffle: true

@@ -1,0 +1,2687 @@
+{
+  "protocol": {
+    "candidate_order": [
+      "PResNet18 + PCX",
+      "HRNetV2-W18 + PCX",
+      "PResNet18 + ESDR",
+      "HRNetV2-W18 + ESDR",
+      "PResNet18 + PSCA",
+      "HRNetV2-W18 + PSCA"
+    ],
+    "pretrained_disabled_for_synthetic_audit_only": true,
+    "dataset_loaded": false,
+    "optimizer_step_executed": false,
+    "formal_training_launched": false,
+    "conv_linear_MAC_definition": "executed Conv2d/Linear multiply-accumulates",
+    "PSCA_attention_MAC_definition": "functional QK and AV multiply-accumulates",
+    "executed_CPU_detector_resolutions": [
+      480,
+      640,
+      800
+    ],
+    "required_480_640_800_forward_completed": true,
+    "executed_complexity_input_size": 640,
+    "CUDA_AMP_executed": false,
+    "three_GPU_DDP_executed": false
+  },
+  "smoke": {
+    "required_configs": {
+      "status": "PASS",
+      "required_files": [
+        "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav.yml",
+        "configs\\rtdetr\\rtdetr_hrnetv2_w18_dut_anti_uav.yml",
+        "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_pcx.yml",
+        "configs\\rtdetr\\rtdetr_hrnetv2_w18_dut_anti_uav_pcx.yml",
+        "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_esdr.yml",
+        "configs\\rtdetr\\rtdetr_hrnetv2_w18_dut_anti_uav_esdr.yml",
+        "configs\\rtdetr\\rtdetr_r18vd_dut_anti_uav_psca.yml",
+        "configs\\rtdetr\\rtdetr_hrnetv2_w18_dut_anti_uav_psca.yml"
+      ]
+    },
+    "fairness": {
+      "PResNet18 + PCX": {
+        "reference": "PResNet18 + Original",
+        "allowed_differences": [
+          "__include__",
+          "output_dir",
+          "PCX"
+        ],
+        "resolved_differences": {
+          "PCX.channel_shuffle": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "PCX.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "PCX.exchange_ratio": {
+            "reference": "<absent>",
+            "candidate": 0.25
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_pcx"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "exchange_ratio": 0.25,
+          "channel_shuffle": true
+        },
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + PCX": {
+        "reference": "HRNetV2-W18 + Original",
+        "allowed_differences": [
+          "__include__",
+          "output_dir",
+          "PCX"
+        ],
+        "resolved_differences": {
+          "PCX.channel_shuffle": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "PCX.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "PCX.exchange_ratio": {
+            "reference": "<absent>",
+            "candidate": 0.25
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_dut_anti_uav.yml",
+              "./include/hrnetv2_w18.yml"
+            ],
+            "candidate": [
+              "./rtdetr_hrnetv2_w18_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_hrnetv2_w18_dut_anti_uav",
+            "candidate": "./output/rtdetr_hrnetv2_w18_dut_anti_uav_pcx"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "exchange_ratio": 0.25,
+          "channel_shuffle": true
+        },
+        "status": "PASS"
+      },
+      "PResNet18 + ESDR": {
+        "reference": "PResNet18 + Original",
+        "allowed_differences": [
+          "__include__",
+          "output_dir",
+          "ESDR"
+        ],
+        "resolved_differences": {
+          "ESDR.beta_init": {
+            "reference": "<absent>",
+            "candidate": 0.02
+          },
+          "ESDR.beta_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "ESDR.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_esdr"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "beta_max": 0.2,
+          "beta_init": 0.02
+        },
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + ESDR": {
+        "reference": "HRNetV2-W18 + Original",
+        "allowed_differences": [
+          "__include__",
+          "output_dir",
+          "ESDR"
+        ],
+        "resolved_differences": {
+          "ESDR.beta_init": {
+            "reference": "<absent>",
+            "candidate": 0.02
+          },
+          "ESDR.beta_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "ESDR.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_dut_anti_uav.yml",
+              "./include/hrnetv2_w18.yml"
+            ],
+            "candidate": [
+              "./rtdetr_hrnetv2_w18_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_hrnetv2_w18_dut_anti_uav",
+            "candidate": "./output/rtdetr_hrnetv2_w18_dut_anti_uav_esdr"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "beta_max": 0.2,
+          "beta_init": 0.02
+        },
+        "status": "PASS"
+      },
+      "PResNet18 + PSCA": {
+        "reference": "PResNet18 + Original",
+        "allowed_differences": [
+          "__include__",
+          "output_dir",
+          "PSCA"
+        ],
+        "resolved_differences": {
+          "PSCA.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.02
+          },
+          "PSCA.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "PSCA.attention_dim": {
+            "reference": "<absent>",
+            "candidate": 32
+          },
+          "PSCA.channel_shuffle": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "PSCA.context_ratio": {
+            "reference": "<absent>",
+            "candidate": 0.25
+          },
+          "PSCA.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "PSCA.p3_pool_stride": {
+            "reference": "<absent>",
+            "candidate": 4
+          },
+          "PSCA.p4_pool_stride": {
+            "reference": "<absent>",
+            "candidate": 2
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_6x_coco.yml",
+              "../dataset/dut_anti_uav_detection.yml"
+            ],
+            "candidate": [
+              "./rtdetr_r18vd_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_r18vd_dut_anti_uav",
+            "candidate": "./output/rtdetr_r18vd_dut_anti_uav_psca"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "context_ratio": 0.25,
+          "attention_dim": 32,
+          "p3_pool_stride": 4,
+          "p4_pool_stride": 2,
+          "alpha_max": 0.2,
+          "alpha_init": 0.02,
+          "channel_shuffle": true
+        },
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + PSCA": {
+        "reference": "HRNetV2-W18 + Original",
+        "allowed_differences": [
+          "__include__",
+          "output_dir",
+          "PSCA"
+        ],
+        "resolved_differences": {
+          "PSCA.alpha_init": {
+            "reference": "<absent>",
+            "candidate": 0.02
+          },
+          "PSCA.alpha_max": {
+            "reference": "<absent>",
+            "candidate": 0.2
+          },
+          "PSCA.attention_dim": {
+            "reference": "<absent>",
+            "candidate": 32
+          },
+          "PSCA.channel_shuffle": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "PSCA.context_ratio": {
+            "reference": "<absent>",
+            "candidate": 0.25
+          },
+          "PSCA.enabled": {
+            "reference": "<absent>",
+            "candidate": true
+          },
+          "PSCA.p3_pool_stride": {
+            "reference": "<absent>",
+            "candidate": 4
+          },
+          "PSCA.p4_pool_stride": {
+            "reference": "<absent>",
+            "candidate": 2
+          },
+          "__include__": {
+            "reference": [
+              "./rtdetr_r18vd_dut_anti_uav.yml",
+              "./include/hrnetv2_w18.yml"
+            ],
+            "candidate": [
+              "./rtdetr_hrnetv2_w18_dut_anti_uav.yml"
+            ]
+          },
+          "output_dir": {
+            "reference": "./output/rtdetr_hrnetv2_w18_dut_anti_uav",
+            "candidate": "./output/rtdetr_hrnetv2_w18_dut_anti_uav_psca"
+          }
+        },
+        "fixed_options": {
+          "enabled": true,
+          "context_ratio": 0.25,
+          "attention_dim": 32,
+          "p3_pool_stride": 4,
+          "p4_pool_stride": 2,
+          "alpha_max": 0.2,
+          "alpha_init": 0.02,
+          "channel_shuffle": true
+        },
+        "status": "PASS"
+      }
+    },
+    "mutual_exclusion": {
+      "status": "PASS",
+      "combinations": {
+        "PCX+ESDR": "REJECTED",
+        "PCX+PSCA": "REJECTED",
+        "ESDR+PSCA": "REJECTED",
+        "PCX+ESDR+PSCA": "REJECTED"
+      },
+      "historical_neck_combinations": {
+        "PCX+ACR": "REJECTED",
+        "PCX+SLR": "REJECTED",
+        "PCX+PAF": "REJECTED",
+        "PCX+BOR": "REJECTED",
+        "PCX+DGFR": "REJECTED",
+        "PCX+SPDR": "REJECTED",
+        "PCX+FDCR": "REJECTED",
+        "PCX+RDCF": "REJECTED",
+        "ESDR+ACR": "REJECTED",
+        "ESDR+SLR": "REJECTED",
+        "ESDR+PAF": "REJECTED",
+        "ESDR+BOR": "REJECTED",
+        "ESDR+DGFR": "REJECTED",
+        "ESDR+SPDR": "REJECTED",
+        "ESDR+FDCR": "REJECTED",
+        "ESDR+RDCF": "REJECTED",
+        "PSCA+ACR": "REJECTED",
+        "PSCA+SLR": "REJECTED",
+        "PSCA+PAF": "REJECTED",
+        "PSCA+BOR": "REJECTED",
+        "PSCA+DGFR": "REJECTED",
+        "PSCA+SPDR": "REJECTED",
+        "PSCA+FDCR": "REJECTED",
+        "PSCA+RDCF": "REJECTED"
+      }
+    },
+    "candidate_activation": {
+      "PResNet18 + PCX": {
+        "method": "PCX",
+        "enabled_states": {
+          "PCX": true,
+          "ESDR": false,
+          "PSCA": false
+        },
+        "constructed_attributes": [
+          "pcx"
+        ],
+        "independent_level_parameters": true,
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + PCX": {
+        "method": "PCX",
+        "enabled_states": {
+          "PCX": true,
+          "ESDR": false,
+          "PSCA": false
+        },
+        "constructed_attributes": [
+          "pcx"
+        ],
+        "independent_level_parameters": true,
+        "status": "PASS"
+      },
+      "PResNet18 + ESDR": {
+        "method": "ESDR",
+        "enabled_states": {
+          "PCX": false,
+          "ESDR": true,
+          "PSCA": false
+        },
+        "constructed_attributes": [
+          "esdr34",
+          "esdr45"
+        ],
+        "independent_level_parameters": true,
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + ESDR": {
+        "method": "ESDR",
+        "enabled_states": {
+          "PCX": false,
+          "ESDR": true,
+          "PSCA": false
+        },
+        "constructed_attributes": [
+          "esdr34",
+          "esdr45"
+        ],
+        "independent_level_parameters": true,
+        "status": "PASS"
+      },
+      "PResNet18 + PSCA": {
+        "method": "PSCA",
+        "enabled_states": {
+          "PCX": false,
+          "ESDR": false,
+          "PSCA": true
+        },
+        "constructed_attributes": [
+          "psca3",
+          "psca4"
+        ],
+        "independent_level_parameters": true,
+        "status": "PASS"
+      },
+      "HRNetV2-W18 + PSCA": {
+        "method": "PSCA",
+        "enabled_states": {
+          "PCX": false,
+          "ESDR": false,
+          "PSCA": true
+        },
+        "constructed_attributes": [
+          "psca3",
+          "psca4"
+        ],
+        "independent_level_parameters": true,
+        "status": "PASS"
+      }
+    },
+    "disabled_equivalence": {
+      "PResNet18 + PCX": {
+        "method": "PCX",
+        "input_size": 128,
+        "same_seed_shared_state": "BIT-EXACT",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS",
+        "tolerance": {
+          "atol": 1e-06,
+          "rtol": 1e-05
+        }
+      },
+      "HRNetV2-W18 + PCX": {
+        "method": "PCX",
+        "input_size": 128,
+        "same_seed_shared_state": "BIT-EXACT",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS",
+        "tolerance": {
+          "atol": 1e-06,
+          "rtol": 1e-05
+        }
+      },
+      "PResNet18 + ESDR": {
+        "method": "ESDR",
+        "input_size": 128,
+        "same_seed_shared_state": "BIT-EXACT",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS",
+        "tolerance": {
+          "atol": 1e-06,
+          "rtol": 1e-05
+        }
+      },
+      "HRNetV2-W18 + ESDR": {
+        "method": "ESDR",
+        "input_size": 128,
+        "same_seed_shared_state": "BIT-EXACT",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS",
+        "tolerance": {
+          "atol": 1e-06,
+          "rtol": 1e-05
+        }
+      },
+      "PResNet18 + PSCA": {
+        "method": "PSCA",
+        "input_size": 128,
+        "same_seed_shared_state": "BIT-EXACT",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS",
+        "tolerance": {
+          "atol": 1e-06,
+          "rtol": 1e-05
+        }
+      },
+      "HRNetV2-W18 + PSCA": {
+        "method": "PSCA",
+        "input_size": 128,
+        "same_seed_shared_state": "BIT-EXACT",
+        "N3_N4_N5": "PASS",
+        "pred_logits": "PASS",
+        "pred_boxes": "PASS",
+        "tolerance": {
+          "atol": 1e-06,
+          "rtol": 1e-05
+        }
+      }
+    },
+    "models": {
+      "PResNet18 + PCX": {
+        "detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "encoder_dummy_backward": {
+          "loss": 0.8715765476226807,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        },
+        "full_detector_dummy_backward": {
+          "input": [
+            1,
+            3,
+            128,
+            128
+          ],
+          "loss": 139.06216430664062,
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO",
+          "optimizer_step": false
+        },
+        "cpu_bfloat16": {
+          "status": "PASS",
+          "dtype": "torch.bfloat16",
+          "loss": 0.8552883863449097,
+          "gradients": "ALL PRESENT AND FINITE"
+        }
+      },
+      "HRNetV2-W18 + PCX": {
+        "detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "encoder_dummy_backward": {
+          "loss": 0.8655505180358887,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        },
+        "full_detector_dummy_backward": {
+          "input": [
+            1,
+            3,
+            128,
+            128
+          ],
+          "loss": 142.9064178466797,
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO",
+          "optimizer_step": false
+        },
+        "cpu_bfloat16": {
+          "status": "PASS",
+          "dtype": "torch.bfloat16",
+          "loss": 0.8486138582229614,
+          "gradients": "ALL PRESENT AND FINITE"
+        }
+      },
+      "PResNet18 + ESDR": {
+        "detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "encoder_dummy_backward": {
+          "loss": 1.0660340785980225,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        },
+        "full_detector_dummy_backward": {
+          "input": [
+            1,
+            3,
+            128,
+            128
+          ],
+          "loss": 151.70394897460938,
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO",
+          "optimizer_step": false
+        },
+        "cpu_bfloat16": {
+          "status": "PASS",
+          "dtype": "torch.bfloat16",
+          "loss": 1.0705652236938477,
+          "gradients": "ALL PRESENT AND FINITE"
+        }
+      },
+      "HRNetV2-W18 + ESDR": {
+        "detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "encoder_dummy_backward": {
+          "loss": 1.0665922164916992,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        },
+        "full_detector_dummy_backward": {
+          "input": [
+            1,
+            3,
+            128,
+            128
+          ],
+          "loss": 148.39572143554688,
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO",
+          "optimizer_step": false
+        },
+        "cpu_bfloat16": {
+          "status": "PASS",
+          "dtype": "torch.bfloat16",
+          "loss": 1.0578153133392334,
+          "gradients": "ALL PRESENT AND FINITE"
+        }
+      },
+      "PResNet18 + PSCA": {
+        "detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "encoder_dummy_backward": {
+          "loss": 1.065913438796997,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        },
+        "full_detector_dummy_backward": {
+          "input": [
+            1,
+            3,
+            128,
+            128
+          ],
+          "loss": 146.97288513183594,
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO",
+          "optimizer_step": false
+        },
+        "cpu_bfloat16": {
+          "status": "PASS",
+          "dtype": "torch.bfloat16",
+          "loss": 1.0707275867462158,
+          "gradients": "ALL PRESENT AND FINITE"
+        }
+      },
+      "HRNetV2-W18 + PSCA": {
+        "detector_forward": {
+          "480": {
+            "input": [
+              1,
+              3,
+              480,
+              480
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                60,
+                60
+              ],
+              [
+                1,
+                256,
+                30,
+                30
+              ],
+              [
+                1,
+                256,
+                15,
+                15
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "640": {
+            "input": [
+              1,
+              3,
+              640,
+              640
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                80,
+                80
+              ],
+              [
+                1,
+                256,
+                40,
+                40
+              ],
+              [
+                1,
+                256,
+                20,
+                20
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          },
+          "800": {
+            "input": [
+              1,
+              3,
+              800,
+              800
+            ],
+            "N3_N4_N5": [
+              [
+                1,
+                256,
+                100,
+                100
+              ],
+              [
+                1,
+                256,
+                50,
+                50
+              ],
+              [
+                1,
+                256,
+                25,
+                25
+              ]
+            ],
+            "pred_logits": [
+              1,
+              300,
+              1
+            ],
+            "pred_boxes": [
+              1,
+              300,
+              4
+            ],
+            "status": "PASS"
+          }
+        },
+        "encoder_dummy_backward": {
+          "loss": 1.067051887512207,
+          "N3_N4_N5": [
+            [
+              2,
+              256,
+              16,
+              16
+            ],
+            [
+              2,
+              256,
+              8,
+              8
+            ],
+            [
+              2,
+              256,
+              4,
+              4
+            ]
+          ],
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO"
+        },
+        "full_detector_dummy_backward": {
+          "input": [
+            1,
+            3,
+            128,
+            128
+          ],
+          "loss": 149.19314575195312,
+          "new_parameter_gradients": "ALL PRESENT, FINITE, NONZERO",
+          "optimizer_step": false
+        },
+        "cpu_bfloat16": {
+          "status": "PASS",
+          "dtype": "torch.bfloat16",
+          "loss": 1.055650234222412,
+          "gradients": "ALL PRESENT AND FINITE"
+        }
+      }
+    },
+    "optimizer": {
+      "PResNet18 + PCX": [
+        {
+          "parameter": "encoder.pcx.down_3_to_4.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.down_3_to_4.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.down_4_to_5.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.down_4_to_5.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.refine3.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.refine3.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.refine3.pointwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.refine3.pointwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.refine4.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.refine4.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.refine4.pointwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.refine4.pointwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.refine5.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.refine5.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.refine5.pointwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.refine5.pointwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        }
+      ],
+      "HRNetV2-W18 + PCX": [
+        {
+          "parameter": "encoder.pcx.down_3_to_4.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.down_3_to_4.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.down_4_to_5.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.down_4_to_5.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.refine3.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.refine3.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.refine3.pointwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.refine3.pointwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.refine4.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.refine4.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.refine4.pointwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.refine4.pointwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.refine5.depthwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.refine5.depthwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.pcx.refine5.pointwise.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.pcx.refine5.pointwise.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        }
+      ],
+      "PResNet18 + ESDR": [
+        {
+          "parameter": "encoder.esdr34.raw_beta",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.esdr34.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.esdr34.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.esdr45.raw_beta",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.esdr45.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.esdr45.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        }
+      ],
+      "HRNetV2-W18 + ESDR": [
+        {
+          "parameter": "encoder.esdr34.raw_beta",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.esdr34.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.esdr34.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.esdr45.raw_beta",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.esdr45.project.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.esdr45.project.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        }
+      ],
+      "PResNet18 + PSCA": [
+        {
+          "parameter": "encoder.psca3.raw_alpha",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca3.query.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca3.key.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca3.value.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca3.value.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.psca3.output.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca3.output.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.psca4.raw_alpha",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca4.query.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca4.key.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca4.value.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca4.value.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.psca4.output.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca4.output.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        }
+      ],
+      "HRNetV2-W18 + PSCA": [
+        {
+          "parameter": "encoder.psca3.raw_alpha",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca3.query.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca3.key.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca3.value.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca3.value.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.psca3.output.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca3.output.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.psca4.raw_alpha",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca4.query.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca4.key.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca4.value.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca4.value.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        },
+        {
+          "parameter": "encoder.psca4.output.weight",
+          "optimizer_group": 3,
+          "lr": 0.0003,
+          "weight_decay": 0.0001,
+          "expected_weight_decay": 0.0001
+        },
+        {
+          "parameter": "encoder.psca4.output.bias",
+          "optimizer_group": 2,
+          "lr": 0.0003,
+          "weight_decay": 0.0,
+          "expected_weight_decay": 0.0
+        }
+      ]
+    },
+    "same_seed_and_insertion": {
+      "PResNet18 + PCX": {
+        "status": "PASS",
+        "same_seed_common_weights": "BIT-EXACT",
+        "common_tensors": 533,
+        "added_tensors": [
+          "encoder.pcx.down_3_to_4.bias",
+          "encoder.pcx.down_3_to_4.weight",
+          "encoder.pcx.down_4_to_5.bias",
+          "encoder.pcx.down_4_to_5.weight",
+          "encoder.pcx.refine3.depthwise.bias",
+          "encoder.pcx.refine3.depthwise.weight",
+          "encoder.pcx.refine3.pointwise.bias",
+          "encoder.pcx.refine3.pointwise.weight",
+          "encoder.pcx.refine4.depthwise.bias",
+          "encoder.pcx.refine4.depthwise.weight",
+          "encoder.pcx.refine4.pointwise.bias",
+          "encoder.pcx.refine4.pointwise.weight",
+          "encoder.pcx.refine5.depthwise.bias",
+          "encoder.pcx.refine5.depthwise.weight",
+          "encoder.pcx.refine5.pointwise.bias",
+          "encoder.pcx.refine5.pointwise.weight"
+        ],
+        "insertion": {
+          "placement": "post-CCFF N3/N4/N5",
+          "call_count": 1,
+          "input_levels": 3,
+          "output_levels": 3
+        },
+        "output_shapes": [
+          [
+            1,
+            256,
+            16,
+            16
+          ],
+          [
+            1,
+            256,
+            8,
+            8
+          ],
+          [
+            1,
+            256,
+            4,
+            4
+          ]
+        ]
+      },
+      "HRNetV2-W18 + PCX": {
+        "status": "PASS",
+        "same_seed_common_weights": "BIT-EXACT",
+        "common_tensors": 2225,
+        "added_tensors": [
+          "encoder.pcx.down_3_to_4.bias",
+          "encoder.pcx.down_3_to_4.weight",
+          "encoder.pcx.down_4_to_5.bias",
+          "encoder.pcx.down_4_to_5.weight",
+          "encoder.pcx.refine3.depthwise.bias",
+          "encoder.pcx.refine3.depthwise.weight",
+          "encoder.pcx.refine3.pointwise.bias",
+          "encoder.pcx.refine3.pointwise.weight",
+          "encoder.pcx.refine4.depthwise.bias",
+          "encoder.pcx.refine4.depthwise.weight",
+          "encoder.pcx.refine4.pointwise.bias",
+          "encoder.pcx.refine4.pointwise.weight",
+          "encoder.pcx.refine5.depthwise.bias",
+          "encoder.pcx.refine5.depthwise.weight",
+          "encoder.pcx.refine5.pointwise.bias",
+          "encoder.pcx.refine5.pointwise.weight"
+        ],
+        "insertion": {
+          "placement": "post-CCFF N3/N4/N5",
+          "call_count": 1,
+          "input_levels": 3,
+          "output_levels": 3
+        },
+        "output_shapes": [
+          [
+            1,
+            256,
+            16,
+            16
+          ],
+          [
+            1,
+            256,
+            8,
+            8
+          ],
+          [
+            1,
+            256,
+            4,
+            4
+          ]
+        ]
+      },
+      "PResNet18 + ESDR": {
+        "status": "PASS",
+        "same_seed_common_weights": "BIT-EXACT",
+        "common_tensors": 533,
+        "added_tensors": [
+          "encoder.esdr34.project.bias",
+          "encoder.esdr34.project.weight",
+          "encoder.esdr34.raw_beta",
+          "encoder.esdr45.project.bias",
+          "encoder.esdr45.project.weight",
+          "encoder.esdr45.raw_beta"
+        ],
+        "insertion": {
+          "placement": "bottom-up downsample only",
+          "call_count": 2,
+          "transitions": [
+            {
+              "transition": "P3->P4",
+              "source_shape": [
+                1,
+                256,
+                16,
+                16
+              ],
+              "base_shape": [
+                1,
+                256,
+                8,
+                8
+              ],
+              "output_shape": [
+                1,
+                256,
+                8,
+                8
+              ],
+              "original_downsample_object_preserved": true
+            },
+            {
+              "transition": "P4->P5",
+              "source_shape": [
+                1,
+                256,
+                8,
+                8
+              ],
+              "base_shape": [
+                1,
+                256,
+                4,
+                4
+              ],
+              "output_shape": [
+                1,
+                256,
+                4,
+                4
+              ],
+              "original_downsample_object_preserved": true
+            }
+          ]
+        },
+        "output_shapes": [
+          [
+            1,
+            256,
+            16,
+            16
+          ],
+          [
+            1,
+            256,
+            8,
+            8
+          ],
+          [
+            1,
+            256,
+            4,
+            4
+          ]
+        ]
+      },
+      "HRNetV2-W18 + ESDR": {
+        "status": "PASS",
+        "same_seed_common_weights": "BIT-EXACT",
+        "common_tensors": 2225,
+        "added_tensors": [
+          "encoder.esdr34.project.bias",
+          "encoder.esdr34.project.weight",
+          "encoder.esdr34.raw_beta",
+          "encoder.esdr45.project.bias",
+          "encoder.esdr45.project.weight",
+          "encoder.esdr45.raw_beta"
+        ],
+        "insertion": {
+          "placement": "bottom-up downsample only",
+          "call_count": 2,
+          "transitions": [
+            {
+              "transition": "P3->P4",
+              "source_shape": [
+                1,
+                256,
+                16,
+                16
+              ],
+              "base_shape": [
+                1,
+                256,
+                8,
+                8
+              ],
+              "output_shape": [
+                1,
+                256,
+                8,
+                8
+              ],
+              "original_downsample_object_preserved": true
+            },
+            {
+              "transition": "P4->P5",
+              "source_shape": [
+                1,
+                256,
+                8,
+                8
+              ],
+              "base_shape": [
+                1,
+                256,
+                4,
+                4
+              ],
+              "output_shape": [
+                1,
+                256,
+                4,
+                4
+              ],
+              "original_downsample_object_preserved": true
+            }
+          ]
+        },
+        "output_shapes": [
+          [
+            1,
+            256,
+            16,
+            16
+          ],
+          [
+            1,
+            256,
+            8,
+            8
+          ],
+          [
+            1,
+            256,
+            4,
+            4
+          ]
+        ]
+      },
+      "PResNet18 + PSCA": {
+        "status": "PASS",
+        "same_seed_common_weights": "BIT-EXACT",
+        "common_tensors": 533,
+        "added_tensors": [
+          "encoder.psca3.key.weight",
+          "encoder.psca3.output.bias",
+          "encoder.psca3.output.weight",
+          "encoder.psca3.query.weight",
+          "encoder.psca3.raw_alpha",
+          "encoder.psca3.value.bias",
+          "encoder.psca3.value.weight",
+          "encoder.psca4.key.weight",
+          "encoder.psca4.output.bias",
+          "encoder.psca4.output.weight",
+          "encoder.psca4.query.weight",
+          "encoder.psca4.raw_alpha",
+          "encoder.psca4.value.bias",
+          "encoder.psca4.value.weight"
+        ],
+        "insertion": {
+          "placement": "post-CCFF N3/N4 only",
+          "call_count": 2,
+          "levels": [
+            3,
+            4
+          ],
+          "N5_identity": "BIT-EXACT"
+        },
+        "output_shapes": [
+          [
+            1,
+            256,
+            16,
+            16
+          ],
+          [
+            1,
+            256,
+            8,
+            8
+          ],
+          [
+            1,
+            256,
+            4,
+            4
+          ]
+        ]
+      },
+      "HRNetV2-W18 + PSCA": {
+        "status": "PASS",
+        "same_seed_common_weights": "BIT-EXACT",
+        "common_tensors": 2225,
+        "added_tensors": [
+          "encoder.psca3.key.weight",
+          "encoder.psca3.output.bias",
+          "encoder.psca3.output.weight",
+          "encoder.psca3.query.weight",
+          "encoder.psca3.raw_alpha",
+          "encoder.psca3.value.bias",
+          "encoder.psca3.value.weight",
+          "encoder.psca4.key.weight",
+          "encoder.psca4.output.bias",
+          "encoder.psca4.output.weight",
+          "encoder.psca4.query.weight",
+          "encoder.psca4.raw_alpha",
+          "encoder.psca4.value.bias",
+          "encoder.psca4.value.weight"
+        ],
+        "insertion": {
+          "placement": "post-CCFF N3/N4 only",
+          "call_count": 2,
+          "levels": [
+            3,
+            4
+          ],
+          "N5_identity": "BIT-EXACT"
+        },
+        "output_shapes": [
+          [
+            1,
+            256,
+            16,
+            16
+          ],
+          [
+            1,
+            256,
+            8,
+            8
+          ],
+          [
+            1,
+            256,
+            4,
+            4
+          ]
+        ]
+      }
+    }
+  },
+  "complexity": {
+    "PResNet18 + Original": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 20083028,
+      "conv_linear_macs": 30006963200,
+      "PSCA_attention_macs": {
+        "QK": 0,
+        "AV": 0,
+        "total": 0,
+        "levels": {}
+      },
+      "conv_linear_plus_PSCA_attention_macs": 30006963200,
+      "flops_2_per_reported_mac": 60013926400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/softmax/concat/channel-shuffle/elementwise and other non-Conv/Linear/QK/AV ops"
+    },
+    "HRNetV2-W18 + Original": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 18280456,
+      "conv_linear_macs": 39669190400,
+      "PSCA_attention_macs": {
+        "QK": 0,
+        "AV": 0,
+        "total": 0,
+        "levels": {}
+      },
+      "conv_linear_plus_PSCA_attention_macs": 39669190400,
+      "flops_2_per_reported_mac": 79338380800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/softmax/concat/channel-shuffle/elementwise and other non-Conv/Linear/QK/AV ops"
+    },
+    "PResNet18 + PCX": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 20171284,
+      "conv_linear_macs": 30119936000,
+      "PSCA_attention_macs": {
+        "QK": 0,
+        "AV": 0,
+        "total": 0,
+        "levels": {}
+      },
+      "conv_linear_plus_PSCA_attention_macs": 30119936000,
+      "flops_2_per_reported_mac": 60239872000,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/softmax/concat/channel-shuffle/elementwise and other non-Conv/Linear/QK/AV ops",
+      "added_params_vs_original": 88256,
+      "added_reported_macs_vs_original": 112972800
+    },
+    "HRNetV2-W18 + PCX": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 18368712,
+      "conv_linear_macs": 39782163200,
+      "PSCA_attention_macs": {
+        "QK": 0,
+        "AV": 0,
+        "total": 0,
+        "levels": {}
+      },
+      "conv_linear_plus_PSCA_attention_macs": 39782163200,
+      "flops_2_per_reported_mac": 79564326400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/softmax/concat/channel-shuffle/elementwise and other non-Conv/Linear/QK/AV ops",
+      "added_params_vs_original": 88256,
+      "added_reported_macs_vs_original": 112972800
+    },
+    "PResNet18 + ESDR": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 20215124,
+      "conv_linear_macs": 30138035200,
+      "PSCA_attention_macs": {
+        "QK": 0,
+        "AV": 0,
+        "total": 0,
+        "levels": {}
+      },
+      "conv_linear_plus_PSCA_attention_macs": 30138035200,
+      "flops_2_per_reported_mac": 60276070400,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/softmax/concat/channel-shuffle/elementwise and other non-Conv/Linear/QK/AV ops",
+      "added_params_vs_original": 132096,
+      "added_reported_macs_vs_original": 131072000
+    },
+    "HRNetV2-W18 + ESDR": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 18412552,
+      "conv_linear_macs": 39800262400,
+      "PSCA_attention_macs": {
+        "QK": 0,
+        "AV": 0,
+        "total": 0,
+        "levels": {}
+      },
+      "conv_linear_plus_PSCA_attention_macs": 39800262400,
+      "flops_2_per_reported_mac": 79600524800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/softmax/concat/channel-shuffle/elementwise and other non-Conv/Linear/QK/AV ops",
+      "added_params_vs_original": 132096,
+      "added_reported_macs_vs_original": 131072000
+    },
+    "PResNet18 + PSCA": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 20107988,
+      "conv_linear_macs": 30061030400,
+      "PSCA_attention_macs": {
+        "QK": 102400000,
+        "AV": 204800000,
+        "levels": {
+          "N3": {
+            "queries": 6400,
+            "keys_values": 400,
+            "attention_dim": 32,
+            "context_channels": 64,
+            "QK": 81920000,
+            "AV": 163840000
+          },
+          "N4": {
+            "queries": 1600,
+            "keys_values": 400,
+            "attention_dim": 32,
+            "context_channels": 64,
+            "QK": 20480000,
+            "AV": 40960000
+          }
+        },
+        "total": 307200000
+      },
+      "conv_linear_plus_PSCA_attention_macs": 30368230400,
+      "flops_2_per_reported_mac": 60736460800,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/softmax/concat/channel-shuffle/elementwise and other non-Conv/Linear/QK/AV ops",
+      "added_params_vs_original": 24960,
+      "added_reported_macs_vs_original": 361267200
+    },
+    "HRNetV2-W18 + PSCA": {
+      "input": [
+        1,
+        3,
+        640,
+        640
+      ],
+      "whole_params": 18305416,
+      "conv_linear_macs": 39723257600,
+      "PSCA_attention_macs": {
+        "QK": 102400000,
+        "AV": 204800000,
+        "levels": {
+          "N3": {
+            "queries": 6400,
+            "keys_values": 400,
+            "attention_dim": 32,
+            "context_channels": 64,
+            "QK": 81920000,
+            "AV": 163840000
+          },
+          "N4": {
+            "queries": 1600,
+            "keys_values": 400,
+            "attention_dim": 32,
+            "context_channels": 64,
+            "QK": 20480000,
+            "AV": 40960000
+          }
+        },
+        "total": 307200000
+      },
+      "conv_linear_plus_PSCA_attention_macs": 40030457600,
+      "flops_2_per_reported_mac": 80060915200,
+      "prediction_shapes": {
+        "pred_logits": [
+          1,
+          300,
+          1
+        ],
+        "pred_boxes": [
+          1,
+          300,
+          4
+        ]
+      },
+      "omitted_ops": "normalization/pooling/interpolation/activation/softmax/concat/channel-shuffle/elementwise and other non-Conv/Linear/QK/AV ops",
+      "added_params_vs_original": 24960,
+      "added_reported_macs_vs_original": 361267200
+    }
+  }
+}

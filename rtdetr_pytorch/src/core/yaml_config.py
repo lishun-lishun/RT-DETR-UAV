@@ -74,6 +74,11 @@ class YAMLConfig(BaseConfig):
         if not isinstance(rdcf, dict):
             raise ValueError('RDCF must be a mapping')
         cfg['RDCF'] = {'enabled': False, **copy.deepcopy(rdcf)}
+        for name in ('PCX', 'ESDR', 'PSCA'):
+            options = cfg.get(name, {})
+            if not isinstance(options, dict):
+                raise ValueError(f'{name} must be a mapping')
+            cfg[name] = {'enabled': False, **copy.deepcopy(options)}
         # Complete default-off point switches for official/legacy YAMLs, without
         # altering a file or constructing plugins. Reject invalid values in the
         # backbone rather than silently dropping misspelled point names.
@@ -115,7 +120,7 @@ class YAMLConfig(BaseConfig):
                 self.yaml_cfg['BackboneEnhancement'])
             for name in ('BackboneModification', 'BDPD', 'MSDConv', 'PDR',
                          'ACR', 'SLR', 'PAF', 'BOR', 'DGFR', 'SPDR',
-                         'FDCR', 'RDCF'):
+                         'FDCR', 'RDCF', 'PCX', 'ESDR', 'PSCA'):
                 GLOBAL_CONFIG[name] = copy.deepcopy(self.yaml_cfg[name])
             self._model = create(self.yaml_cfg['model'])
         return self._model 
