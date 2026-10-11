@@ -226,9 +226,10 @@ _HRNET_W18 = {
 class HRNetV2W18(nn.Module):
     """HRNetV2-W18 provider returning RT-DETR P3/P4/P5 only."""
 
-    __share__ = ['SLR']
+    __share__ = ['SLR', 'HRDI']
 
-    def __init__(self, pretrained=True, pretrained_path=None, SLR=None):
+    def __init__(self, pretrained=True, pretrained_path=None, SLR=None,
+                 HRDI=None):
         super().__init__()
         if not isinstance(pretrained, bool):
             raise ValueError('HRNetV2W18.pretrained must be boolean')
@@ -249,6 +250,30 @@ class HRNetV2W18(nn.Module):
             raise ValueError(
                 'HRNetV2W18 SLR.detail_source_channels must equal the real '
                 'Stage4 stride-4 branch channels (18)')
+        hrdi_cfg = {} if HRDI is None else dict(HRDI)
+        allowed_hrdi = {
+            'enabled', 'source', 'source_channels', 'source_stride',
+            'targets', 'use_dwconv', 'kernel_size', 'norm', 'activation',
+            'resize_mode', 'align_corners', 'init_alpha', 'per_level_alpha',
+        }
+        unknown_hrdi = set(hrdi_cfg) - allowed_hrdi
+        if unknown_hrdi:
+            raise ValueError(f'Unknown HRDI options: {sorted(unknown_hrdi)}')
+        self.hrdi_enabled = hrdi_cfg.get('enabled', False)
+        if not isinstance(self.hrdi_enabled, bool):
+            raise ValueError('HRDI.enabled must be a YAML boolean')
+        if self.hrdi_enabled:
+            if hrdi_cfg.get('source') != 'highest_resolution':
+                raise ValueError(
+                    "HRNetV2W18 HRDI.source must be 'highest_resolution'")
+            if hrdi_cfg.get('source_channels') != 18:
+                raise ValueError(
+                    'HRNetV2W18 HRDI.source_channels must equal the real '
+                    'Stage4 stride-4 branch channels (18)')
+            if hrdi_cfg.get('source_stride') != 4:
+                raise ValueError(
+                    'HRNetV2W18 HRDI.source_stride must equal the real '
+                    'Stage4 highest-resolution branch stride (4)')
 
         self.out_channels = [36, 72, 144]
         self.out_strides = [8, 16, 32]
@@ -514,6 +539,6 @@ class HRNetV2W18(nn.Module):
                 raise RuntimeError(
                     f'HRNet output stride {stride} has {output.shape[1]} '
                     f'channels, expected {channels}')
-        if self.slr_enabled:
+        if self.slr_enabled or self.hrdi_enabled:
             return {'features': outputs, 'detail': features[0]}
         return outputs

@@ -1,0 +1,2 @@
+__include__: ['./rtdetr_r18vd_dut_anti_uav.yml', './include/hrdi_presnet18.yml', './include/sgr.yml']
+output_dir: ./output/rtdetr_r18vd_dut_anti_uav_hrdi_sgr

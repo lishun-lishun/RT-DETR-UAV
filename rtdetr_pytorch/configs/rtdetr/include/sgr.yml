@@ -1,0 +1,15 @@
+# Training-only geometry-aware regression; Hungarian matching remains original.
+SGR:
+  enabled: true
+  use_scale_weight: true
+  gamma: 0.25
+  weight_max: 2.0
+  area_ref_mode: fixed
+  area_ref: 0.01
+  eps: 0.000001
+  use_center_loss: true
+  center_loss_coef: 0.25
+  min_box_size: 0.01
+  center_loss_max: 10.0
+  apply_to_aux: true
+  apply_to_dn: false

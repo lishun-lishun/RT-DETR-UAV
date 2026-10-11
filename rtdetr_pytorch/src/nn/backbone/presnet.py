@@ -143,7 +143,8 @@ class Blocks(nn.Module):
 class PResNet(nn.Module):
     __share__ = ['SECD', 'BackbonePlugins', 'CCED', 'GRER',
                  'BackboneVariant', 'PHSB', 'BackboneEnhancement', 'BAFR', 'HCBR',
-                 'BackboneModification', 'BDPD', 'MSDConv', 'PDR', 'SLR']
+                 'BackboneModification', 'BDPD', 'MSDConv', 'PDR', 'SLR',
+                 'HRDI']
 
     def __init__(
         self, 
@@ -168,7 +169,8 @@ class PResNet(nn.Module):
         BDPD=None,
         MSDConv=None,
         PDR=None,
-        SLR=None):
+        SLR=None,
+        HRDI=None):
         super().__init__()
 
         block_nums = ResNet_cfg[depth]
@@ -183,6 +185,18 @@ class PResNet(nn.Module):
         self.slr_enabled = slr_cfg.get('enabled', False)
         if not isinstance(self.slr_enabled, bool):
             raise ValueError('SLR.enabled must be a YAML boolean')
+        hrdi_cfg = {} if HRDI is None else dict(HRDI)
+        allowed_hrdi = {
+            'enabled', 'source', 'source_channels', 'source_stride',
+            'targets', 'use_dwconv', 'kernel_size', 'norm', 'activation',
+            'resize_mode', 'align_corners', 'init_alpha', 'per_level_alpha',
+        }
+        unknown_hrdi = set(hrdi_cfg) - allowed_hrdi
+        if unknown_hrdi:
+            raise ValueError(f'Unknown HRDI options: {sorted(unknown_hrdi)}')
+        self.hrdi_enabled = hrdi_cfg.get('enabled', False)
+        if not isinstance(self.hrdi_enabled, bool):
+            raise ValueError('HRDI.enabled must be a YAML boolean')
         pdr_cfg = {} if PDR is None else dict(PDR)
         allowed_pdr = {
             'enabled', 'use_relay3', 'use_relay4', 'use_semantic_gate',
@@ -511,6 +525,41 @@ class PResNet(nn.Module):
                     'PResNet SLR.detail_source_channels must equal the real '
                     f'C2 channels ({_out_channels[0]})')
 
+        if self.hrdi_enabled:
+            if (depth != 18 or variant != 'd' or num_stages != 4
+                    or list(return_idx) != [1, 2, 3]):
+                raise ValueError(
+                    'HRDI first-round PResNet experiment requires '
+                    'PResNet18-d, four stages and return_idx=[1,2,3]')
+            if hrdi_cfg.get('source') != 'c2':
+                raise ValueError("PResNet HRDI.source must be 'c2'")
+            if hrdi_cfg.get('source_channels') != _out_channels[0]:
+                raise ValueError(
+                    'PResNet HRDI.source_channels must equal the real '
+                    f'C2 channels ({_out_channels[0]})')
+            if hrdi_cfg.get('source_stride') != _out_strides[0]:
+                raise ValueError(
+                    'PResNet HRDI.source_stride must equal the real '
+                    f'C2 stride ({_out_strides[0]})')
+            # These routes return before the ordinary stage loop below.  Keep
+            # HRDI minimal and unambiguous instead of duplicating their custom
+            # forward implementations.
+            early_return_methods = (
+                self.pdr is not None,
+                self.plugins is not None,
+                self.cced_34 is not None,
+                self.grer_34 is not None,
+                self.phsb is not None,
+                self.secd_34 is not None,
+                self.secd_45 is not None,
+                self.hcbr_p3 is not None,
+                self.hcbr_p4 is not None,
+            )
+            if any(early_return_methods):
+                raise ValueError(
+                    'HRDI cannot be combined with a PResNet route that uses '
+                    'a custom early-return forward')
+
         if freeze_at >= 0:
             self._freeze_parameters(self.conv1)
             for i in range(min(freeze_at, num_stages)):
@@ -681,7 +730,7 @@ class PResNet(nn.Module):
         detail_source = None
         for idx, stage in enumerate(self.res_layers):
             x = stage(x)
-            if self.slr_enabled and idx == 0:
+            if (self.slr_enabled or self.hrdi_enabled) and idx == 0:
                 detail_source = x  # original C2, stride 4
             if idx == 1 and self.msdconv_p3 is not None:
                 x = self.msdconv_p3(x)
@@ -689,7 +738,7 @@ class PResNet(nn.Module):
                 outs.append(x)
         if self.backbone_variant_debug:
             self._debug_variant_features(outs)
-        if self.slr_enabled:
+        if self.slr_enabled or self.hrdi_enabled:
             return {'features': outs, 'detail': detail_source}
         return outs
 

@@ -18,6 +18,7 @@ from .rdcf_neck import ReparamDirectionalContextBlock
 from .pcx_neck import PartialChannelCrossScaleExchange
 from .esdr_neck import ExtremaSensitiveDownsample
 from .psca_neck import PartialSpatialContextAttention
+from .hrdi import HighResolutionDetailInjection
 
 from src.core import register
 
@@ -194,7 +195,7 @@ class TransformerEncoder(nn.Module):
 class HybridEncoder(nn.Module):
     __share__ = [
         'ACR', 'SLR', 'PAF', 'BOR', 'DGFR', 'SPDR', 'FDCR', 'RDCF',
-        'PCX', 'ESDR', 'PSCA'
+        'PCX', 'ESDR', 'PSCA', 'HRDI'
     ]
 
     def __init__(self,
@@ -222,7 +223,8 @@ class HybridEncoder(nn.Module):
                  RDCF=None,
                  PCX=None,
                  ESDR=None,
-                 PSCA=None):
+                 PSCA=None,
+                 HRDI=None):
         super().__init__()
         self.in_channels = in_channels
         self.feat_strides = feat_strides
@@ -262,6 +264,21 @@ class HybridEncoder(nn.Module):
             raise ValueError('SLR.enabled must be boolean')
         if self.slr_enabled and self.acr_enabled:
             raise ValueError('SLR and ACR are independent experiments and cannot mix')
+
+        hrdi_cfg = {} if HRDI is None else copy.deepcopy(HRDI)
+        if not isinstance(hrdi_cfg, dict):
+            raise ValueError('HRDI must be a mapping')
+        allowed_hrdi = {
+            'enabled', 'source', 'source_channels', 'source_stride',
+            'targets', 'use_dwconv', 'kernel_size', 'norm', 'activation',
+            'resize_mode', 'align_corners', 'init_alpha', 'per_level_alpha',
+        }
+        unknown_hrdi = set(hrdi_cfg) - allowed_hrdi
+        if unknown_hrdi:
+            raise ValueError(f'Unknown HRDI options: {sorted(unknown_hrdi)}')
+        self.hrdi_enabled = hrdi_cfg.pop('enabled', False)
+        if not isinstance(self.hrdi_enabled, bool):
+            raise ValueError('HRDI.enabled must be boolean')
 
         paf_cfg = {} if PAF is None else copy.deepcopy(PAF)
         if not isinstance(paf_cfg, dict):
@@ -513,6 +530,16 @@ class HybridEncoder(nn.Module):
                     detail_source_channels=detail_channels,
                     **slr_cfg)
 
+        # HRDI is an optional sideband consumer after the complete original
+        # CCFF.  Its initialization is isolated so enabling it does not shift
+        # any common Encoder/Decoder parameter under a fixed seed.
+        if self.hrdi_enabled:
+            if len(in_channels) != 3:
+                raise ValueError('HRDI requires exactly P3/P4/P5')
+            with torch.random.fork_rng(devices=[]):
+                self.hrdi = HighResolutionDetailInjection(
+                    hidden_dim=hidden_dim, **hrdi_cfg)
+
         # PAF keeps the original nearest-neighbour upsampling and CSPRepLayer;
         # it only aligns the already-upsampled feature immediately before each
         # top-down concatenation. The two routes intentionally do not share
@@ -661,10 +688,11 @@ class HybridEncoder(nn.Module):
         if isinstance(feats, dict):
             if set(feats) != {'features', 'detail'}:
                 raise ValueError(
-                    'SLR backbone output must contain only features and detail')
-            if not self.slr_enabled:
+                    'Detail-aware backbone output must contain only features and detail')
+            if not (self.slr_enabled or self.hrdi_enabled):
                 raise RuntimeError(
-                    'Backbone returned an SLR detail source while SLR is disabled')
+                    'Backbone returned a detail source while all detail consumers '
+                    'are disabled')
             detail_source = feats['detail']
             feats = feats['features']
         assert len(feats) == len(self.in_channels)
@@ -725,6 +753,11 @@ class HybridEncoder(nn.Module):
             out = self.pan_blocks[idx](torch.concat([downsample_feat, feat_high], dim=1))
             outs.append(out)
 
+        if self.hrdi_enabled:
+            if detail_source is None:
+                raise RuntimeError(
+                    'HRDI is enabled but the backbone supplied no detail source')
+            outs = self.hrdi(outs, detail_source)
         if self.dgfr_enabled:
             outs = self.dgfr(proj_feats, outs)
         if self.slr_enabled:

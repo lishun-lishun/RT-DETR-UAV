@@ -1,0 +1,15 @@
+# HRDI adapter for the real HRNet Stage4 branch-0 output (18 channels, stride 4).
+HRDI:
+  enabled: true
+  source: highest_resolution
+  source_channels: 18
+  source_stride: 4
+  targets: [P3, P4]
+  use_dwconv: true
+  kernel_size: 3
+  norm: BN
+  activation: SiLU
+  resize_mode: bilinear
+  align_corners: false
+  init_alpha: 0.0
+  per_level_alpha: true

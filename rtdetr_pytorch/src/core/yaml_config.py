@@ -74,7 +74,7 @@ class YAMLConfig(BaseConfig):
         if not isinstance(rdcf, dict):
             raise ValueError('RDCF must be a mapping')
         cfg['RDCF'] = {'enabled': False, **copy.deepcopy(rdcf)}
-        for name in ('PCX', 'ESDR', 'PSCA'):
+        for name in ('PCX', 'ESDR', 'PSCA', 'HRDI', 'SAQS', 'SGR'):
             options = cfg.get(name, {})
             if not isinstance(options, dict):
                 raise ValueError(f'{name} must be a mapping')
@@ -120,7 +120,8 @@ class YAMLConfig(BaseConfig):
                 self.yaml_cfg['BackboneEnhancement'])
             for name in ('BackboneModification', 'BDPD', 'MSDConv', 'PDR',
                          'ACR', 'SLR', 'PAF', 'BOR', 'DGFR', 'SPDR',
-                         'FDCR', 'RDCF', 'PCX', 'ESDR', 'PSCA'):
+                         'FDCR', 'RDCF', 'PCX', 'ESDR', 'PSCA',
+                         'HRDI', 'SAQS', 'SGR'):
                 GLOBAL_CONFIG[name] = copy.deepcopy(self.yaml_cfg[name])
             self._model = create(self.yaml_cfg['model'])
         return self._model 

@@ -11,6 +11,7 @@ import torch.nn.functional as F
 import torch.nn.init as init 
 
 from .denoising import get_contrastive_denoising_training_group
+from .saqs import ScaleAwareQuerySelector
 from .utils import deformable_attention_core_func, get_activation, inverse_sigmoid
 from .utils import bias_init_with_prob
 
@@ -280,7 +281,7 @@ class TransformerDecoder(nn.Module):
 
 @register
 class RTDETRTransformer(nn.Module):
-    __share__ = ['num_classes']
+    __share__ = ['num_classes', 'SAQS']
     def __init__(self,
                  num_classes=80,
                  hidden_dim=256,
@@ -302,7 +303,8 @@ class RTDETRTransformer(nn.Module):
                  eval_spatial_size=None,
                  eval_idx=-1,
                  eps=1e-2, 
-                 aux_loss=True):
+                 aux_loss=True,
+                 SAQS=None):
 
         super(RTDETRTransformer, self).__init__()
         assert position_embed_type in ['sine', 'learned'], \
@@ -322,6 +324,36 @@ class RTDETRTransformer(nn.Module):
         self.num_decoder_layers = num_decoder_layers
         self.eval_spatial_size = eval_spatial_size
         self.aux_loss = aux_loss
+
+        saqs_cfg = {} if SAQS is None else copy.deepcopy(SAQS)
+        if not isinstance(saqs_cfg, dict):
+            raise ValueError('SAQS must be a mapping')
+        allowed_saqs = {
+            'enabled', 'level_ratios', 'feature_level_strides',
+            'use_area_prior', 'area_prior_lambda', 'area_prior_tau',
+            'area_weight_max', 'debug',
+        }
+        unknown_saqs = set(saqs_cfg) - allowed_saqs
+        if unknown_saqs:
+            raise ValueError(f'Unknown SAQS options: {sorted(unknown_saqs)}')
+        self.saqs_enabled = saqs_cfg.pop('enabled', False)
+        if not isinstance(self.saqs_enabled, bool):
+            raise ValueError('SAQS.enabled must be a boolean')
+        if self.saqs_enabled:
+            configured_strides = saqs_cfg.pop(
+                'feature_level_strides', [8, 16, 32])
+            if not isinstance(configured_strides, (list, tuple)):
+                raise ValueError(
+                    'SAQS.feature_level_strides must be a list or tuple')
+            if list(configured_strides) != list(self.feat_strides):
+                raise ValueError(
+                    'SAQS.feature_level_strides must exactly match decoder '
+                    f'feat_strides {list(self.feat_strides)}, got '
+                    f'{list(configured_strides)}')
+            self.saqs_selector = ScaleAwareQuerySelector(
+                num_queries=self.num_queries,
+                feature_level_strides=configured_strides,
+                **saqs_cfg)
 
         # backbone feature projection
         self._build_input_proj_layer(feat_channels)
@@ -488,7 +520,14 @@ class RTDETRTransformer(nn.Module):
         enc_outputs_class = self.enc_score_head(output_memory)
         enc_outputs_coord_unact = self.enc_bbox_head(output_memory) + anchors
 
-        _, topk_ind = torch.topk(enc_outputs_class.max(-1).values, self.num_queries, dim=1)
+        if self.saqs_enabled:
+            topk_ind = self.saqs_selector(
+                enc_outputs_class,
+                enc_outputs_coord_unact,
+                spatial_shapes,
+                valid_mask=valid_mask)
+        else:
+            _, topk_ind = torch.topk(enc_outputs_class.max(-1).values, self.num_queries, dim=1)
         
         reference_points_unact = enc_outputs_coord_unact.gather(dim=1, \
             index=topk_ind.unsqueeze(-1).repeat(1, 1, enc_outputs_coord_unact.shape[-1]))

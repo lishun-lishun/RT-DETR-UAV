@@ -6,6 +6,8 @@ by lyuwenyu
 """
 
 
+import copy
+
 import torch 
 import torch.nn as nn 
 import torch.nn.functional as F 
@@ -13,6 +15,7 @@ import torchvision
 
 # from torchvision.ops import box_convert, generalized_box_iou
 from .box_ops import box_cxcywh_to_xyxy, box_iou, generalized_box_iou
+from .sgr import SmallObjectGeometryRegression
 
 from src.misc.dist import get_world_size, is_dist_available_and_initialized
 from src.core import register
@@ -26,10 +29,11 @@ class SetCriterion(nn.Module):
         1) we compute hungarian assignment between ground truth boxes and the outputs of the model
         2) we supervise each pair of matched ground-truth / prediction (supervise class and box)
     """
-    __share__ = ['num_classes', ]
+    __share__ = ['num_classes', 'SGR']
     __inject__ = ['matcher', ]
 
-    def __init__(self, matcher, weight_dict, losses, alpha=0.2, gamma=2.0, eos_coef=1e-4, num_classes=80):
+    def __init__(self, matcher, weight_dict, losses, alpha=0.2, gamma=2.0,
+                 eos_coef=1e-4, num_classes=80, SGR=None):
         """ Create the criterion.
         Parameters:
             num_classes: number of object categories, omitting the special no-object category
@@ -41,7 +45,32 @@ class SetCriterion(nn.Module):
         super().__init__()
         self.num_classes = num_classes
         self.matcher = matcher
+        sgr_cfg = {} if SGR is None else copy.deepcopy(SGR)
+        if not isinstance(sgr_cfg, dict):
+            raise ValueError('SGR must be a mapping')
+        allowed_sgr = {
+            'enabled', 'use_scale_weight', 'gamma', 'weight_max',
+            'area_ref_mode', 'area_ref', 'eps', 'use_center_loss',
+            'center_loss_coef', 'min_box_size', 'center_loss_max',
+            'apply_to_aux', 'apply_to_dn',
+        }
+        unknown_sgr = set(sgr_cfg) - allowed_sgr
+        if unknown_sgr:
+            raise ValueError(f'Unknown SGR options: {sorted(unknown_sgr)}')
+        self.sgr_enabled = sgr_cfg.pop('enabled', False)
+        if not isinstance(self.sgr_enabled, bool):
+            raise ValueError('SGR.enabled must be boolean')
+
+        # Preserve the original object and construction path exactly when SGR
+        # is disabled.  Enabled experiments receive a private dictionary so
+        # adding the centre coefficient cannot pollute the global YAML registry.
         self.weight_dict = weight_dict
+        if self.sgr_enabled:
+            self.sgr = SmallObjectGeometryRegression(**sgr_cfg)
+            self.weight_dict = copy.deepcopy(weight_dict)
+            if self.sgr.use_center_loss:
+                self.weight_dict['loss_center'] = \
+                    self.sgr.center_loss_coef
         self.losses = losses 
 
         empty_weight = torch.ones(self.num_classes + 1)
@@ -149,7 +178,8 @@ class SetCriterion(nn.Module):
         losses = {'cardinality_error': card_err}
         return losses
 
-    def loss_boxes(self, outputs, targets, indices, num_boxes):
+    def loss_boxes(self, outputs, targets, indices, num_boxes,
+                   sgr_stage='main', sgr_area_ref=None):
         """Compute the losses related to the bounding boxes, the L1 regression loss and the GIoU loss
            targets dicts must contain the key "boxes" containing a tensor of dim [nb_target_boxes, 4]
            The target boxes are expected in format (center_x, center_y, w, h), normalized by the image size.
@@ -159,15 +189,46 @@ class SetCriterion(nn.Module):
         src_boxes = outputs['pred_boxes'][idx]
         target_boxes = torch.cat([t['boxes'][i] for t, (_, i) in zip(targets, indices)], dim=0)
 
+        apply_sgr = (self.sgr_enabled
+                     and self.sgr.should_apply(sgr_stage))
+        if not apply_sgr:
+            # This is intentionally the original RT-DETR reduction path.
+            # Keeping it separate makes SGR=false bit-for-bit/key-for-key
+            # identical rather than relying on an all-ones weighting path.
+            losses = {}
+
+            loss_bbox = F.l1_loss(src_boxes, target_boxes, reduction='none')
+            losses['loss_bbox'] = loss_bbox.sum() / num_boxes
+
+            loss_giou = 1 - torch.diag(generalized_box_iou(
+                    box_cxcywh_to_xyxy(src_boxes),
+                    box_cxcywh_to_xyxy(target_boxes)))
+            losses['loss_giou'] = loss_giou.sum() / num_boxes
+            return losses
+
         losses = {}
-
         loss_bbox = F.l1_loss(src_boxes, target_boxes, reduction='none')
-        losses['loss_bbox'] = loss_bbox.sum() / num_boxes
-
         loss_giou = 1 - torch.diag(generalized_box_iou(
                 box_cxcywh_to_xyxy(src_boxes),
                 box_cxcywh_to_xyxy(target_boxes)))
-        losses['loss_giou'] = loss_giou.sum() / num_boxes
+
+        if self.sgr.use_scale_weight:
+            if sgr_area_ref is None:
+                raise RuntimeError(
+                    'SGR scale weighting requires a resolved area reference')
+            box_weights = self.sgr.scale_weights(
+                target_boxes, sgr_area_ref)
+            losses['loss_bbox'] = (
+                loss_bbox.sum(dim=-1) * box_weights).sum() / num_boxes
+            losses['loss_giou'] = (
+                loss_giou * box_weights).sum() / num_boxes
+        else:
+            losses['loss_bbox'] = loss_bbox.sum() / num_boxes
+            losses['loss_giou'] = loss_giou.sum() / num_boxes
+
+        if self.sgr.use_center_loss:
+            center = self.sgr.center_error(src_boxes, target_boxes)
+            losses['loss_center'] = center.sum() / num_boxes
         return losses
 
     def loss_masks(self, outputs, targets, indices, num_boxes):
@@ -244,15 +305,25 @@ class SetCriterion(nn.Module):
             torch.distributed.all_reduce(num_boxes)
         num_boxes = torch.clamp(num_boxes / get_world_size(), min=1).item()
 
+        sgr_area_ref = None
+        if (self.sgr_enabled and self.sgr.use_scale_weight):
+            output_device = next(iter(outputs.values())).device
+            sgr_area_ref = self.sgr.resolve_area_ref(targets, output_device)
+
         # Compute all the requested losses
         losses = {}
         for loss in self.losses:
-            l_dict = self.get_loss(loss, outputs, targets, indices, num_boxes)
+            kwargs = ({'sgr_stage': 'main',
+                       'sgr_area_ref': sgr_area_ref}
+                      if loss == 'boxes' else {})
+            l_dict = self.get_loss(
+                loss, outputs, targets, indices, num_boxes, **kwargs)
             l_dict = {k: l_dict[k] * self.weight_dict[k] for k in l_dict if k in self.weight_dict}
             losses.update(l_dict)
 
         # In case of auxiliary losses, we repeat this process with the output of each intermediate layer.
         if 'aux_outputs' in outputs:
+            aux_count = len(outputs['aux_outputs'])
             for i, aux_outputs in enumerate(outputs['aux_outputs']):
                 indices = self.matcher(aux_outputs, targets)
                 for loss in self.losses:
@@ -263,6 +334,14 @@ class SetCriterion(nn.Module):
                     if loss == 'labels':
                         # Logging is enabled only for the last layer
                         kwargs = {'log': False}
+                    elif loss == 'boxes':
+                        # RT-DETR appends one encoder-proposal output after
+                        # all true decoder auxiliary outputs.
+                        stage = 'encoder_aux' if i == aux_count - 1 else 'aux'
+                        kwargs = {
+                            'sgr_stage': stage,
+                            'sgr_area_ref': sgr_area_ref,
+                        }
 
                     l_dict = self.get_loss(loss, aux_outputs, targets, indices, num_boxes, **kwargs)
                     l_dict = {k: l_dict[k] * self.weight_dict[k] for k in l_dict if k in self.weight_dict}
@@ -285,6 +364,11 @@ class SetCriterion(nn.Module):
                     if loss == 'labels':
                         # Logging is enabled only for the last layer
                         kwargs = {'log': False}
+                    elif loss == 'boxes':
+                        kwargs = {
+                            'sgr_stage': 'dn',
+                            'sgr_area_ref': sgr_area_ref,
+                        }
 
                     l_dict = self.get_loss(loss, aux_outputs, targets, indices, num_boxes, **kwargs)
                     l_dict = {k: l_dict[k] * self.weight_dict[k] for k in l_dict if k in self.weight_dict}

@@ -1,0 +1,10 @@
+# P3/P4/P5 correspond to strides 8/16/32 for both supported backbones.
+SAQS:
+  enabled: true
+  feature_level_strides: [8, 16, 32]
+  level_ratios: [0.6, 0.3, 0.1]
+  use_area_prior: false
+  area_prior_lambda: 0.25
+  area_prior_tau: 0.02
+  area_weight_max: 1.5
+  debug: true
