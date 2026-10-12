@@ -184,8 +184,10 @@ def test_module_gradients():
     selector = ScaleAwareQuerySelector(
         num_queries=12, feature_level_strides=[8, 16, 32],
         level_ratios=[0.5, 1 / 3, 1 / 6])
-    logits = torch.randn(2, 21, 1)
-    boxes = torch.randn(2, 21, 4)
+    # Reproduce formal AMP behavior: the score head can remain FP16 while
+    # adding FP32 anchors promotes proposal logits to FP32.
+    logits = torch.randn(2, 21, 1, dtype=torch.float16)
+    boxes = torch.randn(2, 21, 4, dtype=torch.float32)
     memory = torch.randn(2, 21, 16, requires_grad=True)
     indices = selector(logits, boxes, [[4, 4], [2, 2], [1, 1]])
     gathered = memory.gather(

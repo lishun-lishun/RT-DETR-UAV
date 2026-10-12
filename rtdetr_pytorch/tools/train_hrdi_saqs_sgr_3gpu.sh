@@ -99,10 +99,13 @@ for index in "${!NAMES[@]}"; do
     emit "config=$config"
     emit "output_dir=$output_dir"
 
-    if [[ -d "$output_dir" ]]; then
-        emit "[SKIP] experiment=$name reason=output_directory_exists"
+    if [[ -f "$output_dir/best.pth" ]]; then
+        emit "[SKIP] experiment=$name reason=completed_best_checkpoint_exists"
         SUMMARY+=("$number|$name|SKIP EXISTING|0")
         continue
+    fi
+    if [[ -d "$output_dir" ]]; then
+        emit "[RETRY] experiment=$name reason=incomplete_output_without_best_checkpoint"
     fi
     if [[ ! -f "$config" ]]; then
         emit "[FAIL] experiment=$name return_code=66 reason=missing_config"

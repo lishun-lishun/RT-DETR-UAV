@@ -191,9 +191,11 @@ class ScaleAwareQuerySelector(nn.Module):
                 or proposal_logits.is_complex():
             raise RuntimeError(
                 'SAQS proposal_logits must be real floating point')
-        if proposal_logits.dtype != class_logits.dtype:
-            raise RuntimeError(
-                'SAQS class and proposal tensors must share a dtype')
+        # Under AMP the classification head is commonly FP16/BF16 while
+        # ``bbox_head + anchors`` is promoted to FP32 by the FP32 anchors.
+        # SAQS only produces integer gather indices, so requiring identical
+        # floating dtypes is both unnecessary and incorrect.  The optional
+        # area-prior path explicitly ranks in FP32 below.
         if proposal_logits.device != class_logits.device:
             raise RuntimeError(
                 'SAQS class and proposal tensors must share a device')
@@ -242,7 +244,10 @@ class ScaleAwareQuerySelector(nn.Module):
         return lengths, valid
 
     def _selection_scores(self, class_logits, proposal_logits):
-        scores = class_logits.max(dim=-1).values
+        # Rank in FP32 for deterministic AMP compatibility. Casting FP16 or
+        # BF16 logits to FP32 preserves their represented ordering and avoids
+        # backend gaps such as CPU Half Top-K in smoke/export environments.
+        scores = class_logits.max(dim=-1).values.float()
         if not self.use_area_prior:
             return scores
 
@@ -250,7 +255,7 @@ class ScaleAwareQuerySelector(nn.Module):
         # Using sigmoid probability avoids reversing the intended preference
         # when the raw classification logit is negative. Only ranking consumes
         # this tensor; gathered encoder logits remain the original raw logits.
-        probability = scores.detach().float().sigmoid()
+        probability = scores.detach().sigmoid()
         proposal = proposal_logits.detach().float().sigmoid()
         area = proposal[..., 2] * proposal[..., 3]
         weight = 1.0 + self.area_prior_lambda * torch.exp(
