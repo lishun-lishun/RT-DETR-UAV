@@ -2,9 +2,11 @@
 
 Each experiment directory is matched to a YAML with the same basename.  With
 ``--experiments`` the supplied names and order are used exactly; otherwise all
-immediate child directories are evaluated alphabetically.  Tests run
-sequentially on one visible GPU to bound CUDA and shared-memory use. A failure
-is recorded and does not prevent evaluation of the remaining models.
+immediate child directories are evaluated alphabetically.  With
+``--only-existing-best``, directories without ``best.pth`` are excluded from
+the plan. Tests run sequentially on one visible GPU to bound CUDA and
+shared-memory use. A failure is recorded and does not prevent evaluation of
+the remaining models.
 """
 
 import argparse
@@ -163,6 +165,13 @@ def main(args):
         experiments = sorted(
             (path for path in output_root.iterdir() if path.is_dir()),
             key=lambda path: path.name.lower())
+        if args.only_existing_best:
+            experiments = [path for path in experiments
+                           if (path / 'best.pth').is_file()]
+            if not experiments:
+                raise FileNotFoundError(
+                    f'No immediate child directory contains best.pth: '
+                    f'{output_root}')
     plan = []
     for directory in experiments:
         checkpoint = directory / 'best.pth'
@@ -206,6 +215,7 @@ def main(args):
         'report_dir': str(report_dir), 'split': args.split,
         'gpu': args.gpu, 'num_workers': args.num_workers,
         'require_ema': bool(getattr(args, 'require_ema', False)),
+        'only_existing_best': bool(args.only_existing_best),
         'requested_experiments': list(requested) if requested else None,
         'total': len(plan),
     }
@@ -292,5 +302,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '--require-ema', action='store_true',
         help='require every checkpoint to contain a usable ema.module state')
+    parser.add_argument(
+        '--only-existing-best', action='store_true',
+        help='when auto-scanning, exclude directories without best.pth')
     parser.add_argument('--dry-run', action='store_true')
     sys.exit(main(parser.parse_args()))

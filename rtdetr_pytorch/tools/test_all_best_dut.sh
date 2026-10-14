@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# Scan every immediate experiment directory under OUTPUT_ROOT and sequentially
-# evaluate its best.pth on the real DUT test split. Evaluation is single-GPU,
-# FP32, 640x640, and requires checkpoint EMA weights. Missing checkpoints or
-# configs and failed evaluations are recorded without stopping later models.
+# Scan every immediate experiment directory under OUTPUT_ROOT that contains a
+# best.pth and evaluate it sequentially on the real DUT test split. Evaluation
+# is single-GPU, FP32, 640x640, and requires checkpoint EMA weights. A missing
+# matching YAML or failed evaluation is recorded without stopping later models.
 
 set -uo pipefail
 
@@ -48,6 +48,7 @@ command=(
     --gpu "$GPU_ID"
     --num-workers "$NUM_WORKERS"
     --require-ema
+    --only-existing-best
 )
 if [[ -n "${REPORT_DIR:-}" ]]; then
     command+=(--report-dir "$REPORT_DIR")
