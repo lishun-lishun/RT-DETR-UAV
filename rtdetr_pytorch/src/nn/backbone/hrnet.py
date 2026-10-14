@@ -36,6 +36,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from src.core import register
+from .crcg import CrossResolutionConsensusGating
 
 
 __all__ = ['HRNetV2W18', 'HighResolutionModule']
@@ -226,10 +227,10 @@ _HRNET_W18 = {
 class HRNetV2W18(nn.Module):
     """HRNetV2-W18 provider returning RT-DETR P3/P4/P5 only."""
 
-    __share__ = ['SLR', 'HRDI']
+    __share__ = ['SLR', 'HRDI', 'CRCG', 'QCLR']
 
     def __init__(self, pretrained=True, pretrained_path=None, SLR=None,
-                 HRDI=None):
+                 HRDI=None, CRCG=None, QCLR=None):
         super().__init__()
         if not isinstance(pretrained, bool):
             raise ValueError('HRNetV2W18.pretrained must be boolean')
@@ -274,6 +275,29 @@ class HRNetV2W18(nn.Module):
                 raise ValueError(
                     'HRNetV2W18 HRDI.source_stride must equal the real '
                     'Stage4 highest-resolution branch stride (4)')
+        crcg_cfg = {} if CRCG is None else dict(CRCG)
+        allowed_crcg = {
+            'enabled', 'embed_dim', 'gate_type', 'temperature', 'gate_bias',
+            'consensus_reduce', 'mode', 'align_mode', 'align_corners',
+            'init_alpha', 'debug',
+        }
+        unknown_crcg = set(crcg_cfg) - allowed_crcg
+        if unknown_crcg:
+            raise ValueError(f'Unknown CRCG options: {sorted(unknown_crcg)}')
+        self.crcg_enabled = crcg_cfg.pop('enabled', False)
+        if not isinstance(self.crcg_enabled, bool):
+            raise ValueError('CRCG.enabled must be a YAML boolean')
+        qclr_cfg = {} if QCLR is None else dict(QCLR)
+        if not isinstance(qclr_cfg, dict):
+            raise ValueError('QCLR must be a mapping')
+        self.qclr_enabled = qclr_cfg.get('enabled', False)
+        if not isinstance(self.qclr_enabled, bool):
+            raise ValueError('QCLR.enabled must be a YAML boolean')
+        if self.qclr_enabled:
+            if qclr_cfg.get('feature_source', 'hrnet_highest') != 'hrnet_highest':
+                raise ValueError("HRNet QCLR.feature_source must be 'hrnet_highest'")
+            if qclr_cfg.get('high_res_channels', 18) != 18:
+                raise ValueError('HRNet QCLR.high_res_channels must equal 18')
 
         self.out_channels = [36, 72, 144]
         self.out_strides = [8, 16, 32]
@@ -306,6 +330,13 @@ class HRNetV2W18(nn.Module):
         self._init_weights()
         if pretrained or pretrained_path:
             self._load_pretrained(pretrained_path)
+        # Construct only after strict official-weight loading: CRCG keys must
+        # not be mistaken for missing ImageNet backbone keys. fork_rng also
+        # prevents optional parameters from shifting later common RNG state.
+        if self.crcg_enabled:
+            with torch.random.fork_rng(devices=[]):
+                self.crcg = CrossResolutionConsensusGating(
+                    [18, 36, 72, 144], **crcg_cfg)
 
     @staticmethod
     def _make_layer(block, in_channels, channels, blocks):
@@ -521,7 +552,11 @@ class HRNetV2W18(nn.Module):
 
         features = self.stage2(self._apply_transition([x], self.transition1))
         features = self.stage3(self._apply_transition(features, self.transition2))
-        features = self.stage4(self._apply_transition(features, self.transition3))
+        stage4_inputs = self._apply_transition(features, self.transition3)
+        reliability = None
+        if self.crcg_enabled:
+            stage4_inputs, reliability = self.crcg(stage4_inputs)
+        features = self.stage4(stage4_inputs)
 
         # RT-DETR remains a three-level detector. The stride-4 HRNet branch is
         # maintained and fused internally, but is not sent to HybridEncoder.
@@ -539,6 +574,14 @@ class HRNetV2W18(nn.Module):
                 raise RuntimeError(
                     f'HRNet output stride {stride} has {output.shape[1]} '
                     f'channels, expected {channels}')
-        if self.slr_enabled or self.hrdi_enabled:
-            return {'features': outputs, 'detail': features[0]}
+        if (self.slr_enabled or self.hrdi_enabled or self.crcg_enabled
+                or self.qclr_enabled):
+            packet = {'features': outputs}
+            if self.slr_enabled or self.hrdi_enabled:
+                packet['detail'] = features[0]
+            if self.crcg_enabled:
+                packet['consensus'] = reliability
+            if self.qclr_enabled:
+                packet['high_res'] = features[0]
+            return packet
         return outputs

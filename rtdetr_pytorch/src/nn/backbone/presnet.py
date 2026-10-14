@@ -144,7 +144,7 @@ class PResNet(nn.Module):
     __share__ = ['SECD', 'BackbonePlugins', 'CCED', 'GRER',
                  'BackboneVariant', 'PHSB', 'BackboneEnhancement', 'BAFR', 'HCBR',
                  'BackboneModification', 'BDPD', 'MSDConv', 'PDR', 'SLR',
-                 'HRDI']
+                 'HRDI', 'CRCG', 'QCLR']
 
     def __init__(
         self, 
@@ -170,7 +170,9 @@ class PResNet(nn.Module):
         MSDConv=None,
         PDR=None,
         SLR=None,
-        HRDI=None):
+        HRDI=None,
+        CRCG=None,
+        QCLR=None):
         super().__init__()
 
         block_nums = ResNet_cfg[depth]
@@ -197,6 +199,14 @@ class PResNet(nn.Module):
         self.hrdi_enabled = hrdi_cfg.get('enabled', False)
         if not isinstance(self.hrdi_enabled, bool):
             raise ValueError('HRDI.enabled must be a YAML boolean')
+        crcg_cfg = {} if CRCG is None else dict(CRCG)
+        if crcg_cfg.get('enabled', False):
+            raise ValueError('CRCG requires multi-resolution HRNet features.')
+        qclr_cfg = {} if QCLR is None else dict(QCLR)
+        if qclr_cfg.get('enabled', False):
+            raise ValueError(
+                'QCLR requires the HRNet highest-resolution feature; '
+                'PResNet fallback is not enabled')
         pdr_cfg = {} if PDR is None else dict(PDR)
         allowed_pdr = {
             'enabled', 'use_relay3', 'use_relay4', 'use_semantic_gate',

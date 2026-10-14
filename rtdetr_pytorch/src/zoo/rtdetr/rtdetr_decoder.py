@@ -12,6 +12,8 @@ import torch.nn.init as init
 
 from .denoising import get_contrastive_denoising_training_group
 from .saqs import ScaleAwareQuerySelector
+from .cgqs import ConsensusGuidedQuerySelector
+from .qclr import QueryConditionedLocalRefinement
 from .utils import deformable_attention_core_func, get_activation, inverse_sigmoid
 from .utils import bias_init_with_prob
 
@@ -244,7 +246,8 @@ class TransformerDecoder(nn.Module):
                 score_head,
                 query_pos_head,
                 attn_mask=None,
-                memory_mask=None):
+                memory_mask=None,
+                return_final_query=False):
         output = tgt
         dec_out_bboxes = []
         dec_out_logits = []
@@ -276,12 +279,15 @@ class TransformerDecoder(nn.Module):
             ref_points_detach = inter_ref_bbox.detach(
             ) if self.training else inter_ref_bbox
 
-        return torch.stack(dec_out_bboxes), torch.stack(dec_out_logits)
+        outputs = (torch.stack(dec_out_bboxes), torch.stack(dec_out_logits))
+        if return_final_query:
+            return outputs + (output,)
+        return outputs
 
 
 @register
 class RTDETRTransformer(nn.Module):
-    __share__ = ['num_classes', 'SAQS']
+    __share__ = ['num_classes', 'SAQS', 'CGQS', 'QCLR']
     def __init__(self,
                  num_classes=80,
                  hidden_dim=256,
@@ -304,7 +310,9 @@ class RTDETRTransformer(nn.Module):
                  eval_idx=-1,
                  eps=1e-2, 
                  aux_loss=True,
-                 SAQS=None):
+                 SAQS=None,
+                 CGQS=None,
+                 QCLR=None):
 
         super(RTDETRTransformer, self).__init__()
         assert position_embed_type in ['sine', 'learned'], \
@@ -355,6 +363,26 @@ class RTDETRTransformer(nn.Module):
                 feature_level_strides=configured_strides,
                 **saqs_cfg)
 
+        cgqs_cfg = {} if CGQS is None else copy.deepcopy(CGQS)
+        if not isinstance(cgqs_cfg, dict):
+            raise ValueError('CGQS must be a mapping')
+        allowed_cgqs = {
+            'enabled', 'use_consensus', 'consensus_weight',
+            'use_local_peak', 'peak_weight', 'peak_kernel', 'score_mode',
+            'eps', 'align_mode', 'align_corners', 'debug',
+        }
+        unknown_cgqs = set(cgqs_cfg) - allowed_cgqs
+        if unknown_cgqs:
+            raise ValueError(f'Unknown CGQS options: {sorted(unknown_cgqs)}')
+        self.cgqs_enabled = cgqs_cfg.pop('enabled', False)
+        if not isinstance(self.cgqs_enabled, bool):
+            raise ValueError('CGQS.enabled must be a boolean')
+        if self.cgqs_enabled and self.saqs_enabled:
+            raise ValueError('CGQS and SAQS both replace query selection; enable only one')
+        if self.cgqs_enabled:
+            self.cgqs_selector = ConsensusGuidedQuerySelector(
+                num_queries=self.num_queries, **cgqs_cfg)
+
         # backbone feature projection
         self._build_input_proj_layer(feat_channels)
 
@@ -399,6 +427,26 @@ class RTDETRTransformer(nn.Module):
             self.anchors, self.valid_mask = self._generate_anchors()
 
         self._reset_parameters()
+
+        qclr_cfg = {} if QCLR is None else copy.deepcopy(QCLR)
+        if not isinstance(qclr_cfg, dict):
+            raise ValueError('QCLR must be a mapping')
+        allowed_qclr = {
+            'enabled', 'small_area_threshold', 'window_size', 'corr_dim',
+            'temperature', 'learnable_beta', 'init_beta', 'center_only',
+            'max_refine_queries', 'high_res_channels', 'feature_source',
+            'align_corners', 'debug',
+        }
+        unknown_qclr = set(qclr_cfg) - allowed_qclr
+        if unknown_qclr:
+            raise ValueError(f'Unknown QCLR options: {sorted(unknown_qclr)}')
+        self.qclr_enabled = qclr_cfg.pop('enabled', False)
+        if not isinstance(self.qclr_enabled, bool):
+            raise ValueError('QCLR.enabled must be a boolean')
+        if self.qclr_enabled:
+            with torch.random.fork_rng(devices=[]):
+                self.qclr = QueryConditionedLocalRefinement(
+                    query_dim=self.hidden_dim, **qclr_cfg)
 
     def _reset_parameters(self):
         bias = bias_init_with_prob(0.01)
@@ -504,7 +552,8 @@ class RTDETRTransformer(nn.Module):
                            memory,
                            spatial_shapes,
                            denoising_class=None,
-                           denoising_bbox_unact=None):
+                           denoising_bbox_unact=None,
+                           consensus=None):
         bs, _, _ = memory.shape
         # prepare input for decoder
         if self.training or self.eval_spatial_size is None:
@@ -520,7 +569,11 @@ class RTDETRTransformer(nn.Module):
         enc_outputs_class = self.enc_score_head(output_memory)
         enc_outputs_coord_unact = self.enc_bbox_head(output_memory) + anchors
 
-        if self.saqs_enabled:
+        if self.cgqs_enabled:
+            topk_ind = self.cgqs_selector(
+                enc_outputs_class, spatial_shapes, valid_mask,
+                consensus=consensus)
+        elif self.saqs_enabled:
             topk_ind = self.saqs_selector(
                 enc_outputs_class,
                 enc_outputs_coord_unact,
@@ -556,6 +609,19 @@ class RTDETRTransformer(nn.Module):
 
     def forward(self, feats, targets=None):
 
+        consensus = None
+        high_res = None
+        if isinstance(feats, dict):
+            allowed_keys = {'features', 'consensus', 'high_res'}
+            if 'features' not in feats or not set(feats).issubset(allowed_keys):
+                raise ValueError(
+                    'Decoder feature packet contains invalid keys')
+            consensus = feats.get('consensus')
+            high_res = feats.get('high_res')
+            feats = feats['features']
+        if self.qclr_enabled and high_res is None:
+            raise RuntimeError('QCLR is enabled but received no high_res feature')
+
         # input projection and embedding
         (memory, spatial_shapes, level_start_index) = self._get_encoder_input(feats)
         
@@ -573,10 +639,12 @@ class RTDETRTransformer(nn.Module):
             denoising_class, denoising_bbox_unact, attn_mask, dn_meta = None, None, None, None
 
         target, init_ref_points_unact, enc_topk_bboxes, enc_topk_logits = \
-            self._get_decoder_input(memory, spatial_shapes, denoising_class, denoising_bbox_unact)
+            self._get_decoder_input(
+                memory, spatial_shapes, denoising_class,
+                denoising_bbox_unact, consensus=consensus)
 
         # decoder
-        out_bboxes, out_logits = self.decoder(
+        decoder_outputs = self.decoder(
             target,
             init_ref_points_unact,
             memory,
@@ -585,13 +653,25 @@ class RTDETRTransformer(nn.Module):
             self.dec_bbox_head,
             self.dec_score_head,
             self.query_pos_head,
-            attn_mask=attn_mask)
+            attn_mask=attn_mask,
+            return_final_query=self.qclr_enabled)
+        if self.qclr_enabled:
+            out_bboxes, out_logits, final_query = decoder_outputs
+        else:
+            out_bboxes, out_logits = decoder_outputs
 
         if self.training and dn_meta is not None:
             dn_out_bboxes, out_bboxes = torch.split(out_bboxes, dn_meta['dn_num_split'], dim=2)
             dn_out_logits, out_logits = torch.split(out_logits, dn_meta['dn_num_split'], dim=2)
+            if self.qclr_enabled:
+                _, final_query = torch.split(
+                    final_query, dn_meta['dn_num_split'], dim=1)
 
-        out = {'pred_logits': out_logits[-1], 'pred_boxes': out_bboxes[-1]}
+        final_boxes = out_bboxes[-1]
+        if self.qclr_enabled:
+            final_boxes = self.qclr(
+                final_query, final_boxes, out_logits[-1], high_res)
+        out = {'pred_logits': out_logits[-1], 'pred_boxes': final_boxes}
 
         if self.training and self.aux_loss:
             out['aux_outputs'] = self._set_aux_loss(out_logits[:-1], out_bboxes[:-1])

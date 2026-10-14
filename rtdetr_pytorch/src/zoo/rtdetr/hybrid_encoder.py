@@ -195,7 +195,7 @@ class TransformerEncoder(nn.Module):
 class HybridEncoder(nn.Module):
     __share__ = [
         'ACR', 'SLR', 'PAF', 'BOR', 'DGFR', 'SPDR', 'FDCR', 'RDCF',
-        'PCX', 'ESDR', 'PSCA', 'HRDI'
+        'PCX', 'ESDR', 'PSCA', 'HRDI', 'CRCG', 'CGQS', 'QCLR'
     ]
 
     def __init__(self,
@@ -224,7 +224,10 @@ class HybridEncoder(nn.Module):
                  PCX=None,
                  ESDR=None,
                  PSCA=None,
-                 HRDI=None):
+                 HRDI=None,
+                 CRCG=None,
+                 CGQS=None,
+                 QCLR=None):
         super().__init__()
         self.in_channels = in_channels
         self.feat_strides = feat_strides
@@ -233,6 +236,25 @@ class HybridEncoder(nn.Module):
         self.num_encoder_layers = num_encoder_layers
         self.pe_temperature = pe_temperature
         self.eval_spatial_size = eval_spatial_size
+
+        crcg_cfg = {} if CRCG is None else copy.deepcopy(CRCG)
+        if not isinstance(crcg_cfg, dict):
+            raise ValueError('CRCG must be a mapping')
+        self.crcg_enabled = crcg_cfg.get('enabled', False)
+        if not isinstance(self.crcg_enabled, bool):
+            raise ValueError('CRCG.enabled must be boolean')
+        cgqs_cfg = {} if CGQS is None else copy.deepcopy(CGQS)
+        if not isinstance(cgqs_cfg, dict):
+            raise ValueError('CGQS must be a mapping')
+        self.cgqs_enabled = cgqs_cfg.get('enabled', False)
+        if not isinstance(self.cgqs_enabled, bool):
+            raise ValueError('CGQS.enabled must be boolean')
+        qclr_cfg = {} if QCLR is None else copy.deepcopy(QCLR)
+        if not isinstance(qclr_cfg, dict):
+            raise ValueError('QCLR must be a mapping')
+        self.qclr_enabled = qclr_cfg.get('enabled', False)
+        if not isinstance(self.qclr_enabled, bool):
+            raise ValueError('QCLR.enabled must be boolean')
 
         acr_cfg = {} if ACR is None else copy.deepcopy(ACR)
         if not isinstance(acr_cfg, dict):
@@ -685,15 +707,23 @@ class HybridEncoder(nn.Module):
 
     def forward(self, feats):
         detail_source = None
+        consensus = None
+        high_res = None
         if isinstance(feats, dict):
-            if set(feats) != {'features', 'detail'}:
+            allowed_keys = {'features', 'detail', 'consensus', 'high_res'}
+            if 'features' not in feats or not set(feats).issubset(allowed_keys):
                 raise ValueError(
-                    'Detail-aware backbone output must contain only features and detail')
-            if not (self.slr_enabled or self.hrdi_enabled):
+                    'Backbone feature packet contains invalid keys')
+            if 'detail' in feats and not (self.slr_enabled or self.hrdi_enabled):
                 raise RuntimeError(
                     'Backbone returned a detail source while all detail consumers '
                     'are disabled')
-            detail_source = feats['detail']
+            if 'consensus' in feats and not self.crcg_enabled:
+                raise RuntimeError(
+                    'Backbone returned CRCG consensus while CRCG is disabled')
+            detail_source = feats.get('detail')
+            consensus = feats.get('consensus')
+            high_res = feats.get('high_res')
             feats = feats['features']
         assert len(feats) == len(self.in_channels)
         proj_feats = [self.input_proj[i](feat) for i, feat in enumerate(feats)]
@@ -777,4 +807,16 @@ class HybridEncoder(nn.Module):
         elif self.psca_enabled:
             outs[0] = self.psca3(outs[0])
             outs[1] = self.psca4(outs[1])
+        # CRCG-only retains the decoder's original list interface. CGQS uses a
+        # side packet; ``None`` deliberately activates its documented local-
+        # peak-only fallback when CRCG is off.
+        if self.qclr_enabled and high_res is None:
+            raise RuntimeError('QCLR is enabled but HRNet supplied no high_res feature')
+        if self.cgqs_enabled or self.qclr_enabled:
+            packet = {'features': outs}
+            if self.cgqs_enabled:
+                packet['consensus'] = consensus
+            if self.qclr_enabled:
+                packet['high_res'] = high_res
+            return packet
         return outs

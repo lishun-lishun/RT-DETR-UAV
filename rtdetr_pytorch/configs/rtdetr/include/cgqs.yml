@@ -1,0 +1,12 @@
+CGQS:
+  enabled: true
+  use_consensus: true
+  consensus_weight: 0.5
+  use_local_peak: true
+  peak_weight: 0.25
+  peak_kernel: 3
+  score_mode: additive
+  eps: 1.0e-6
+  align_mode: bilinear
+  align_corners: false
+  debug: false

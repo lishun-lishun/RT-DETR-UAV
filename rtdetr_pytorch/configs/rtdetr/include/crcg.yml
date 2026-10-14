@@ -1,0 +1,12 @@
+CRCG:
+  enabled: true
+  embed_dim: 64
+  gate_type: sigmoid
+  temperature: 2.0
+  gate_bias: 0.0
+  consensus_reduce: mean
+  mode: gate_self
+  align_mode: bilinear
+  align_corners: false
+  init_alpha: 0.0
+  debug: false

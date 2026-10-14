@@ -1,0 +1,14 @@
+QCLR:
+  enabled: true
+  feature_source: hrnet_highest
+  high_res_channels: 18
+  small_area_threshold: 0.01
+  window_size: 5
+  corr_dim: 64
+  temperature: 0.1
+  learnable_beta: true
+  init_beta: 0.0
+  center_only: true
+  max_refine_queries: 100
+  align_corners: false
+  debug: false
